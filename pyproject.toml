@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "frugent"
+dynamic = ["version"]
+description = "面向合成编码工作负载的成本高效 agent 运行时机制工具包"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Wu Manruo", email = "246873871+shinefuer@users.noreply.github.com" },
+]
+dependencies = ["numpy>=1.26,<3"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2,<2",
+  "hatchling>=1.27,<2",
+  "mypy>=1.13,<2",
+  "pytest>=8.3,<9",
+  "ruff>=0.8,<1",
+]
+torch = ["torch>=2.2,<3"]
+
+[project.scripts]
+frugent = "frugent.cli:main"
+
+[tool.hatch.version]
+path = "src/frugent/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/frugent"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config"
+testpaths = ["tests"]
+markers = [
+  "slow: slower integration or training checks",
+  "model: checks that require the optional CPU-only torch extra",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+strict = true
+files = ["src"]
+
