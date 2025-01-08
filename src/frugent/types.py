@@ -88,3 +88,35 @@ class Event:
         ):
             raise RecordError("event.payload: expected string mapping")
         return cls(sequence, kind, tuple(sorted(payload.items())))
+
+
+@dataclass(frozen=True, slots=True)
+class Decision:
+    """A selected candidate and its quantized deterministic score."""
+
+    candidate: str
+    reason: str
+    score: float
+
+    def __post_init__(self) -> None:
+        if not self.candidate:
+            raise RecordError("decision.candidate: expected a non-empty identifier")
+        if not self.reason:
+            raise RecordError("decision.reason: expected a non-empty explanation")
+        if not 0.0 <= self.score <= 1.0:
+            raise RecordError("decision.score: expected a finite value in [0, 1]")
+        object.__setattr__(self, "score", round(self.score, 6))
+
+    def to_record(self) -> dict[str, str | float]:
+        return {"candidate": self.candidate, "reason": self.reason, "score": self.score}
+
+    @classmethod
+    def from_record(cls, record: Mapping[str, Any]) -> Decision:
+        candidate = record.get("candidate")
+        reason = record.get("reason")
+        score = record.get("score")
+        if not isinstance(candidate, str) or not isinstance(reason, str):
+            raise RecordError("decision: candidate and reason must be strings")
+        if isinstance(score, bool) or not isinstance(score, (int, float)):
+            raise RecordError("decision.score: expected a number")
+        return cls(candidate, reason, float(score))

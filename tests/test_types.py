@@ -66,3 +66,15 @@ def test_event_roundtrip_preserves_sequence_and_payload() -> None:
 def test_event_rejects_invalid_sequence(sequence: int) -> None:
     with pytest.raises(t.RecordError, match=r"event\.sequence"):
         t.Event(sequence, "step")
+
+
+def test_decision_quantizes_score_at_production() -> None:
+    decision = t.Decision("local-small", "prefix affinity", 0.123456789)
+    assert decision.score == 0.123457
+    assert t.Decision.from_record(decision.to_record()) == decision
+
+
+@pytest.mark.parametrize("score", [-0.001, 1.001, float("nan")])
+def test_decision_rejects_scores_outside_unit_interval(score: float) -> None:
+    with pytest.raises(t.RecordError, match=r"decision\.score"):
+        t.Decision("candidate", "reason", score)
