@@ -51,3 +51,40 @@ class Message:
         ):
             raise RecordError("message.metadata: expected string mapping")
         return cls(role, content, tuple(sorted(raw_metadata.items())))
+
+
+@dataclass(frozen=True, slots=True)
+class Event:
+    """A deterministic event in an execution trace."""
+
+    sequence: int
+    kind: str
+    payload: tuple[tuple[str, str], ...] = field(default_factory=tuple)
+
+    def __post_init__(self) -> None:
+        if isinstance(self.sequence, bool) or self.sequence < 0:
+            raise RecordError("event.sequence: expected a non-negative integer")
+        if not self.kind or not self.kind.replace("_", "").isalnum():
+            raise RecordError("event.kind: expected a non-empty identifier")
+        if tuple(sorted(self.payload)) != self.payload:
+            raise RecordError("event.payload: keys must be in canonical order")
+
+    def to_record(self) -> dict[str, Any]:
+        return {
+            "sequence": self.sequence,
+            "kind": self.kind,
+            "payload": dict(self.payload),
+        }
+
+    @classmethod
+    def from_record(cls, record: Mapping[str, Any]) -> Event:
+        sequence = record.get("sequence")
+        kind = record.get("kind")
+        payload = record.get("payload", {})
+        if not isinstance(sequence, int) or not isinstance(kind, str):
+            raise RecordError("event: sequence and kind have invalid types")
+        if not isinstance(payload, Mapping) or not all(
+            isinstance(key, str) and isinstance(value, str) for key, value in payload.items()
+        ):
+            raise RecordError("event.payload: expected string mapping")
+        return cls(sequence, kind, tuple(sorted(payload.items())))

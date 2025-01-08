@@ -50,3 +50,19 @@ def test_message_rejects_empty_content() -> None:
 def test_message_rejects_noncanonical_direct_metadata() -> None:
     with pytest.raises(t.RecordError, match="canonical order"):
         t.Message("user", "x", (("z", "2"), ("a", "1")))
+
+
+def test_event_roundtrip_preserves_sequence_and_payload() -> None:
+    event = t.Event.from_record({"sequence": 3, "kind": "tool_result", "payload": {"b": "2"}})
+    assert event.to_record() == {
+        "sequence": 3,
+        "kind": "tool_result",
+        "payload": {"b": "2"},
+    }
+    assert t.Event.from_record(event.to_record()) == event
+
+
+@pytest.mark.parametrize("sequence", [-1, -100, True])
+def test_event_rejects_invalid_sequence(sequence: int) -> None:
+    with pytest.raises(t.RecordError, match=r"event\.sequence"):
+        t.Event(sequence, "step")
