@@ -78,3 +78,30 @@ def test_decision_quantizes_score_at_production() -> None:
 def test_decision_rejects_scores_outside_unit_interval(score: float) -> None:
     with pytest.raises(t.RecordError, match=r"decision\.score"):
         t.Decision("candidate", "reason", score)
+
+
+@pytest.mark.parametrize("kind", ["step", "tool_result", "CACHE_HIT", "x9"])
+def test_event_accepts_protocol_identifiers(kind: str) -> None:
+    assert t.Event(0, kind).kind == kind
+
+
+@pytest.mark.parametrize("kind", ["", "tool result", "path/name", "!"])
+def test_event_rejects_ambiguous_kind(kind: str) -> None:
+    with pytest.raises(t.RecordError, match=r"event\.kind"):
+        t.Event(0, kind)
+
+
+def test_event_wire_shape_is_stable() -> None:
+    assert t.Event(7, "cache_hit", (("model", "tiny"),)).to_record() == {
+        "sequence": 7,
+        "kind": "cache_hit",
+        "payload": {"model": "tiny"},
+    }
+
+
+def test_decision_wire_shape_is_stable() -> None:
+    assert t.Decision("tiny", "lowest eligible cost", 0.75).to_record() == {
+        "candidate": "tiny",
+        "reason": "lowest eligible cost",
+        "score": 0.75,
+    }
