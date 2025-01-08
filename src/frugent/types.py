@@ -120,3 +120,37 @@ class Decision:
         if isinstance(score, bool) or not isinstance(score, (int, float)):
             raise RecordError("decision.score: expected a number")
         return cls(candidate, reason, float(score))
+
+
+@dataclass(frozen=True, slots=True)
+class Usage:
+    """Token usage split by billable category."""
+
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    cached_prompt_tokens: int = 0
+
+    def __post_init__(self) -> None:
+        values = (self.prompt_tokens, self.completion_tokens, self.cached_prompt_tokens)
+        if any(value < 0 for value in values):
+            raise RecordError("usage: token counts must be non-negative")
+        if self.cached_prompt_tokens > self.prompt_tokens:
+            raise RecordError("usage.cached_prompt_tokens: cannot exceed prompt tokens")
+
+    @property
+    def total_tokens(self) -> int:
+        return self.prompt_tokens + self.completion_tokens
+
+    def __add__(self, other: Usage) -> Usage:
+        return Usage(
+            self.prompt_tokens + other.prompt_tokens,
+            self.completion_tokens + other.completion_tokens,
+            self.cached_prompt_tokens + other.cached_prompt_tokens,
+        )
+
+    def to_record(self) -> dict[str, int]:
+        return {
+            "prompt_tokens": self.prompt_tokens,
+            "completion_tokens": self.completion_tokens,
+            "cached_prompt_tokens": self.cached_prompt_tokens,
+        }

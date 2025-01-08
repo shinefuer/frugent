@@ -105,3 +105,15 @@ def test_decision_wire_shape_is_stable() -> None:
         "reason": "lowest eligible cost",
         "score": 0.75,
     }
+
+
+def test_usage_addition_preserves_categories() -> None:
+    left = t.Usage(100, 20, 80)
+    right = t.Usage(40, 10, 10)
+    assert left + right == t.Usage(140, 30, 90)
+    assert (left + right).total_tokens == 170
+
+
+def test_usage_rejects_impossible_cached_total() -> None:
+    with pytest.raises(t.RecordError, match="cannot exceed"):
+        t.Usage(3, 1, 4)
