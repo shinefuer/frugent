@@ -204,3 +204,10 @@ class Response:
             "model": self.model,
             "usage": self.usage.to_record(),
         }
+
+
+def canonical_metadata(values: Mapping[str, str]) -> tuple[tuple[str, str], ...]:
+    """Freeze a string mapping in deterministic key order."""
+    if not all(isinstance(key, str) and isinstance(value, str) for key, value in values.items()):
+        raise RecordError("metadata: expected string keys and values")
+    return tuple(sorted(values.items()))

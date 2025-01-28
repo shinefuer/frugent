@@ -160,3 +160,15 @@ def test_request_rejects_ambiguous_identity_or_seed(
 def test_response_requires_pairing_identity(request_id: str, model: str) -> None:
     with pytest.raises(t.RecordError, match="request_id and model"):
         t.Response(request_id, "", model, t.Usage())
+
+
+def test_canonical_metadata_is_order_independent() -> None:
+    assert t.canonical_metadata({"z": "last", "a": "first"}) == (
+        ("a", "first"),
+        ("z", "last"),
+    )
+
+
+def test_canonical_metadata_rejects_non_string_values() -> None:
+    with pytest.raises(t.RecordError, match="string keys"):
+        t.canonical_metadata({"count": 3})  # type: ignore[dict-item]
