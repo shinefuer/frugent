@@ -117,3 +117,9 @@ def test_usage_addition_preserves_categories() -> None:
 def test_usage_rejects_impossible_cached_total() -> None:
     with pytest.raises(t.RecordError, match="cannot exceed"):
         t.Usage(3, 1, 4)
+
+
+@pytest.mark.parametrize("values", [(True, 0, 0), (0, False, 0), (0, 0, True)])
+def test_usage_does_not_treat_booleans_as_token_counts(values: tuple[int, int, int]) -> None:
+    with pytest.raises(t.RecordError, match="must be integers"):
+        t.Usage(*values)

@@ -132,6 +132,8 @@ class Usage:
 
     def __post_init__(self) -> None:
         values = (self.prompt_tokens, self.completion_tokens, self.cached_prompt_tokens)
+        if any(isinstance(value, bool) or not isinstance(value, int) for value in values):
+            raise RecordError("usage: token counts must be integers")
         if any(value < 0 for value in values):
             raise RecordError("usage: token counts must be non-negative")
         if self.cached_prompt_tokens > self.prompt_tokens:
