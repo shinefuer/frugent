@@ -156,3 +156,51 @@ class Usage:
             "completion_tokens": self.completion_tokens,
             "cached_prompt_tokens": self.cached_prompt_tokens,
         }
+
+
+@dataclass(frozen=True, slots=True)
+class Request:
+    """Adapter-neutral request with ordered messages."""
+
+    request_id: str
+    messages: tuple[Message, ...]
+    seed: int = 0
+
+    def __post_init__(self) -> None:
+        if not self.request_id:
+            raise RecordError("request.request_id: expected a non-empty identifier")
+        if not self.messages:
+            raise RecordError("request.messages: expected at least one message")
+        if isinstance(self.seed, bool) or not isinstance(self.seed, int) or self.seed < 0:
+            raise RecordError("request.seed: expected a non-negative integer")
+
+    def to_record(self) -> dict[str, Any]:
+        return {
+            "request_id": self.request_id,
+            "messages": [message.to_record() for message in self.messages],
+            "seed": self.seed,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class Response:
+    """Adapter-neutral response paired with measured usage."""
+
+    request_id: str
+    content: str
+    model: str
+    usage: Usage
+
+    def __post_init__(self) -> None:
+        if not self.request_id or not self.model:
+            raise RecordError("response: request_id and model must be non-empty")
+        if not isinstance(self.content, str):
+            raise RecordError("response.content: expected a string")
+
+    def to_record(self) -> dict[str, Any]:
+        return {
+            "request_id": self.request_id,
+            "content": self.content,
+            "model": self.model,
+            "usage": self.usage.to_record(),
+        }

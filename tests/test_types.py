@@ -123,3 +123,18 @@ def test_usage_rejects_impossible_cached_total() -> None:
 def test_usage_does_not_treat_booleans_as_token_counts(values: tuple[int, int, int]) -> None:
     with pytest.raises(t.RecordError, match="must be integers"):
         t.Usage(*values)
+
+
+def test_request_record_preserves_message_order() -> None:
+    request = t.Request("r1", (t.Message("system", "rules"), t.Message("user", "task")), seed=11)
+    assert [item["role"] for item in request.to_record()["messages"]] == ["system", "user"]
+    assert request.to_record()["seed"] == 11
+
+
+def test_response_record_nests_usage_categories() -> None:
+    response = t.Response("r1", "done", "scripted-small", t.Usage(5, 2, 3))
+    assert response.to_record()["usage"] == {
+        "prompt_tokens": 5,
+        "completion_tokens": 2,
+        "cached_prompt_tokens": 3,
+    }
