@@ -138,3 +138,25 @@ def test_response_record_nests_usage_categories() -> None:
         "completion_tokens": 2,
         "cached_prompt_tokens": 3,
     }
+
+
+@pytest.mark.parametrize(
+    ("request_id", "messages", "seed", "fragment"),
+    [
+        ("", (t.Message("user", "x"),), 0, "request_id"),
+        ("r", (), 0, "at least one"),
+        ("r", (t.Message("user", "x"),), -1, "request.seed"),
+        ("r", (t.Message("user", "x"),), True, "request.seed"),
+    ],
+)
+def test_request_rejects_ambiguous_identity_or_seed(
+    request_id: str, messages: tuple[t.Message, ...], seed: int, fragment: str
+) -> None:
+    with pytest.raises(t.RecordError, match=fragment):
+        t.Request(request_id, messages, seed)
+
+
+@pytest.mark.parametrize(("request_id", "model"), [("", "scripted"), ("r1", ""), ("", "")])
+def test_response_requires_pairing_identity(request_id: str, model: str) -> None:
+    with pytest.raises(t.RecordError, match="request_id and model"):
+        t.Response(request_id, "", model, t.Usage())
