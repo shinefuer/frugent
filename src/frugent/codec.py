@@ -66,3 +66,33 @@ def decode_json(payload: bytes | str) -> Any:
         raise CodecError(f"invalid JSON: {error}") from error
     _reject_non_finite(decoded)
     return decoded
+
+
+def encode_envelope(schema: str, version: int, payload: Any) -> bytes:
+    """Encode a versioned payload with a digest over its exact content."""
+    if not schema or isinstance(version, bool) or version < 1:
+        raise CodecError("envelope: schema must be non-empty and version must be positive")
+    body = {"schema": schema, "version": version, "payload": payload}
+    return canonical_json({**body, "checksum": payload_digest(body)})
+
+
+def decode_envelope(data: bytes | str, expected_schema: str) -> tuple[int, Any]:
+    """Verify and decode a versioned checksum envelope."""
+    decoded = decode_json(data)
+    if not isinstance(decoded, dict) or set(decoded) != {
+        "schema",
+        "version",
+        "payload",
+        "checksum",
+    }:
+        raise CodecError("envelope: unexpected shape")
+    if decoded["schema"] != expected_schema:
+        raise CodecError(f"envelope: expected schema {expected_schema!r}")
+    version = decoded["version"]
+    checksum = decoded["checksum"]
+    if isinstance(version, bool) or not isinstance(version, int) or version < 1:
+        raise CodecError("envelope.version: expected a positive integer")
+    body = {"schema": decoded["schema"], "version": version, "payload": decoded["payload"]}
+    if not isinstance(checksum, str) or checksum != payload_digest(body):
+        raise CodecError("envelope: checksum mismatch")
+    return version, decoded["payload"]

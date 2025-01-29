@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+import frugent.codec as c
 from frugent.codec import CodecError, canonical_json, decode_json, payload_digest
 
 
@@ -81,3 +82,15 @@ def test_decode_json_never_silently_overwrites_duplicate_keys(payload: str) -> N
 def test_decode_json_rejects_non_finite_constants(constant: str) -> None:
     with pytest.raises(CodecError, match="non-finite JSON constant"):
         decode_json(f'{{"value":{constant}}}')
+
+
+def test_checksum_envelope_roundtrip() -> None:
+    encoded = c.encode_envelope("frugent.trace", 2, {"events": [1, 2]})
+    assert c.decode_envelope(encoded, "frugent.trace") == (2, {"events": [1, 2]})
+
+
+def test_checksum_envelope_rejects_payload_tampering() -> None:
+    encoded = c.encode_envelope("frugent.trace", 1, {"cost": 10})
+    tampered = encoded.replace(b'"cost":10', b'"cost":11')
+    with pytest.raises(CodecError, match="checksum mismatch"):
+        c.decode_envelope(tampered, "frugent.trace")
