@@ -62,3 +62,22 @@ def test_decode_json_inverts_canonical_encoding() -> None:
 def test_decode_json_rejects_malformed_bytes(payload: bytes) -> None:
     with pytest.raises(CodecError, match="invalid JSON"):
         decode_json(payload)
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        '{"seed":1,"seed":2}',
+        '{"outer":{"x":1,"x":2}}',
+        '[{"kind":"a","kind":"b"}]',
+    ],
+)
+def test_decode_json_never_silently_overwrites_duplicate_keys(payload: str) -> None:
+    with pytest.raises(CodecError, match="duplicate object key"):
+        decode_json(payload)
+
+
+@pytest.mark.parametrize("constant", ["NaN", "Infinity", "-Infinity"])
+def test_decode_json_rejects_non_finite_constants(constant: str) -> None:
+    with pytest.raises(CodecError, match="non-finite JSON constant"):
+        decode_json(f'{{"value":{constant}}}')
