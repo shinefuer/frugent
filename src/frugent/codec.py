@@ -44,3 +44,25 @@ def canonical_json(value: Any) -> bytes:
 def payload_digest(value: Any) -> str:
     """Return a namespaced SHA-256 digest of the canonical bytes."""
     return "sha256:" + hashlib.sha256(canonical_json(value)).hexdigest()
+
+
+def decode_json(payload: bytes | str) -> Any:
+    """Decode a JSON document while rejecting duplicate keys and non-finite numbers."""
+
+    def pairs(values: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, value in values:
+            if key in result:
+                raise CodecError(f"duplicate object key: {key}")
+            result[key] = value
+        return result
+
+    def invalid_constant(value: str) -> None:
+        raise CodecError(f"non-finite JSON constant: {value}")
+
+    try:
+        decoded = json.loads(payload, object_pairs_hook=pairs, parse_constant=invalid_constant)
+    except (json.JSONDecodeError, UnicodeDecodeError) as error:
+        raise CodecError(f"invalid JSON: {error}") from error
+    _reject_non_finite(decoded)
+    return decoded

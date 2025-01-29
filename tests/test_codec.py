@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from frugent.codec import CodecError, canonical_json, payload_digest
+from frugent.codec import CodecError, canonical_json, decode_json, payload_digest
 
 
 def test_canonical_json_ignores_mapping_insertion_order() -> None:
@@ -51,3 +51,14 @@ def test_canonical_json_rejects_non_string_object_keys() -> None:
 def test_canonical_json_rejects_unhandled_objects() -> None:
     with pytest.raises(CodecError, match="not JSON-compatible"):
         canonical_json({"value": object()})
+
+
+def test_decode_json_inverts_canonical_encoding() -> None:
+    value = {"seed": 7, "labels": ["easy", "hard"], "enabled": True}
+    assert decode_json(canonical_json(value)) == value
+
+
+@pytest.mark.parametrize("payload", [b"{", b"[] trailing", b'"\xff"'])
+def test_decode_json_rejects_malformed_bytes(payload: bytes) -> None:
+    with pytest.raises(CodecError, match="invalid JSON"):
+        decode_json(payload)
