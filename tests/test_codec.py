@@ -94,3 +94,22 @@ def test_checksum_envelope_rejects_payload_tampering() -> None:
     tampered = encoded.replace(b'"cost":10', b'"cost":11')
     with pytest.raises(CodecError, match="checksum mismatch"):
         c.decode_envelope(tampered, "frugent.trace")
+
+
+@pytest.mark.parametrize(
+    ("schema", "version"), [("", 1), ("trace", 0), ("trace", -1), ("trace", True)]
+)
+def test_encode_envelope_requires_schema_identity(schema: str, version: int) -> None:
+    with pytest.raises(CodecError, match="envelope"):
+        c.encode_envelope(schema, version, {})
+
+
+def test_decode_envelope_rejects_wrong_schema() -> None:
+    encoded = c.encode_envelope("frugent.config", 1, {})
+    with pytest.raises(CodecError, match="expected schema"):
+        c.decode_envelope(encoded, "frugent.trace")
+
+
+def test_decode_envelope_rejects_extra_fields_even_with_valid_json() -> None:
+    with pytest.raises(CodecError, match="unexpected shape"):
+        c.decode_envelope(b'{"schema":"x","version":1,"payload":{},"checksum":"x","extra":0}', "x")
