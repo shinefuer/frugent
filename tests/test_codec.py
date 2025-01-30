@@ -113,3 +113,15 @@ def test_decode_envelope_rejects_wrong_schema() -> None:
 def test_decode_envelope_rejects_extra_fields_even_with_valid_json() -> None:
     with pytest.raises(CodecError, match="unexpected shape"):
         c.decode_envelope(b'{"schema":"x","version":1,"payload":{},"checksum":"x","extra":0}', "x")
+
+
+def test_jsonl_roundtrip_preserves_record_order() -> None:
+    records = [{"sequence": 0}, {"sequence": 1}, {"sequence": 2}]
+    encoded = c.encode_jsonl(records)
+    assert encoded.count(b"\n") == 3
+    assert c.decode_jsonl(encoded) == records
+
+
+def test_empty_jsonl_is_a_valid_empty_stream() -> None:
+    assert c.encode_jsonl([]) == b""
+    assert c.decode_jsonl(b"") == []

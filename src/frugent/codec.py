@@ -96,3 +96,26 @@ def decode_envelope(data: bytes | str, expected_schema: str) -> tuple[int, Any]:
     if not isinstance(checksum, str) or checksum != payload_digest(body):
         raise CodecError("envelope: checksum mismatch")
     return version, decoded["payload"]
+
+
+def encode_jsonl(records: list[Any]) -> bytes:
+    """Encode records as independently checksummed canonical JSON lines."""
+    lines = [encode_envelope("frugent.jsonl.record", 1, record) for record in records]
+    return b"\n".join(lines) + (b"\n" if lines else b"")
+
+
+def decode_jsonl(data: bytes | str) -> list[Any]:
+    """Decode complete nonblank JSON lines and verify each checksum."""
+    raw = data.encode("utf-8") if isinstance(data, str) else data
+    if raw and not raw.endswith(b"\n"):
+        raise CodecError("jsonl: final record is incomplete")
+    result: list[Any] = []
+    for line_number, line in enumerate(raw.splitlines(), start=1):
+        if not line.strip():
+            raise CodecError(f"jsonl: blank line at {line_number}")
+        try:
+            _, payload = decode_envelope(line, "frugent.jsonl.record")
+        except CodecError as error:
+            raise CodecError(f"jsonl line {line_number}: {error}") from error
+        result.append(payload)
+    return result
