@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import Any
 
 CURRENT_SCHEMA_VERSION = 2
 
@@ -49,3 +51,31 @@ class RuntimeConfig:
             "cost_budget_micros": self.cost_budget_micros,
             "quality_floor": self.quality_floor,
         }
+
+    @classmethod
+    def from_record(cls, record: Mapping[str, Any]) -> RuntimeConfig:
+        """Parse the current schema while rejecting missing or unknown fields."""
+        expected = {
+            "schema_version",
+            "seed",
+            "max_steps",
+            "token_budget",
+            "cost_budget_micros",
+            "quality_floor",
+        }
+        actual = set(record)
+        if actual != expected:
+            missing = sorted(expected - actual)
+            unknown = sorted(actual - expected)
+            raise ConfigError(f"config fields: missing={missing}, unknown={unknown}")
+        try:
+            return cls(
+                schema_version=record["schema_version"],
+                seed=record["seed"],
+                max_steps=record["max_steps"],
+                token_budget=record["token_budget"],
+                cost_budget_micros=record["cost_budget_micros"],
+                quality_floor=record["quality_floor"],
+            )
+        except TypeError as error:
+            raise ConfigError(f"config value types: {error}") from error
