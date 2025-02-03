@@ -125,3 +125,21 @@ def test_jsonl_roundtrip_preserves_record_order() -> None:
 def test_empty_jsonl_is_a_valid_empty_stream() -> None:
     assert c.encode_jsonl([]) == b""
     assert c.decode_jsonl(b"") == []
+
+
+def test_jsonl_reports_one_based_damaged_line() -> None:
+    encoded = c.encode_jsonl([{"ok": 1}, {"cost": 2}])
+    damaged = encoded.replace(b'"cost":2', b'"cost":3')
+    with pytest.raises(CodecError, match="jsonl line 2: envelope: checksum mismatch"):
+        c.decode_jsonl(damaged)
+
+
+def test_jsonl_rejects_truncated_final_record() -> None:
+    with pytest.raises(CodecError, match="final record is incomplete"):
+        c.decode_jsonl(c.encode_jsonl([{"x": 1}]).rstrip(b"\n"))
+
+
+def test_jsonl_rejects_blank_lines_to_keep_line_numbers_stable() -> None:
+    encoded = c.encode_jsonl([{"x": 1}]) + b"\n"
+    with pytest.raises(CodecError, match="blank line at 2"):
+        c.decode_jsonl(encoded)
