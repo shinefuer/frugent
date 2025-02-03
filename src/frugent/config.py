@@ -79,3 +79,22 @@ class RuntimeConfig:
             )
         except TypeError as error:
             raise ConfigError(f"config value types: {error}") from error
+
+
+def migrate_config(record: Mapping[str, Any]) -> dict[str, int | float]:
+    """Migrate a supported historical record to the current schema."""
+    version = record.get("schema_version")
+    if version == CURRENT_SCHEMA_VERSION:
+        return RuntimeConfig.from_record(record).to_record()
+    if version != 1:
+        raise ConfigError(f"config migration: unsupported schema_version {version!r}")
+    expected = {"schema_version", "seed", "steps", "tokens", "cost_micros"}
+    if set(record) != expected:
+        raise ConfigError("config migration v1: unexpected fields")
+    return RuntimeConfig(
+        seed=record["seed"],
+        max_steps=record["steps"],
+        token_budget=record["tokens"],
+        cost_budget_micros=record["cost_micros"],
+        quality_floor=0.8,
+    ).to_record()

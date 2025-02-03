@@ -68,3 +68,22 @@ def test_config_record_rejects_schema_drift(mutation: dict[str, object], fragmen
 def test_runtime_config_does_not_coerce_deceptive_scalars(kwargs: dict[str, object]) -> None:
     with pytest.raises((cfg.ConfigError, TypeError), match="config"):
         cfg.RuntimeConfig(**kwargs)
+
+
+def test_v1_config_migration_renames_limits_and_adds_quality_floor() -> None:
+    migrated = cfg.migrate_config(
+        {"schema_version": 1, "seed": 2, "steps": 4, "tokens": 900, "cost_micros": 50_000}
+    )
+    assert migrated == {
+        "schema_version": 2,
+        "seed": 2,
+        "max_steps": 4,
+        "token_budget": 900,
+        "cost_budget_micros": 50_000,
+        "quality_floor": 0.8,
+    }
+
+
+def test_current_config_migration_is_idempotent() -> None:
+    record = cfg.RuntimeConfig(seed=3).to_record()
+    assert cfg.migrate_config(cfg.migrate_config(record)) == record
