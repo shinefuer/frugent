@@ -52,3 +52,19 @@ def test_config_record_rejects_schema_drift(mutation: dict[str, object], fragmen
         record[key] = value  # type: ignore[index]
     with pytest.raises(cfg.ConfigError, match=fragment):
         cfg.RuntimeConfig.from_record(record)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"seed": True},
+        {"max_steps": 1.5},
+        {"token_budget": "4096"},
+        {"cost_budget_micros": False},
+        {"schema_version": 1},
+        {"quality_floor": float("nan")},
+    ],
+)
+def test_runtime_config_does_not_coerce_deceptive_scalars(kwargs: dict[str, object]) -> None:
+    with pytest.raises((cfg.ConfigError, TypeError), match="config"):
+        cfg.RuntimeConfig(**kwargs)
