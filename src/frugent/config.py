@@ -52,6 +52,13 @@ class RuntimeConfig:
             "quality_floor": self.quality_floor,
         }
 
+    @property
+    def fingerprint(self) -> str:
+        """Return a content fingerprint suitable for report metadata."""
+        from frugent.codec import payload_digest
+
+        return payload_digest(self.to_record())
+
     @classmethod
     def from_record(cls, record: Mapping[str, Any]) -> RuntimeConfig:
         """Parse the current schema while rejecting missing or unknown fields."""
@@ -100,3 +107,10 @@ def migrate_config(record: Mapping[str, Any]) -> dict[str, int | float]:
         cost_budget_micros=record["cost_micros"],
         quality_floor=0.8,
     ).to_record()
+
+
+def dump_config(config: RuntimeConfig) -> bytes:
+    """Render the exact current schema as canonical UTF-8 JSON."""
+    from frugent.codec import canonical_json
+
+    return canonical_json(config.to_record()) + b"\n"

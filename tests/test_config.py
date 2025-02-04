@@ -106,3 +106,17 @@ def test_v1_migration_rejects_undeclared_fields() -> None:
     }
     with pytest.raises(cfg.ConfigError, match="unexpected fields"):
         cfg.migrate_config(legacy)
+
+
+def test_config_fingerprint_changes_with_effective_limit() -> None:
+    base = cfg.RuntimeConfig(seed=5, token_budget=100)
+    changed = cfg.RuntimeConfig(seed=5, token_budget=101)
+    assert base.fingerprint != changed.fingerprint
+    assert base.fingerprint == cfg.RuntimeConfig(seed=5, token_budget=100).fingerprint
+
+
+def test_dump_config_is_canonical_and_newline_terminated() -> None:
+    dumped = cfg.dump_config(cfg.RuntimeConfig(seed=9))
+    assert dumped.endswith(b"\n")
+    assert b" " not in dumped
+    assert dumped.startswith(b'{"cost_budget_micros":')
