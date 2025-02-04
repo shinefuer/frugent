@@ -39,8 +39,8 @@ def test_config_record_roundtrip_is_exact() -> None:
 @pytest.mark.parametrize(
     ("mutation", "fragment"),
     [
-        ({"remove": "seed"}, "missing=\['seed'\]"),
-        ({"extra": ("endpoint", "https://invalid")}, "unknown=\['endpoint'\]"),
+        ({"remove": "seed"}, r"missing=\['seed'\]"),
+        ({"extra": ("endpoint", "https://invalid")}, r"unknown=\['endpoint'\]"),
     ],
 )
 def test_config_record_rejects_schema_drift(mutation: dict[str, object], fragment: str) -> None:
@@ -87,3 +87,22 @@ def test_v1_config_migration_renames_limits_and_adds_quality_floor() -> None:
 def test_current_config_migration_is_idempotent() -> None:
     record = cfg.RuntimeConfig(seed=3).to_record()
     assert cfg.migrate_config(cfg.migrate_config(record)) == record
+
+
+@pytest.mark.parametrize("version", [None, 0, -1, 3, "1", True])
+def test_config_migration_rejects_unknown_versions(version: object) -> None:
+    with pytest.raises(cfg.ConfigError, match="unsupported schema_version"):
+        cfg.migrate_config({"schema_version": version})
+
+
+def test_v1_migration_rejects_undeclared_fields() -> None:
+    legacy = {
+        "schema_version": 1,
+        "seed": 0,
+        "steps": 2,
+        "tokens": 10,
+        "cost_micros": 20,
+        "endpoint": "forbidden",
+    }
+    with pytest.raises(cfg.ConfigError, match="unexpected fields"):
+        cfg.migrate_config(legacy)

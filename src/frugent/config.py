@@ -84,6 +84,8 @@ class RuntimeConfig:
 def migrate_config(record: Mapping[str, Any]) -> dict[str, int | float]:
     """Migrate a supported historical record to the current schema."""
     version = record.get("schema_version")
+    if isinstance(version, bool):
+        raise ConfigError(f"config migration: unsupported schema_version {version!r}")
     if version == CURRENT_SCHEMA_VERSION:
         return RuntimeConfig.from_record(record).to_record()
     if version != 1:
