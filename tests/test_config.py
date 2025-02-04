@@ -120,3 +120,21 @@ def test_dump_config_is_canonical_and_newline_terminated() -> None:
     assert dumped.endswith(b"\n")
     assert b" " not in dumped
     assert dumped.startswith(b'{"cost_budget_micros":')
+
+
+def test_load_config_inverts_dump_config() -> None:
+    original = cfg.RuntimeConfig(seed=12, max_steps=5, quality_floor=0.91)
+    assert cfg.load_config(cfg.dump_config(original)) == original
+
+
+def test_load_config_applies_supported_migration() -> None:
+    legacy = b'{"cost_micros":90,"schema_version":1,"seed":3,"steps":2,"tokens":40}'
+    loaded = cfg.load_config(legacy)
+    assert loaded.schema_version == cfg.CURRENT_SCHEMA_VERSION
+    assert loaded.token_budget == 40
+
+
+@pytest.mark.parametrize("payload", [b"[]", b"null", b"not json"])
+def test_load_config_rejects_non_object_documents(payload: bytes) -> None:
+    with pytest.raises(cfg.ConfigError, match="config JSON"):
+        cfg.load_config(payload)

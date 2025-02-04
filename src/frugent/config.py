@@ -114,3 +114,16 @@ def dump_config(config: RuntimeConfig) -> bytes:
     from frugent.codec import canonical_json
 
     return canonical_json(config.to_record()) + b"\n"
+
+
+def load_config(data: bytes | str) -> RuntimeConfig:
+    """Decode, migrate, and validate one configuration document."""
+    from frugent.codec import CodecError, decode_json
+
+    try:
+        decoded = decode_json(data)
+    except CodecError as error:
+        raise ConfigError(f"config JSON: {error}") from error
+    if not isinstance(decoded, dict):
+        raise ConfigError("config JSON: expected an object")
+    return RuntimeConfig.from_record(migrate_config(decoded))
