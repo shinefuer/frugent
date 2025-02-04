@@ -127,3 +127,15 @@ def load_config(data: bytes | str) -> RuntimeConfig:
     if not isinstance(decoded, dict):
         raise ConfigError("config JSON: expected an object")
     return RuntimeConfig.from_record(migrate_config(decoded))
+
+
+def with_overrides(config: RuntimeConfig, overrides: Mapping[str, Any]) -> RuntimeConfig:
+    """Return a validated copy after applying declared current-schema fields."""
+    forbidden = {"schema_version"}
+    allowed = set(config.to_record()) - forbidden
+    unknown = set(overrides) - allowed
+    if unknown:
+        raise ConfigError(f"config overrides: unknown fields {sorted(unknown)}")
+    record = config.to_record()
+    record.update(overrides)
+    return RuntimeConfig.from_record(record)

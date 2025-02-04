@@ -138,3 +138,17 @@ def test_load_config_applies_supported_migration() -> None:
 def test_load_config_rejects_non_object_documents(payload: bytes) -> None:
     with pytest.raises(cfg.ConfigError, match="config JSON"):
         cfg.load_config(payload)
+
+
+def test_overrides_return_new_validated_config() -> None:
+    original = cfg.RuntimeConfig(seed=1, token_budget=500)
+    updated = cfg.with_overrides(original, {"token_budget": 250, "quality_floor": 0.9})
+    assert updated.token_budget == 250
+    assert updated.quality_floor == 0.9
+    assert original.token_budget == 500
+
+
+@pytest.mark.parametrize("key", ["schema_version", "endpoint", "api_key"])
+def test_overrides_reject_undeclared_or_identity_fields(key: str) -> None:
+    with pytest.raises(cfg.ConfigError, match="unknown fields"):
+        cfg.with_overrides(cfg.RuntimeConfig(), {key: 1})
