@@ -24,3 +24,19 @@ def test_model_rate_rejects_negative_prices(field: str) -> None:
     values[field] = -1
     with pytest.raises(r.RateCardError, match="non-negative"):
         r.ModelRate(**values)
+
+
+@pytest.mark.parametrize("discount", [0, 1, 500_000, 999_999, 1_000_000])
+def test_model_rate_accepts_closed_discount_interval(discount: int) -> None:
+    assert r.ModelRate("m", 1, 2, discount, discount).cache_price_ppm == discount
+
+
+@pytest.mark.parametrize("discount", [-1, 1_000_001, True, 0.5])
+def test_model_rate_rejects_ambiguous_discount(discount: object) -> None:
+    with pytest.raises(r.RateCardError, match="discount"):
+        r.ModelRate("m", 1, 2, discount, 1)  # type: ignore[arg-type]
+
+
+def test_model_rate_requires_model_identity() -> None:
+    with pytest.raises(r.RateCardError, match="model must be non-empty"):
+        r.ModelRate("", 1, 2)
