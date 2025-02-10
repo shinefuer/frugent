@@ -40,3 +40,18 @@ def test_model_rate_rejects_ambiguous_discount(discount: object) -> None:
 def test_model_rate_requires_model_identity() -> None:
     with pytest.raises(r.RateCardError, match="model must be non-empty"):
         r.ModelRate("", 1, 2)
+
+
+def test_rate_card_lookup_is_exact() -> None:
+    card = r.RateCard(
+        "demo fictional rates",
+        (r.ModelRate("large", 10, 20), r.ModelRate("small", 2, 4)),
+    )
+    assert card.model_rate("small").completion_micros_per_1k == 4
+    with pytest.raises(r.RateCardError, match="unknown model"):
+        card.model_rate("Small")
+
+
+def test_rate_card_requires_honest_label() -> None:
+    with pytest.raises(r.RateCardError, match="fictional"):
+        r.RateCard("provider pricing", (r.ModelRate("m", 1, 1),))

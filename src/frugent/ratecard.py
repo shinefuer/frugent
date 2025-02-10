@@ -58,3 +58,36 @@ class ModelRate:
         if set(record) != expected:
             raise RateCardError("model rate: unexpected record fields")
         return cls(**record)
+
+
+@dataclass(frozen=True, slots=True)
+class RateCard:
+    """Named fictional rates with deterministic model lookup."""
+
+    label: str
+    rates: tuple[ModelRate, ...]
+    schema_version: int = 1
+
+    def __post_init__(self) -> None:
+        if "fictional" not in self.label.casefold():
+            raise RateCardError("rate card label must explicitly include 'fictional'")
+        if self.schema_version != 1:
+            raise RateCardError("rate card schema_version: expected 1")
+        if not self.rates:
+            raise RateCardError("rate card: expected at least one model")
+        names = [rate.model for rate in self.rates]
+        if names != sorted(names) or len(set(names)) != len(names):
+            raise RateCardError("rate card: models must be unique and sorted")
+
+    def model_rate(self, model: str) -> ModelRate:
+        for rate in self.rates:
+            if rate.model == model:
+                return rate
+        raise RateCardError(f"rate card: unknown model {model!r}")
+
+    def to_record(self) -> dict[str, Any]:
+        return {
+            "schema_version": self.schema_version,
+            "label": self.label,
+            "rates": [rate.to_record() for rate in self.rates],
+        }
