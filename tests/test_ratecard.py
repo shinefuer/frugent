@@ -96,3 +96,14 @@ def test_rate_card_record_roundtrip() -> None:
 def test_rate_card_parser_requires_rate_list(rates: object) -> None:
     with pytest.raises(r.RateCardError, match="expected a list"):
         r.RateCard.from_record({"schema_version": 1, "label": "fictional", "rates": rates})
+
+
+def test_cost_breakdown_conserves_components() -> None:
+    cost = r.CostBreakdown(10, 2, 8, 5)
+    assert cost.gross_micros == 20
+    assert cost.total_micros == 15
+
+
+def test_cost_breakdown_rejects_excess_discount() -> None:
+    with pytest.raises(r.RateCardError, match="exceeds gross"):
+        r.CostBreakdown(1, 1, 1, 4)

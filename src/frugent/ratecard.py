@@ -113,3 +113,35 @@ class RateCard:
                 raise RateCardError(f"rate card.rates[{index}]: unexpected fields")
             parsed.append(ModelRate(**item))
         return cls(record["label"], tuple(parsed), record["schema_version"])
+
+
+@dataclass(frozen=True, slots=True)
+class CostBreakdown:
+    """Integer micro-cost components whose total is exactly conserved."""
+
+    uncached_prompt_micros: int
+    cached_prompt_micros: int
+    completion_micros: int
+    batch_discount_micros: int = 0
+
+    def __post_init__(self) -> None:
+        values = (
+            self.uncached_prompt_micros,
+            self.cached_prompt_micros,
+            self.completion_micros,
+            self.batch_discount_micros,
+        )
+        if any(
+            isinstance(value, bool) or not isinstance(value, int) or value < 0 for value in values
+        ):
+            raise RateCardError("cost breakdown: components must be non-negative integers")
+        if self.batch_discount_micros > sum(values[:3]):
+            raise RateCardError("cost breakdown: discount exceeds gross cost")
+
+    @property
+    def gross_micros(self) -> int:
+        return self.uncached_prompt_micros + self.cached_prompt_micros + self.completion_micros
+
+    @property
+    def total_micros(self) -> int:
+        return self.gross_micros - self.batch_discount_micros
