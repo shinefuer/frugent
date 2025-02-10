@@ -55,3 +55,30 @@ def test_rate_card_lookup_is_exact() -> None:
 def test_rate_card_requires_honest_label() -> None:
     with pytest.raises(r.RateCardError, match="fictional"):
         r.RateCard("provider pricing", (r.ModelRate("m", 1, 1),))
+
+
+def test_rate_card_rejects_unsorted_models() -> None:
+    with pytest.raises(r.RateCardError, match="unique and sorted"):
+        r.RateCard("fictional", (r.ModelRate("z", 1, 1), r.ModelRate("a", 1, 1)))
+
+
+def test_rate_card_rejects_duplicate_models() -> None:
+    with pytest.raises(r.RateCardError, match="unique and sorted"):
+        r.RateCard("fictional", (r.ModelRate("m", 1, 1), r.ModelRate("m", 2, 2)))
+
+
+def test_rate_card_wire_shape_is_stable() -> None:
+    card = r.RateCard("offline fictional v1", (r.ModelRate("tiny", 3, 7, 500_000),))
+    assert card.to_record() == {
+        "schema_version": 1,
+        "label": "offline fictional v1",
+        "rates": [
+            {
+                "model": "tiny",
+                "prompt_micros_per_1k": 3,
+                "completion_micros_per_1k": 7,
+                "cache_price_ppm": 500_000,
+                "batch_price_ppm": 1_000_000,
+            }
+        ],
+    }
