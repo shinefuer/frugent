@@ -91,3 +91,25 @@ class RateCard:
             "label": self.label,
             "rates": [rate.to_record() for rate in self.rates],
         }
+
+    @classmethod
+    def from_record(cls, record: Mapping[str, Any]) -> RateCard:
+        expected = {"schema_version", "label", "rates"}
+        if set(record) != expected:
+            raise RateCardError("rate card: unexpected record fields")
+        raw_rates = record["rates"]
+        if not isinstance(raw_rates, list):
+            raise RateCardError("rate card.rates: expected a list")
+        parsed: list[ModelRate] = []
+        rate_fields = {
+            "model",
+            "prompt_micros_per_1k",
+            "completion_micros_per_1k",
+            "cache_price_ppm",
+            "batch_price_ppm",
+        }
+        for index, item in enumerate(raw_rates):
+            if not isinstance(item, Mapping) or set(item) != rate_fields:
+                raise RateCardError(f"rate card.rates[{index}]: unexpected fields")
+            parsed.append(ModelRate(**item))
+        return cls(record["label"], tuple(parsed), record["schema_version"])

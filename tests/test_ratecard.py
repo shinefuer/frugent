@@ -82,3 +82,17 @@ def test_rate_card_wire_shape_is_stable() -> None:
             }
         ],
     }
+
+
+def test_rate_card_record_roundtrip() -> None:
+    original = r.RateCard(
+        "synthetic fictional",
+        (r.ModelRate("large", 5, 12), r.ModelRate("small", 1, 3, 200_000, 900_000)),
+    )
+    assert r.RateCard.from_record(original.to_record()) == original
+
+
+@pytest.mark.parametrize("rates", [None, {}, "rates", 1])
+def test_rate_card_parser_requires_rate_list(rates: object) -> None:
+    with pytest.raises(r.RateCardError, match="expected a list"):
+        r.RateCard.from_record({"schema_version": 1, "label": "fictional", "rates": rates})
