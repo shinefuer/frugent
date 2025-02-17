@@ -123,3 +123,19 @@ def test_price_usage_separates_cache_and_batch_effects() -> None:
 
 def test_price_usage_rounds_positive_fraction_up() -> None:
     assert r.price_usage(r.ModelRate("m", 1, 1), Usage(1, 0)).total_micros == 1
+
+
+@pytest.mark.parametrize("prompt", [0, 1, 10, 999, 1000, 1001, 4096])
+def test_prompt_cost_never_decreases_with_tokens(prompt: int) -> None:
+    rate = r.ModelRate("m", 137, 211)
+    current = r.price_usage(rate, Usage(prompt, 0)).total_micros
+    following = r.price_usage(rate, Usage(prompt + 1, 0)).total_micros
+    assert following >= current
+
+
+@pytest.mark.parametrize("cached", [0, 1, 10, 500, 1000])
+def test_more_discounted_cache_never_increases_cost(cached: int) -> None:
+    rate = r.ModelRate("m", 1000, 1000, 100_000)
+    current = r.price_usage(rate, Usage(1000, 0, cached)).total_micros
+    following = r.price_usage(rate, Usage(1000, 0, min(1000, cached + 1))).total_micros
+    assert following <= current
