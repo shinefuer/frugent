@@ -163,3 +163,28 @@ def price_usage(rate: ModelRate, usage: Usage, *, batched: bool = False) -> Cost
     gross = uncached + cached + completion
     discount = 0 if not batched else gross - (gross * rate.batch_price_ppm // PPM)
     return CostBreakdown(uncached, cached, completion, discount)
+
+
+@dataclass(frozen=True, slots=True)
+class Savings:
+    """Attribution against the same usage priced without optimizations."""
+
+    baseline_micros: int
+    actual_micros: int
+    cache_saved_micros: int
+    batch_saved_micros: int
+
+    def __post_init__(self) -> None:
+        if (
+            self.baseline_micros - self.actual_micros
+            != self.cache_saved_micros + self.batch_saved_micros
+        ):
+            raise RateCardError("savings: attribution does not conserve baseline difference")
+
+
+def attribute_savings(rate: ModelRate, usage: Usage, *, batched: bool = False) -> Savings:
+    baseline_usage = Usage(usage.prompt_tokens, usage.completion_tokens, 0)
+    baseline = price_usage(rate, baseline_usage).total_micros
+    cached_cost = price_usage(rate, usage).total_micros
+    actual = price_usage(rate, usage, batched=batched).total_micros
+    return Savings(baseline, actual, baseline - cached_cost, cached_cost - actual)

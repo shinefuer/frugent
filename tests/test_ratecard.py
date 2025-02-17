@@ -139,3 +139,19 @@ def test_more_discounted_cache_never_increases_cost(cached: int) -> None:
     current = r.price_usage(rate, Usage(1000, 0, cached)).total_micros
     following = r.price_usage(rate, Usage(1000, 0, min(1000, cached + 1))).total_micros
     assert following <= current
+
+
+def test_savings_attribution_reconciles_to_baseline() -> None:
+    rate = r.ModelRate("m", 1000, 2000, 250_000, 800_000)
+    savings = r.attribute_savings(rate, Usage(100, 20, 80), batched=True)
+    assert savings.baseline_micros - savings.actual_micros == (
+        savings.cache_saved_micros + savings.batch_saved_micros
+    )
+    assert savings.cache_saved_micros > 0
+    assert savings.batch_saved_micros > 0
+
+
+def test_unoptimized_usage_reports_zero_savings() -> None:
+    savings = r.attribute_savings(r.ModelRate("m", 2, 3), Usage(4, 5))
+    assert savings.cache_saved_micros == 0
+    assert savings.batch_saved_micros == 0
