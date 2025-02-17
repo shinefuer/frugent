@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 import frugent.ratecard as r
+from frugent.types import Usage
 
 
 def test_model_rate_record_uses_explicit_fictional_units() -> None:
@@ -107,3 +108,18 @@ def test_cost_breakdown_conserves_components() -> None:
 def test_cost_breakdown_rejects_excess_discount() -> None:
     with pytest.raises(r.RateCardError, match="exceeds gross"):
         r.CostBreakdown(1, 1, 1, 4)
+
+
+def test_price_usage_separates_cache_and_batch_effects() -> None:
+    rate = r.ModelRate("m", 1_000, 2_000, 250_000, 750_000)
+    usage = Usage(prompt_tokens=100, completion_tokens=10, cached_prompt_tokens=40)
+    cost = r.price_usage(rate, usage, batched=True)
+    assert cost.uncached_prompt_micros == 60
+    assert cost.cached_prompt_micros == 10
+    assert cost.completion_micros == 20
+    assert cost.batch_discount_micros == 23
+    assert cost.total_micros == 67
+
+
+def test_price_usage_rounds_positive_fraction_up() -> None:
+    assert r.price_usage(r.ModelRate("m", 1, 1), Usage(1, 0)).total_micros == 1

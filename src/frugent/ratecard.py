@@ -6,6 +6,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from frugent.types import Usage
+
 PPM = 1_000_000
 
 
@@ -145,3 +147,19 @@ class CostBreakdown:
     @property
     def total_micros(self) -> int:
         return self.gross_micros - self.batch_discount_micros
+
+
+def _ceil_div(numerator: int, denominator: int) -> int:
+    return (numerator + denominator - 1) // denominator
+
+
+def price_usage(rate: ModelRate, usage: Usage, *, batched: bool = False) -> CostBreakdown:
+    """Price one measured usage with deterministic ceiling arithmetic."""
+    uncached_tokens = usage.prompt_tokens - usage.cached_prompt_tokens
+    uncached = _ceil_div(uncached_tokens * rate.prompt_micros_per_1k, 1000)
+    cached_numerator = usage.cached_prompt_tokens * rate.prompt_micros_per_1k * rate.cache_price_ppm
+    cached = _ceil_div(cached_numerator, 1000 * PPM)
+    completion = _ceil_div(usage.completion_tokens * rate.completion_micros_per_1k, 1000)
+    gross = uncached + cached + completion
+    discount = 0 if not batched else gross - (gross * rate.batch_price_ppm // PPM)
+    return CostBreakdown(uncached, cached, completion, discount)
