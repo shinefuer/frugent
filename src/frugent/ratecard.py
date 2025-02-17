@@ -175,6 +175,16 @@ class Savings:
     batch_saved_micros: int
 
     def __post_init__(self) -> None:
+        values = (
+            self.baseline_micros,
+            self.actual_micros,
+            self.cache_saved_micros,
+            self.batch_saved_micros,
+        )
+        if any(
+            isinstance(value, bool) or not isinstance(value, int) or value < 0 for value in values
+        ):
+            raise RateCardError("savings: components must be non-negative integers")
         if (
             self.baseline_micros - self.actual_micros
             != self.cache_saved_micros + self.batch_saved_micros

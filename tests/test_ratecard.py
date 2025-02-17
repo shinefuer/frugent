@@ -155,3 +155,19 @@ def test_unoptimized_usage_reports_zero_savings() -> None:
     savings = r.attribute_savings(r.ModelRate("m", 2, 3), Usage(4, 5))
     assert savings.cache_saved_micros == 0
     assert savings.batch_saved_micros == 0
+
+
+@pytest.mark.parametrize(
+    "values",
+    [(100, 80, 10, 5), (10, 11, 0, 0), (0, 0, 1, -1)],
+)
+def test_savings_record_rejects_nonconserving_components(values: tuple[int, int, int, int]) -> None:
+    with pytest.raises(r.RateCardError, match="savings"):
+        r.Savings(*values)
+
+
+@pytest.mark.parametrize("batched", [False, True])
+def test_savings_never_claims_more_than_baseline(batched: bool) -> None:
+    rate = r.ModelRate("m", 50, 70, 0, 0)
+    savings = r.attribute_savings(rate, Usage(1000, 100, 1000), batched=batched)
+    assert 0 <= savings.actual_micros <= savings.baseline_micros
