@@ -171,3 +171,11 @@ def test_savings_never_claims_more_than_baseline(batched: bool) -> None:
     rate = r.ModelRate("m", 50, 70, 0, 0)
     savings = r.attribute_savings(rate, Usage(1000, 100, 1000), batched=batched)
     assert 0 <= savings.actual_micros <= savings.baseline_micros
+
+
+def test_rate_card_fingerprint_is_content_addressed() -> None:
+    first = r.RateCard("fictional a", (r.ModelRate("m", 1, 2),))
+    same = r.RateCard.from_record(first.to_record())
+    changed = r.RateCard("fictional a", (r.ModelRate("m", 1, 3),))
+    assert r.rate_card_fingerprint(first) == r.rate_card_fingerprint(same)
+    assert r.rate_card_fingerprint(first) != r.rate_card_fingerprint(changed)

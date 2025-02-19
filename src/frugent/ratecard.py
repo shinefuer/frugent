@@ -198,3 +198,10 @@ def attribute_savings(rate: ModelRate, usage: Usage, *, batched: bool = False) -
     cached_cost = price_usage(rate, usage).total_micros
     actual = price_usage(rate, usage, batched=batched).total_micros
     return Savings(baseline, actual, baseline - cached_cost, cached_cost - actual)
+
+
+def rate_card_fingerprint(card: RateCard) -> str:
+    """Fingerprint every fictional price and discount used by a run."""
+    from frugent.codec import payload_digest
+
+    return payload_digest(card.to_record())
