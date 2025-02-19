@@ -179,3 +179,14 @@ def test_rate_card_fingerprint_is_content_addressed() -> None:
     changed = r.RateCard("fictional a", (r.ModelRate("m", 1, 3),))
     assert r.rate_card_fingerprint(first) == r.rate_card_fingerprint(same)
     assert r.rate_card_fingerprint(first) != r.rate_card_fingerprint(changed)
+
+
+def test_aggregate_costs_preserves_each_component() -> None:
+    costs = (r.CostBreakdown(1, 2, 3, 1), r.CostBreakdown(4, 5, 6, 2))
+    combined = r.aggregate_costs(costs)
+    assert combined == r.CostBreakdown(5, 7, 9, 3)
+    assert combined.total_micros == sum(cost.total_micros for cost in costs)
+
+
+def test_empty_cost_aggregation_is_zero() -> None:
+    assert r.aggregate_costs(()).total_micros == 0

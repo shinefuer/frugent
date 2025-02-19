@@ -205,3 +205,13 @@ def rate_card_fingerprint(card: RateCard) -> str:
     from frugent.codec import payload_digest
 
     return payload_digest(card.to_record())
+
+
+def aggregate_costs(costs: tuple[CostBreakdown, ...]) -> CostBreakdown:
+    """Roll up cost components without losing optimization attribution."""
+    return CostBreakdown(
+        sum(cost.uncached_prompt_micros for cost in costs),
+        sum(cost.cached_prompt_micros for cost in costs),
+        sum(cost.completion_micros for cost in costs),
+        sum(cost.batch_discount_micros for cost in costs),
+    )
