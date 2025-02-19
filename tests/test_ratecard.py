@@ -190,3 +190,19 @@ def test_aggregate_costs_preserves_each_component() -> None:
 
 def test_empty_cost_aggregation_is_zero() -> None:
     assert r.aggregate_costs(()).total_micros == 0
+
+
+@pytest.mark.parametrize(
+    ("usage", "expected"),
+    [
+        (Usage(0, 0), 0),
+        (Usage(1000, 0), 100),
+        (Usage(0, 1000), 300),
+        (Usage(1000, 1000), 400),
+        (Usage(1000, 0, 1000), 50),
+        (Usage(500, 500, 250), 188),
+    ],
+)
+def test_price_usage_matches_hand_computed_fictional_totals(usage: Usage, expected: int) -> None:
+    rate = r.ModelRate("m", 100, 300, 500_000)
+    assert r.price_usage(rate, usage).total_micros == expected
