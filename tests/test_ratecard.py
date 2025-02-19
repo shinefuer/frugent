@@ -206,3 +206,12 @@ def test_empty_cost_aggregation_is_zero() -> None:
 def test_price_usage_matches_hand_computed_fictional_totals(usage: Usage, expected: int) -> None:
     rate = r.ModelRate("m", 100, 300, 500_000)
     assert r.price_usage(rate, usage).total_micros == expected
+
+
+def test_demo_rate_card_is_explicitly_fictional_and_sorted() -> None:
+    card = r.demo_rate_card()
+    assert "fictional" in card.label
+    assert tuple(rate.model for rate in card.rates) == tuple(
+        sorted(rate.model for rate in card.rates)
+    )
+    assert r.RateCard.from_record(card.to_record()) == card

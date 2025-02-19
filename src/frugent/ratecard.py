@@ -215,3 +215,15 @@ def aggregate_costs(costs: tuple[CostBreakdown, ...]) -> CostBreakdown:
         sum(cost.completion_micros for cost in costs),
         sum(cost.batch_discount_micros for cost in costs),
     )
+
+
+def demo_rate_card() -> RateCard:
+    """Return the shared fictional rates used by offline examples and tests."""
+    return RateCard(
+        "frugent offline fictional rates v1",
+        (
+            ModelRate("scripted-large", 900, 2_400, 300_000, 800_000),
+            ModelRate("scripted-medium", 300, 900, 350_000, 850_000),
+            ModelRate("scripted-small", 80, 240, 400_000, 900_000),
+        ),
+    )
