@@ -29,3 +29,22 @@ def test_lowercase_mode_uses_unicode_casefold() -> None:
 def test_tokenizer_rejects_ambiguous_seed(seed: object) -> None:
     with pytest.raises(tok.TokenizerError, match="seed"):
         tok.HeuristicTokenizer(seed=seed)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("text", "tokens"),
+    [
+        ("", ()),
+        ("   \n\t", ()),
+        ("中文测试", ()),
+        ("café", ("caf",)),
+        ("a.b/c", ("a", ".", "b", "/", "c")),
+        ("🚀+1", ("🚀", "+", "1")),
+    ],
+)
+def test_heuristic_token_boundaries_are_explicit(text: str, tokens: tuple[str, ...]) -> None:
+    assert tok.HeuristicTokenizer().encode(text) == tokens
+
+
+def test_runtime_protocol_accepts_heuristic_tokenizer() -> None:
+    assert isinstance(tok.HeuristicTokenizer(), tok.Tokenizer)
