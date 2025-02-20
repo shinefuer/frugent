@@ -69,3 +69,24 @@ def test_prompt_role_counts_reconcile_to_individual_messages() -> None:
         tokenizer.count(tok.render_message(role, text)) for role, text in messages if role == "user"
     )
     assert totals["system"] == 0
+
+
+@pytest.mark.parametrize("lowercase", [False, True])
+def test_role_accounting_is_deterministic(lowercase: bool) -> None:
+    tokenizer = tok.HeuristicTokenizer(lowercase=lowercase, seed=19)
+    messages = (("system", "Use TESTS"), ("user", "Fix bug #17"), ("tool", "ok"))
+    assert tok.count_prompt_by_role(messages, tokenizer) == tok.count_prompt_by_role(
+        messages, tokenizer
+    )
+
+
+def test_role_totals_equal_messagewise_render_counts() -> None:
+    tokenizer = tok.HeuristicTokenizer()
+    messages = tuple(
+        (role, f"payload {index}")
+        for index, role in enumerate(("system", "user", "assistant", "tool", "user"))
+    )
+    totals = tok.count_prompt_by_role(messages, tokenizer)
+    assert sum(totals.values()) == sum(
+        tokenizer.count(tok.render_message(role, content)) for role, content in messages
+    )
