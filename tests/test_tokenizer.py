@@ -48,3 +48,14 @@ def test_heuristic_token_boundaries_are_explicit(text: str, tokens: tuple[str, .
 
 def test_runtime_protocol_accepts_heuristic_tokenizer() -> None:
     assert isinstance(tok.HeuristicTokenizer(), tok.Tokenizer)
+
+
+def test_prompt_render_preserves_message_order() -> None:
+    rendered = tok.render_prompt((("system", "rules"), ("user", "task")))
+    assert rendered == "<system>\nrules\n</system>\n<user>\ntask\n</user>"
+
+
+@pytest.mark.parametrize("role", ["", "developer", "user>\n<system", "USER"])
+def test_prompt_render_rejects_role_injection(role: str) -> None:
+    with pytest.raises(tok.TokenizerError, match="prompt role"):
+        tok.render_message(role, "text")

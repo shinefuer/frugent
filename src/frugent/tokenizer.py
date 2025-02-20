@@ -41,3 +41,17 @@ class HeuristicTokenizer:
 
     def count(self, text: str) -> int:
         return len(self.encode(text))
+
+
+def render_message(role: str, content: str) -> str:
+    """Render a message without allowing delimiter injection through roles."""
+    if role not in {"system", "user", "assistant", "tool"}:
+        raise TokenizerError(f"prompt role: unsupported {role!r}")
+    if not isinstance(content, str):
+        raise TokenizerError("prompt content: expected text")
+    return f"<{role}>\n{content}\n</{role}>"
+
+
+def render_prompt(messages: tuple[tuple[str, str], ...]) -> str:
+    """Render an ordered prompt with a single stable separator."""
+    return "\n".join(render_message(role, content) for role, content in messages)
