@@ -66,3 +66,12 @@ def count_prompt_by_role(
         rendered = render_message(role, content)
         totals[role] += tokenizer.count(rendered)
     return totals
+
+
+def token_offsets(text: str, *, lowercase: bool = False) -> tuple[tuple[str, int, int], ...]:
+    """Return token text and half-open source offsets for highlighting."""
+    if lowercase:
+        raise TokenizerError("token offsets: lowercase mode would lose source fidelity")
+    return tuple(
+        (match.group(0), match.start(), match.end()) for match in TOKEN_PATTERN.finditer(text)
+    )

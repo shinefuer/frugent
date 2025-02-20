@@ -90,3 +90,17 @@ def test_role_totals_equal_messagewise_render_counts() -> None:
     assert sum(totals.values()) == sum(
         tokenizer.count(tok.render_message(role, content)) for role, content in messages
     )
+
+
+def test_token_offsets_slice_back_to_exact_tokens() -> None:
+    text = "alpha += value_2;"
+    offsets = tok.token_offsets(text)
+    assert tuple(text[start:end] for _, start, end in offsets) == tuple(
+        token for token, _, _ in offsets
+    )
+    assert offsets[-1] == (";", 16, 17)
+
+
+def test_token_offsets_reject_lossy_lowercase_mode() -> None:
+    with pytest.raises(tok.TokenizerError, match="source fidelity"):
+        tok.token_offsets("MixedCase", lowercase=True)
