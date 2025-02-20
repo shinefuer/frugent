@@ -59,3 +59,13 @@ def test_prompt_render_preserves_message_order() -> None:
 def test_prompt_render_rejects_role_injection(role: str) -> None:
     with pytest.raises(tok.TokenizerError, match="prompt role"):
         tok.render_message(role, "text")
+
+
+def test_prompt_role_counts_reconcile_to_individual_messages() -> None:
+    tokenizer = tok.HeuristicTokenizer()
+    messages = (("user", "fix x"), ("tool", "done"), ("user", "verify"))
+    totals = tok.count_prompt_by_role(messages, tokenizer)
+    assert totals["user"] == sum(
+        tokenizer.count(tok.render_message(role, text)) for role, text in messages if role == "user"
+    )
+    assert totals["system"] == 0

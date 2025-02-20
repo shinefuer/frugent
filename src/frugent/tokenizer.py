@@ -55,3 +55,14 @@ def render_message(role: str, content: str) -> str:
 def render_prompt(messages: tuple[tuple[str, str], ...]) -> str:
     """Render an ordered prompt with a single stable separator."""
     return "\n".join(render_message(role, content) for role, content in messages)
+
+
+def count_prompt_by_role(
+    messages: tuple[tuple[str, str], ...], tokenizer: Tokenizer
+) -> dict[str, int]:
+    """Count rendered message tokens per role using the supplied tokenizer."""
+    totals = {"system": 0, "user": 0, "assistant": 0, "tool": 0}
+    for role, content in messages:
+        rendered = render_message(role, content)
+        totals[role] += tokenizer.count(rendered)
+    return totals
