@@ -134,3 +134,7 @@ def test_truncation_prefixes_grow_monotonically() -> None:
     text = "alpha beta gamma delta"
     prefixes = [tok.truncate_tokens(text, limit) for limit in range(5)]
     assert all(right.startswith(left) for left, right in itertools.pairwise(prefixes))
+
+
+def test_bpe_training_uses_frequency_then_lexical_tie_break() -> None:
+    assert tok.train_bpe(("abab ab",), 2) == (("a", "b"), ("ab", "ab"))

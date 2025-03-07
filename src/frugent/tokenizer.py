@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import re
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
@@ -87,3 +88,33 @@ def truncate_tokens(text: str, limit: int) -> str:
     if limit == 0:
         return ""
     return text[: offsets[limit - 1][2]]
+
+
+def train_bpe(samples: tuple[str, ...], merge_count: int) -> tuple[tuple[str, str], ...]:
+    """Train character-pair merges for a small offline demonstration."""
+    if merge_count < 0:
+        raise TokenizerError("BPE merge_count: expected non-negative")
+    words = [list(word) for sample in samples for word in sample.split() if word]
+    merges: list[tuple[str, str]] = []
+    for _ in range(merge_count):
+        counts: dict[tuple[str, str], int] = {}
+        for word in words:
+            for pair in itertools.pairwise(word):
+                counts[pair] = counts.get(pair, 0) + 1
+        if not counts:
+            break
+        best = min(counts, key=lambda pair: (-counts[pair], pair))
+        merges.append(best)
+        joined = "".join(best)
+        for index, word in enumerate(words):
+            updated: list[str] = []
+            cursor = 0
+            while cursor < len(word):
+                if cursor + 1 < len(word) and (word[cursor], word[cursor + 1]) == best:
+                    updated.append(joined)
+                    cursor += 2
+                else:
+                    updated.append(word[cursor])
+                    cursor += 1
+            words[index] = updated
+    return tuple(merges)
