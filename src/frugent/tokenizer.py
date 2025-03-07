@@ -75,3 +75,15 @@ def token_offsets(text: str, *, lowercase: bool = False) -> tuple[tuple[str, int
     return tuple(
         (match.group(0), match.start(), match.end()) for match in TOKEN_PATTERN.finditer(text)
     )
+
+
+def truncate_tokens(text: str, limit: int) -> str:
+    """Return the longest source prefix containing no more than limit tokens."""
+    if isinstance(limit, bool) or not isinstance(limit, int) or limit < 0:
+        raise TokenizerError("truncate limit: expected a non-negative integer")
+    offsets = token_offsets(text)
+    if len(offsets) <= limit:
+        return text
+    if limit == 0:
+        return ""
+    return text[: offsets[limit - 1][2]]

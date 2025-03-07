@@ -104,3 +104,16 @@ def test_token_offsets_slice_back_to_exact_tokens() -> None:
 def test_token_offsets_reject_lossy_lowercase_mode() -> None:
     with pytest.raises(tok.TokenizerError, match="source fidelity"):
         tok.token_offsets("MixedCase", lowercase=True)
+
+
+@pytest.mark.parametrize(
+    ("limit", "expected"), [(0, ""), (1, "one"), (2, "one two"), (3, "one two!"), (9, "one two!")]
+)
+def test_truncate_tokens_keeps_longest_valid_source_prefix(limit: int, expected: str) -> None:
+    assert tok.truncate_tokens("one two!", limit) == expected
+
+
+@pytest.mark.parametrize("limit", [-1, True, 1.5])
+def test_truncate_tokens_rejects_invalid_limit(limit: object) -> None:
+    with pytest.raises(tok.TokenizerError, match="truncate limit"):
+        tok.truncate_tokens("text", limit)  # type: ignore[arg-type]
