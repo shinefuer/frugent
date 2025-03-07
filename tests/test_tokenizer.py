@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import itertools
+
 import pytest
 
 import frugent.tokenizer as tok
@@ -117,3 +119,18 @@ def test_truncate_tokens_keeps_longest_valid_source_prefix(limit: int, expected:
 def test_truncate_tokens_rejects_invalid_limit(limit: object) -> None:
     with pytest.raises(tok.TokenizerError, match="truncate limit"):
         tok.truncate_tokens("text", limit)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("text", ["", "a", "a b c", "x+=1; y-=2", "🚀 launch now"])
+def test_truncation_never_exceeds_requested_tokens(text: str) -> None:
+    tokenizer = tok.HeuristicTokenizer()
+    for limit in range(0, tokenizer.count(text) + 2):
+        truncated = tok.truncate_tokens(text, limit)
+        assert text.startswith(truncated)
+        assert tokenizer.count(truncated) <= limit
+
+
+def test_truncation_prefixes_grow_monotonically() -> None:
+    text = "alpha beta gamma delta"
+    prefixes = [tok.truncate_tokens(text, limit) for limit in range(5)]
+    assert all(right.startswith(left) for left, right in itertools.pairwise(prefixes))
