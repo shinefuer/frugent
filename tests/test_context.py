@@ -39,3 +39,17 @@ def test_store_append_rejects_non_messages(value: object) -> None:
 def test_extending_empty_tuple_preserves_value() -> None:
     store = ctx.MessageStore((Message("system", "rules"),))
     assert store.extend(()) == store
+
+
+def test_snapshot_freezes_current_prefix() -> None:
+    store = ctx.MessageStore().append(Message("user", "one"))
+    snap = ctx.snapshot(store, "before-tool")
+    later = store.append(Message("tool", "two"))
+    assert snap.version == 1
+    assert snap.messages == store.messages
+    assert snap.messages != later.messages
+
+
+def test_snapshot_rejects_empty_name() -> None:
+    with pytest.raises(ctx.ContextError, match=r"snapshot\.name"):
+        ctx.snapshot(ctx.MessageStore(), "")

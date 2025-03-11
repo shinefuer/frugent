@@ -37,3 +37,22 @@ class MessageStore:
     def summary(self) -> Mapping[str, Any]:
         """Return cheap metadata without serializing message contents."""
         return {"version": self.version, "roles": tuple(message.role for message in self.messages)}
+
+
+@dataclass(frozen=True, slots=True)
+class Snapshot:
+    """A named prefix view into one message store."""
+
+    name: str
+    version: int
+    messages: tuple[Message, ...]
+
+    def __post_init__(self) -> None:
+        if not self.name:
+            raise ContextError("snapshot.name: expected non-empty")
+        if self.version != len(self.messages):
+            raise ContextError("snapshot.version: must equal message count")
+
+
+def snapshot(store: MessageStore, name: str) -> Snapshot:
+    return Snapshot(name, store.version, store.messages)
