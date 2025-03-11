@@ -138,3 +138,19 @@ def test_truncation_prefixes_grow_monotonically() -> None:
 
 def test_bpe_training_uses_frequency_then_lexical_tie_break() -> None:
     assert tok.train_bpe(("abab ab",), 2) == (("a", "b"), ("ab", "ab"))
+
+
+def test_bpe_lexical_tie_break_is_repeatable() -> None:
+    first = tok.train_bpe(("ab ac",), 1)
+    assert first == (("a", "b"),)
+    assert tok.train_bpe(("ab ac",), 1) == first
+
+
+@pytest.mark.parametrize("samples", [(), ("",), ("   ",)])
+def test_bpe_stops_when_no_pairs_exist(samples: tuple[str, ...]) -> None:
+    assert tok.train_bpe(samples, 100) == ()
+
+
+def test_bpe_rejects_negative_merge_budget() -> None:
+    with pytest.raises(tok.TokenizerError, match="merge_count"):
+        tok.train_bpe(("abc",), -1)
