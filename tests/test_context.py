@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 import frugent.context as ctx
 from frugent.types import Message
 
@@ -26,3 +28,14 @@ def test_extend_is_equivalent_to_ordered_appends() -> None:
 def test_store_summary_omits_message_content() -> None:
     store = ctx.MessageStore((Message("user", "private synthetic fixture"),))
     assert store.summary() == {"version": 1, "roles": ("user",)}
+
+
+@pytest.mark.parametrize("value", [None, "message", {"role": "user"}, 1])
+def test_store_append_rejects_non_messages(value: object) -> None:
+    with pytest.raises(ctx.ContextError, match="expected Message"):
+        ctx.MessageStore().append(value)  # type: ignore[arg-type]
+
+
+def test_extending_empty_tuple_preserves_value() -> None:
+    store = ctx.MessageStore((Message("system", "rules"),))
+    assert store.extend(()) == store
