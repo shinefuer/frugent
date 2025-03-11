@@ -154,3 +154,15 @@ def test_bpe_stops_when_no_pairs_exist(samples: tuple[str, ...]) -> None:
 def test_bpe_rejects_negative_merge_budget() -> None:
     with pytest.raises(tok.TokenizerError, match="merge_count"):
         tok.train_bpe(("abc",), -1)
+
+
+def test_apply_bpe_reduces_piece_count_without_changing_text() -> None:
+    text = "abab cab"
+    merges = tok.train_bpe((text,), 3)
+    pieces = tok.apply_bpe(text, merges)
+    assert "".join(pieces) == text.replace(" ", "")
+    assert len(pieces) < len(text.replace(" ", ""))
+
+
+def test_apply_bpe_with_no_merges_returns_characters() -> None:
+    assert tok.apply_bpe("ab cd", ()) == ("a", "b", "c", "d")

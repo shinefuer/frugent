@@ -118,3 +118,22 @@ def train_bpe(samples: tuple[str, ...], merge_count: int) -> tuple[tuple[str, st
                     cursor += 1
             words[index] = updated
     return tuple(merges)
+
+
+def apply_bpe(text: str, merges: tuple[tuple[str, str], ...]) -> tuple[str, ...]:
+    """Apply learned merges in order to whitespace-delimited words."""
+    tokens = [list(word) for word in text.split()]
+    for pair in merges:
+        joined = "".join(pair)
+        for index, word in enumerate(tokens):
+            updated: list[str] = []
+            cursor = 0
+            while cursor < len(word):
+                if cursor + 1 < len(word) and (word[cursor], word[cursor + 1]) == pair:
+                    updated.append(joined)
+                    cursor += 2
+                else:
+                    updated.append(word[cursor])
+                    cursor += 1
+            tokens[index] = updated
+    return tuple(piece for word in tokens for piece in word)
