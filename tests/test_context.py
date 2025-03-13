@@ -53,3 +53,19 @@ def test_snapshot_freezes_current_prefix() -> None:
 def test_snapshot_rejects_empty_name() -> None:
     with pytest.raises(ctx.ContextError, match=r"snapshot\.name"):
         ctx.snapshot(ctx.MessageStore(), "")
+
+
+def test_context_diff_roundtrip() -> None:
+    base = ctx.MessageStore().append(Message("system", "rules"))
+    target = base.extend((Message("user", "task"), Message("assistant", "plan")))
+    change = ctx.diff(base, target)
+    assert change.base_version == 1
+    assert change.target_version == 3
+    assert ctx.apply_diff(base, change) == target
+
+
+def test_context_diff_rejects_rewritten_history() -> None:
+    left = ctx.MessageStore((Message("user", "left"),))
+    right = ctx.MessageStore((Message("user", "right"), Message("tool", "x")))
+    with pytest.raises(ctx.ContextError, match="does not extend"):
+        ctx.diff(left, right)

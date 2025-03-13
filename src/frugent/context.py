@@ -56,3 +56,26 @@ class Snapshot:
 
 def snapshot(store: MessageStore, name: str) -> Snapshot:
     return Snapshot(name, store.version, store.messages)
+
+
+@dataclass(frozen=True, slots=True)
+class ContextDiff:
+    base_version: int
+    appended: tuple[Message, ...]
+
+    @property
+    def target_version(self) -> int:
+        return self.base_version + len(self.appended)
+
+
+def diff(base: MessageStore, target: MessageStore) -> ContextDiff:
+    """Return the suffix when target extends base exactly."""
+    if target.messages[: base.version] != base.messages:
+        raise ContextError("context diff: target does not extend base")
+    return ContextDiff(base.version, target.messages[base.version :])
+
+
+def apply_diff(base: MessageStore, change: ContextDiff) -> MessageStore:
+    if base.version != change.base_version:
+        raise ContextError("context diff: base version mismatch")
+    return base.extend(change.appended)
