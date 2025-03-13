@@ -69,3 +69,19 @@ def test_context_diff_rejects_rewritten_history() -> None:
     right = ctx.MessageStore((Message("user", "right"), Message("tool", "x")))
     with pytest.raises(ctx.ContextError, match="does not extend"):
         ctx.diff(left, right)
+
+
+@pytest.mark.parametrize("base_size", [0, 1, 2, 5])
+def test_empty_suffix_diff_keeps_target_version(base_size: int) -> None:
+    store = ctx.MessageStore().extend(
+        tuple(Message("user", f"m{index}") for index in range(base_size))
+    )
+    change = ctx.diff(store, store)
+    assert change.appended == ()
+    assert change.target_version == store.version
+    assert ctx.apply_diff(store, change) == store
+
+
+def test_apply_diff_rejects_wrong_base_even_when_suffix_is_empty() -> None:
+    with pytest.raises(ctx.ContextError, match="base version mismatch"):
+        ctx.apply_diff(ctx.MessageStore(), ctx.ContextDiff(1, ()))
