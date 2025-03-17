@@ -85,3 +85,20 @@ def test_empty_suffix_diff_keeps_target_version(base_size: int) -> None:
 def test_apply_diff_rejects_wrong_base_even_when_suffix_is_empty() -> None:
     with pytest.raises(ctx.ContextError, match="base version mismatch"):
         ctx.apply_diff(ctx.MessageStore(), ctx.ContextDiff(1, ()))
+
+
+def test_store_record_golden_roundtrip() -> None:
+    store = ctx.MessageStore((Message("user", "task", (("id", "1"),)),))
+    assert ctx.store_to_record(store) == {
+        "schema_version": 1,
+        "version": 1,
+        "messages": [{"role": "user", "content": "task", "metadata": {"id": "1"}}],
+    }
+    assert ctx.store_from_record(ctx.store_to_record(store)) == store
+
+
+def test_store_record_rejects_version_tampering() -> None:
+    record = ctx.store_to_record(ctx.MessageStore((Message("user", "x"),)))
+    record["version"] = 2
+    with pytest.raises(ctx.ContextError, match="version mismatch"):
+        ctx.store_from_record(record)

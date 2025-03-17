@@ -79,3 +79,26 @@ def apply_diff(base: MessageStore, change: ContextDiff) -> MessageStore:
     if base.version != change.base_version:
         raise ContextError("context diff: base version mismatch")
     return base.extend(change.appended)
+
+
+def store_to_record(store: MessageStore) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "version": store.version,
+        "messages": [message.to_record() for message in store.messages],
+    }
+
+
+def store_from_record(record: Mapping[str, Any]) -> MessageStore:
+    if set(record) != {"schema_version", "version", "messages"} or record["schema_version"] != 1:
+        raise ContextError("context record: unexpected schema")
+    raw = record["messages"]
+    if not isinstance(raw, list):
+        raise ContextError("context record: messages must be a list")
+    try:
+        store = MessageStore(tuple(Message.from_record(item) for item in raw))
+    except (TypeError, ValueError) as error:
+        raise ContextError(f"context record: invalid message: {error}") from error
+    if record["version"] != store.version:
+        raise ContextError("context record: version mismatch")
+    return store
