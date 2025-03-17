@@ -102,3 +102,11 @@ def test_store_record_rejects_version_tampering() -> None:
     record["version"] = 2
     with pytest.raises(ctx.ContextError, match="version mismatch"):
         ctx.store_from_record(record)
+
+
+def test_store_fingerprint_tracks_order_and_content() -> None:
+    first = ctx.MessageStore((Message("user", "a"), Message("tool", "b")))
+    same = ctx.store_from_record(ctx.store_to_record(first))
+    reordered = ctx.MessageStore(tuple(reversed(first.messages)))
+    assert ctx.store_fingerprint(first) == ctx.store_fingerprint(same)
+    assert ctx.store_fingerprint(first) != ctx.store_fingerprint(reordered)

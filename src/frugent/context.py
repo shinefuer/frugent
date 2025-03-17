@@ -102,3 +102,10 @@ def store_from_record(record: Mapping[str, Any]) -> MessageStore:
     if record["version"] != store.version:
         raise ContextError("context record: version mismatch")
     return store
+
+
+def store_fingerprint(store: MessageStore) -> str:
+    """Hash the full versioned message history for replay metadata."""
+    from frugent.codec import payload_digest
+
+    return payload_digest(store_to_record(store))
