@@ -109,3 +109,13 @@ def store_fingerprint(store: MessageStore) -> str:
     from frugent.codec import payload_digest
 
     return payload_digest(store_to_record(store))
+
+
+def message_range(store: MessageStore, start: int, stop: int | None = None) -> tuple[Message, ...]:
+    """Return a half-open version range without Python's negative-index ambiguity."""
+    end = store.version if stop is None else stop
+    if any(isinstance(value, bool) or not isinstance(value, int) for value in (start, end)):
+        raise ContextError("context range: indexes must be integers")
+    if not 0 <= start <= end <= store.version:
+        raise ContextError("context range: expected 0 <= start <= stop <= version")
+    return store.messages[start:end]

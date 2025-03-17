@@ -110,3 +110,16 @@ def test_store_fingerprint_tracks_order_and_content() -> None:
     reordered = ctx.MessageStore(tuple(reversed(first.messages)))
     assert ctx.store_fingerprint(first) == ctx.store_fingerprint(same)
     assert ctx.store_fingerprint(first) != ctx.store_fingerprint(reordered)
+
+
+def test_message_range_uses_half_open_versions() -> None:
+    store = ctx.MessageStore(tuple(Message("user", str(index)) for index in range(4)))
+    assert tuple(message.content for message in ctx.message_range(store, 1, 3)) == ("1", "2")
+    assert ctx.message_range(store, 4) == ()
+
+
+@pytest.mark.parametrize("bounds", [(-1, 1), (2, 1), (0, 4), (0, True)])
+def test_message_range_rejects_ambiguous_bounds(bounds: tuple[int, int]) -> None:
+    store = ctx.MessageStore((Message("user", "x"),))
+    with pytest.raises(ctx.ContextError, match="context range"):
+        ctx.message_range(store, *bounds)
