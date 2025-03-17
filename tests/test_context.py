@@ -123,3 +123,20 @@ def test_message_range_rejects_ambiguous_bounds(bounds: tuple[int, int]) -> None
     store = ctx.MessageStore((Message("user", "x"),))
     with pytest.raises(ctx.ContextError, match="context range"):
         ctx.message_range(store, *bounds)
+
+
+@pytest.mark.parametrize("size", [0, 1, 2, 8, 31])
+def test_store_roundtrip_closes_over_multiple_versions(size: int) -> None:
+    store = ctx.MessageStore().extend(
+        tuple(
+            Message("user" if index % 2 == 0 else "assistant", f"m{index}") for index in range(size)
+        )
+    )
+    restored = ctx.store_from_record(ctx.store_to_record(store))
+    assert restored == store
+    assert ctx.store_fingerprint(restored) == ctx.store_fingerprint(store)
+
+
+def test_store_parser_rejects_non_list_messages() -> None:
+    with pytest.raises(ctx.ContextError, match="messages must be a list"):
+        ctx.store_from_record({"schema_version": 1, "version": 0, "messages": {}})
