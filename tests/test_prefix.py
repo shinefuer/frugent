@@ -57,3 +57,18 @@ def test_prefix_frequency_distinguishes_shared_and_exact_counts() -> None:
     assert p.prefix_frequency(trie, ("a", "b")) == 2
     assert p.exact_frequency(trie, ("a", "b")) == 2
     assert p.exact_frequency(trie, ("a",)) == 0
+
+
+@pytest.mark.parametrize("prefix", [("x",), ("a", "x"), ("a", "b", "x")])
+def test_missing_prefix_frequency_is_zero(prefix: tuple[str, ...]) -> None:
+    trie = p.PrefixTrie()
+    trie.insert(("a", "b"))
+    assert p.prefix_frequency(trie, prefix) == 0
+    assert p.exact_frequency(trie, prefix) == 0
+
+
+def test_root_frequency_equals_inserted_sequence_count() -> None:
+    trie = p.PrefixTrie()
+    for index in range(7):
+        trie.insert((str(index),))
+    assert p.prefix_frequency(trie, ()) == trie.sequence_count == 7
