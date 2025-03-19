@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 import frugent.prefix as p
 
 
@@ -20,3 +22,16 @@ def test_duplicate_insert_tracks_frequency() -> None:
     trie.insert(("a", "b"))
     assert trie.sequence_count == 2
     assert trie.longest_prefix(("a", "b", "c")) == 2
+
+
+@pytest.mark.parametrize("tokens", [("",), ("a", ""), ("a", 1), (None,)])
+def test_prefix_insert_rejects_empty_or_non_string_tokens(tokens: tuple[object, ...]) -> None:
+    with pytest.raises(p.PrefixError, match="prefix tokens"):
+        p.PrefixTrie().insert(tokens)  # type: ignore[arg-type]
+
+
+def test_empty_sequence_is_a_valid_root_terminal() -> None:
+    trie = p.PrefixTrie()
+    trie.insert(())
+    assert trie.sequence_count == 1
+    assert trie.longest_prefix(()) == 0
