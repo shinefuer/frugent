@@ -50,3 +50,10 @@ class PrefixTrie:
             node = child
             matched += 1
         return matched
+
+
+def prefix_coverage(trie: PrefixTrie, tokens: tuple[str, ...]) -> float:
+    """Return the quantized fraction of request tokens present in the trie path."""
+    if not tokens:
+        return 1.0
+    return round(trie.longest_prefix(tokens) / len(tokens), 6)

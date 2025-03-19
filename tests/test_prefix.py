@@ -35,3 +35,15 @@ def test_empty_sequence_is_a_valid_root_terminal() -> None:
     trie.insert(())
     assert trie.sequence_count == 1
     assert trie.longest_prefix(()) == 0
+
+
+@pytest.mark.parametrize(
+    ("sequence", "expected"),
+    [((), 1.0), (("a",), 1.0), (("a", "b"), 0.5), (("x", "b"), 0.0)],
+)
+def test_prefix_coverage_quantifies_matched_request_fraction(
+    sequence: tuple[str, ...], expected: float
+) -> None:
+    trie = p.PrefixTrie()
+    trie.insert(("a", "c"))
+    assert p.prefix_coverage(trie, sequence) == expected
