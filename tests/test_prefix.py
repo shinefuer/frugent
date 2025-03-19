@@ -47,3 +47,13 @@ def test_prefix_coverage_quantifies_matched_request_fraction(
     trie = p.PrefixTrie()
     trie.insert(("a", "c"))
     assert p.prefix_coverage(trie, sequence) == expected
+
+
+def test_prefix_frequency_distinguishes_shared_and_exact_counts() -> None:
+    trie = p.PrefixTrie()
+    for sequence in (("a", "b"), ("a", "c"), ("a", "b")):
+        trie.insert(sequence)
+    assert p.prefix_frequency(trie, ("a",)) == 3
+    assert p.prefix_frequency(trie, ("a", "b")) == 2
+    assert p.exact_frequency(trie, ("a", "b")) == 2
+    assert p.exact_frequency(trie, ("a",)) == 0

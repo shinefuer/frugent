@@ -57,3 +57,24 @@ def prefix_coverage(trie: PrefixTrie, tokens: tuple[str, ...]) -> float:
     if not tokens:
         return 1.0
     return round(trie.longest_prefix(tokens) / len(tokens), 6)
+
+
+def prefix_frequency(trie: PrefixTrie, prefix: tuple[str, ...]) -> int:
+    """Count inserted sequences sharing the complete prefix."""
+    node = trie._root
+    for token in prefix:
+        child = node.children.get(token)
+        if child is None:
+            return 0
+        node = child
+    return node.visit_count
+
+
+def exact_frequency(trie: PrefixTrie, tokens: tuple[str, ...]) -> int:
+    node = trie._root
+    for token in tokens:
+        child = node.children.get(token)
+        if child is None:
+            return 0
+        node = child
+    return node.terminal_count
