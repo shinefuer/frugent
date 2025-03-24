@@ -113,3 +113,13 @@ def test_candidate_ranking_prefers_length_then_frequency() -> None:
     left.insert(("a", "b", "c"))
     left.insert(("a", "b", "c"))
     assert p.rank_candidates({"left": left, "right": right}, ("a", "b", "c"))[0][0] == "left"
+
+
+def test_prefix_record_roundtrip_preserves_multiplicity() -> None:
+    trie = p.PrefixTrie()
+    for sequence in (("z",), ("a", "b"), ("a", "b"), ()):
+        trie.insert(sequence)
+    record = p.trie_to_record(trie)
+    assert record == {"schema_version": 1, "sequences": [[], ["a", "b"], ["a", "b"], ["z"]]}
+    restored = p.trie_from_record(record)
+    assert p.trie_to_record(restored) == record

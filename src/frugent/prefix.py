@@ -116,3 +116,30 @@ def rank_candidates(
         for name, trie in tries.items()
     ]
     return tuple(sorted(scored, key=lambda item: (-item[1], -item[2], item[0])))
+
+
+def trie_to_record(trie: PrefixTrie) -> dict[str, Any]:
+    """Serialize exact sequences with multiplicity in lexical order."""
+    sequences: list[list[str]] = []
+
+    def visit(node: _Node, prefix: tuple[str, ...]) -> None:
+        sequences.extend([list(prefix)] * node.terminal_count)
+        for token in sorted(node.children):
+            visit(node.children[token], (*prefix, token))
+
+    visit(trie._root, ())
+    return {"schema_version": 1, "sequences": sequences}
+
+
+def trie_from_record(record: dict[str, Any]) -> PrefixTrie:
+    if set(record) != {"schema_version", "sequences"} or record["schema_version"] != 1:
+        raise PrefixError("prefix record: unexpected schema")
+    sequences = record["sequences"]
+    if not isinstance(sequences, list):
+        raise PrefixError("prefix record: sequences must be a list")
+    trie = PrefixTrie()
+    for sequence in sequences:
+        if not isinstance(sequence, list):
+            raise PrefixError("prefix record: each sequence must be a list")
+        trie.insert(tuple(sequence))
+    return trie
