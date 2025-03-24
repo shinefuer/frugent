@@ -72,3 +72,14 @@ def test_root_frequency_equals_inserted_sequence_count() -> None:
     for index in range(7):
         trie.insert((str(index),))
     assert p.prefix_frequency(trie, ()) == trie.sequence_count == 7
+
+
+def test_remove_decrements_one_duplicate_at_a_time() -> None:
+    trie = p.PrefixTrie()
+    trie.insert(("a", "b"))
+    trie.insert(("a", "b"))
+    assert p.remove(trie, ("a", "b")) is True
+    assert p.exact_frequency(trie, ("a", "b")) == 1
+    assert p.remove(trie, ("a", "b")) is True
+    assert trie.longest_prefix(("a", "b")) == 0
+    assert p.remove(trie, ("a", "b")) is False

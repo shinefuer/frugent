@@ -78,3 +78,26 @@ def exact_frequency(trie: PrefixTrie, tokens: tuple[str, ...]) -> int:
             return 0
         node = child
     return node.terminal_count
+
+
+def remove(trie: PrefixTrie, tokens: tuple[str, ...]) -> bool:
+    """Remove one exact occurrence and prune unused nodes."""
+    path: list[tuple[_Node, str, _Node]] = []
+    node = trie._root
+    for token in tokens:
+        child = node.children.get(token)
+        if child is None:
+            return False
+        path.append((node, token, child))
+        node = child
+    if node.terminal_count == 0:
+        return False
+    node.terminal_count -= 1
+    trie.sequence_count -= 1
+    trie._root.visit_count -= 1
+    for _, _, child in path:
+        child.visit_count -= 1
+    for parent, token, child in reversed(path):
+        if child.visit_count == 0 and child.terminal_count == 0 and not child.children:
+            del parent.children[token]
+    return True
