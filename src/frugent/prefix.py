@@ -101,3 +101,18 @@ def remove(trie: PrefixTrie, tokens: tuple[str, ...]) -> bool:
         if child.visit_count == 0 and child.terminal_count == 0 and not child.children:
             del parent.children[token]
     return True
+
+
+def rank_candidates(
+    tries: dict[str, PrefixTrie], tokens: tuple[str, ...]
+) -> tuple[tuple[str, int, int], ...]:
+    """Rank instances by matched length, prefix frequency, then stable name."""
+    scored = [
+        (
+            name,
+            trie.longest_prefix(tokens),
+            prefix_frequency(trie, tokens[: trie.longest_prefix(tokens)]),
+        )
+        for name, trie in tries.items()
+    ]
+    return tuple(sorted(scored, key=lambda item: (-item[1], -item[2], item[0])))

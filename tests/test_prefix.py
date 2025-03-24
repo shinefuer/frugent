@@ -100,3 +100,16 @@ def test_remove_rejects_nonterminal_prefix() -> None:
     trie.insert(("a", "b"))
     assert p.remove(trie, ("a",)) is False
     assert trie.sequence_count == 1
+
+
+def test_candidate_ranking_prefers_length_then_frequency() -> None:
+    left, right = p.PrefixTrie(), p.PrefixTrie()
+    left.insert(("a", "b"))
+    right.insert(("a", "b", "c"))
+    assert p.rank_candidates({"left": left, "right": right}, ("a", "b", "c", "d"))[0][:2] == (
+        "right",
+        3,
+    )
+    left.insert(("a", "b", "c"))
+    left.insert(("a", "b", "c"))
+    assert p.rank_candidates({"left": left, "right": right}, ("a", "b", "c"))[0][0] == "left"
