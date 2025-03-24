@@ -83,3 +83,20 @@ def test_remove_decrements_one_duplicate_at_a_time() -> None:
     assert p.remove(trie, ("a", "b")) is True
     assert trie.longest_prefix(("a", "b")) == 0
     assert p.remove(trie, ("a", "b")) is False
+
+
+def test_remove_prunes_only_unused_branch() -> None:
+    trie = p.PrefixTrie()
+    trie.insert(("root", "left"))
+    trie.insert(("root", "right"))
+    assert p.remove(trie, ("root", "left"))
+    assert trie.longest_prefix(("root", "left")) == 1
+    assert trie.longest_prefix(("root", "right")) == 2
+    assert p.prefix_frequency(trie, ("root",)) == 1
+
+
+def test_remove_rejects_nonterminal_prefix() -> None:
+    trie = p.PrefixTrie()
+    trie.insert(("a", "b"))
+    assert p.remove(trie, ("a",)) is False
+    assert trie.sequence_count == 1
