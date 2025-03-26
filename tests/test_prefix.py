@@ -123,3 +123,18 @@ def test_prefix_record_roundtrip_preserves_multiplicity() -> None:
     assert record == {"schema_version": 1, "sequences": [[], ["a", "b"], ["a", "b"], ["z"]]}
     restored = p.trie_from_record(record)
     assert p.trie_to_record(restored) == record
+
+
+@pytest.mark.parametrize(
+    "record",
+    [
+        {},
+        {"schema_version": 2, "sequences": []},
+        {"schema_version": 1, "sequences": {}},
+        {"schema_version": 1, "sequences": ["abc"]},
+        {"schema_version": 1, "sequences": [["a", ""]]},
+    ],
+)
+def test_prefix_record_rejects_malformed_shapes(record: dict[str, object]) -> None:
+    with pytest.raises(p.PrefixError, match="prefix"):
+        p.trie_from_record(record)
