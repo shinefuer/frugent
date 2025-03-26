@@ -143,3 +143,15 @@ def trie_from_record(record: dict[str, Any]) -> PrefixTrie:
             raise PrefixError("prefix record: each sequence must be a list")
         trie.insert(tuple(sequence))
     return trie
+
+
+def best_candidate(tries: dict[str, PrefixTrie], tokens: tuple[str, ...]) -> str | None:
+    """Return only the best instance without materializing caller-side scores."""
+    best: tuple[int, int, str] | None = None
+    for name, trie in tries.items():
+        length = trie.longest_prefix(tokens)
+        frequency = prefix_frequency(trie, tokens[:length])
+        candidate = (-length, -frequency, name)
+        if best is None or candidate < best:
+            best = candidate
+    return None if best is None else best[2]

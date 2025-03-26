@@ -138,3 +138,15 @@ def test_prefix_record_roundtrip_preserves_multiplicity() -> None:
 def test_prefix_record_rejects_malformed_shapes(record: dict[str, object]) -> None:
     with pytest.raises(p.PrefixError, match="prefix"):
         p.trie_from_record(record)
+
+
+@pytest.mark.parametrize("tokens", [(), ("a",), ("a", "b"), ("x", "y", "z")])
+def test_best_candidate_matches_full_ranking(tokens: tuple[str, ...]) -> None:
+    tries = {"b": p.PrefixTrie(), "a": p.PrefixTrie()}
+    tries["b"].insert(("a", "b"))
+    tries["a"].insert(("a",))
+    assert p.best_candidate(tries, tokens) == p.rank_candidates(tries, tokens)[0][0]
+
+
+def test_best_candidate_handles_empty_pool() -> None:
+    assert p.best_candidate({}, ("a",)) is None
