@@ -19,3 +19,17 @@ def test_mean_matches_hand_totals(values: tuple[float, ...], expected: float) ->
 def test_mean_rejects_undefined_inputs(values: tuple[float, ...]) -> None:
     with pytest.raises(m.StatisticsError, match="mean"):
         m.mean(values)
+
+
+def test_weighted_mean_matches_repeated_observations() -> None:
+    assert m.weighted_mean((10.0, 20.0), (3.0, 1.0)) == m.mean((10.0, 10.0, 10.0, 20.0))
+
+
+@pytest.mark.parametrize(
+    ("values", "weights"), [((), ()), ((1.0,), ()), ((1.0,), (0.0,)), ((1.0,), (-1.0,))]
+)
+def test_weighted_mean_rejects_inconsistent_weights(
+    values: tuple[float, ...], weights: tuple[float, ...]
+) -> None:
+    with pytest.raises(m.StatisticsError, match="weighted mean"):
+        m.weighted_mean(values, weights)
