@@ -41,3 +41,10 @@ def test_weighted_mean_is_invariant_to_weight_scale(scale: float) -> None:
     assert m.weighted_mean((2.0, 5.0, 11.0), weights) == m.weighted_mean(
         (2.0, 5.0, 11.0), (1.0, 2.0, 4.0)
     )
+
+
+@pytest.mark.parametrize(
+    ("probability", "expected"), [(0.0, 0.0), (0.25, 7.5), (0.5, 15.0), (0.95, 28.5), (1.0, 30.0)]
+)
+def test_quantile_interpolates_known_positions(probability: float, expected: float) -> None:
+    assert m.quantile((30.0, 0.0, 20.0, 10.0), probability) == expected
