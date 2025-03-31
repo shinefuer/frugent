@@ -33,3 +33,11 @@ def test_weighted_mean_rejects_inconsistent_weights(
 ) -> None:
     with pytest.raises(m.StatisticsError, match="weighted mean"):
         m.weighted_mean(values, weights)
+
+
+@pytest.mark.parametrize("scale", [0.1, 1.0, 7.0, 1000.0])
+def test_weighted_mean_is_invariant_to_weight_scale(scale: float) -> None:
+    weights = tuple(value * scale for value in (1.0, 2.0, 4.0))
+    assert m.weighted_mean((2.0, 5.0, 11.0), weights) == m.weighted_mean(
+        (2.0, 5.0, 11.0), (1.0, 2.0, 4.0)
+    )
