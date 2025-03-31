@@ -48,3 +48,12 @@ def test_weighted_mean_is_invariant_to_weight_scale(scale: float) -> None:
 )
 def test_quantile_interpolates_known_positions(probability: float, expected: float) -> None:
     assert m.quantile((30.0, 0.0, 20.0, 10.0), probability) == expected
+
+
+def test_paired_deltas_preserve_task_alignment() -> None:
+    assert m.paired_deltas((10.0, 30.0, 20.0), (8.0, 31.0, 15.0)) == (2.0, -1.0, 5.0)
+
+
+def test_paired_deltas_reject_unpaired_runs() -> None:
+    with pytest.raises(m.StatisticsError, match="equal nonzero"):
+        m.paired_deltas((1.0,), (1.0, 2.0))

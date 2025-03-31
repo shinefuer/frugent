@@ -44,3 +44,10 @@ def quantile(values: tuple[float, ...], probability: float) -> float:
     upper = min(lower + 1, len(ordered) - 1)
     fraction = position - lower
     return round(ordered[lower] * (1 - fraction) + ordered[upper] * fraction, 6)
+
+
+def paired_deltas(baseline: tuple[float, ...], candidate: tuple[float, ...]) -> tuple[float, ...]:
+    """Subtract paired candidate values from baselines in task order."""
+    if len(baseline) != len(candidate) or not baseline:
+        raise StatisticsError("paired deltas: runs must have equal nonzero length")
+    return tuple(round(left - right, 6) for left, right in zip(baseline, candidate, strict=True))
