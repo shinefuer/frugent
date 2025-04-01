@@ -67,3 +67,12 @@ def bootstrap_mean_ci(
     )
     tail = (1.0 - confidence) / 2.0
     return quantile(samples, tail), quantile(samples, 1.0 - tail)
+
+
+def latency_summary(values_ms: tuple[float, ...]) -> dict[str, float]:
+    """Return deterministic P50/P95/max values for simulated latency only."""
+    return {
+        "p50_ms": quantile(values_ms, 0.5),
+        "p95_ms": quantile(values_ms, 0.95),
+        "max_ms": quantile(values_ms, 1.0),
+    }

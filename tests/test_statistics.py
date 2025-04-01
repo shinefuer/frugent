@@ -76,3 +76,8 @@ def test_quantile_endpoints_equal_extrema() -> None:
     values = (9.0, -2.0, 4.0)
     assert m.quantile(values, 0.0) == min(values)
     assert m.quantile(values, 1.0) == max(values)
+
+
+def test_latency_summary_uses_documented_quantiles() -> None:
+    values = (1.0, 2.0, 3.0, 100.0)
+    assert m.latency_summary(values) == {"p50_ms": 2.5, "p95_ms": 85.45, "max_ms": 100.0}
