@@ -64,3 +64,15 @@ def test_bootstrap_interval_is_seeded_and_contains_constant_mean() -> None:
     first = m.bootstrap_mean_ci((1.0, 2.0, 9.0), seed=19, rounds=200)
     assert first == m.bootstrap_mean_ci((1.0, 2.0, 9.0), seed=19, rounds=200)
     assert first[0] <= m.mean((1.0, 2.0, 9.0)) <= first[1]
+
+
+@pytest.mark.parametrize("probability", [-0.01, 1.01, float("nan")])
+def test_quantile_rejects_probability_outside_closed_interval(probability: float) -> None:
+    with pytest.raises(m.StatisticsError, match="quantile"):
+        m.quantile((1.0,), probability)
+
+
+def test_quantile_endpoints_equal_extrema() -> None:
+    values = (9.0, -2.0, 4.0)
+    assert m.quantile(values, 0.0) == min(values)
+    assert m.quantile(values, 1.0) == max(values)
