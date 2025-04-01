@@ -51,3 +51,19 @@ def paired_deltas(baseline: tuple[float, ...], candidate: tuple[float, ...]) -> 
     if len(baseline) != len(candidate) or not baseline:
         raise StatisticsError("paired deltas: runs must have equal nonzero length")
     return tuple(round(left - right, 6) for left, right in zip(baseline, candidate, strict=True))
+
+
+def bootstrap_mean_ci(
+    values: tuple[float, ...], *, seed: int, rounds: int = 1000, confidence: float = 0.95
+) -> tuple[float, float]:
+    """Return a seeded percentile interval for the sample mean."""
+    import random
+
+    if not values or isinstance(seed, bool) or seed < 0 or rounds < 1 or not 0 < confidence < 1:
+        raise StatisticsError("bootstrap: invalid values, seed, rounds, or confidence")
+    generator = random.Random(seed)
+    samples = tuple(
+        mean(tuple(values[generator.randrange(len(values))] for _ in values)) for _ in range(rounds)
+    )
+    tail = (1.0 - confidence) / 2.0
+    return quantile(samples, tail), quantile(samples, 1.0 - tail)

@@ -57,3 +57,10 @@ def test_paired_deltas_preserve_task_alignment() -> None:
 def test_paired_deltas_reject_unpaired_runs() -> None:
     with pytest.raises(m.StatisticsError, match="equal nonzero"):
         m.paired_deltas((1.0,), (1.0, 2.0))
+
+
+def test_bootstrap_interval_is_seeded_and_contains_constant_mean() -> None:
+    assert m.bootstrap_mean_ci((4.0, 4.0, 4.0), seed=7, rounds=50) == (4.0, 4.0)
+    first = m.bootstrap_mean_ci((1.0, 2.0, 9.0), seed=19, rounds=200)
+    assert first == m.bootstrap_mean_ci((1.0, 2.0, 9.0), seed=19, rounds=200)
+    assert first[0] <= m.mean((1.0, 2.0, 9.0)) <= first[1]
