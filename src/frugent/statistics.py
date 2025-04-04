@@ -76,3 +76,9 @@ def latency_summary(values_ms: tuple[float, ...]) -> dict[str, float]:
         "p95_ms": quantile(values_ms, 0.95),
         "max_ms": quantile(values_ms, 1.0),
     }
+
+
+def median_absolute_deviation(values: tuple[float, ...]) -> float:
+    """Return the median distance from the sample median."""
+    center = quantile(values, 0.5)
+    return quantile(tuple(abs(value - center) for value in values), 0.5)

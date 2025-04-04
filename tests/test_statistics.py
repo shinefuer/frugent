@@ -81,3 +81,12 @@ def test_quantile_endpoints_equal_extrema() -> None:
 def test_latency_summary_uses_documented_quantiles() -> None:
     values = (1.0, 2.0, 3.0, 100.0)
     assert m.latency_summary(values) == {"p50_ms": 2.5, "p95_ms": 85.45, "max_ms": 100.0}
+
+
+@pytest.mark.parametrize(
+    ("values", "expected"), [((1.0,), 0.0), ((1.0, 2.0, 3.0), 1.0), ((1.0, 1.0, 9.0), 0.0)]
+)
+def test_median_absolute_deviation_resists_outliers(
+    values: tuple[float, ...], expected: float
+) -> None:
+    assert m.median_absolute_deviation(values) == expected
