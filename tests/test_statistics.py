@@ -90,3 +90,16 @@ def test_median_absolute_deviation_resists_outliers(
     values: tuple[float, ...], expected: float
 ) -> None:
     assert m.median_absolute_deviation(values) == expected
+
+
+@pytest.mark.parametrize("seed", [0, 1, 17, 999])
+def test_bootstrap_interval_stays_inside_observed_range(seed: int) -> None:
+    values = (-3.0, 2.0, 10.0)
+    low, high = m.bootstrap_mean_ci(values, seed=seed, rounds=100)
+    assert min(values) <= low <= high <= max(values)
+
+
+@pytest.mark.parametrize("rounds", [0, -1])
+def test_bootstrap_rejects_empty_sampling(rounds: int) -> None:
+    with pytest.raises(m.StatisticsError, match="bootstrap"):
+        m.bootstrap_mean_ci((1.0,), seed=1, rounds=rounds)
