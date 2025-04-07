@@ -82,3 +82,16 @@ def median_absolute_deviation(values: tuple[float, ...]) -> float:
     """Return the median distance from the sample median."""
     center = quantile(values, 0.5)
     return quantile(tuple(abs(value - center) for value in values), 0.5)
+
+
+def curve_area(points: tuple[tuple[float, float], ...]) -> float:
+    """Integrate sorted x/y points with the trapezoidal rule."""
+    import itertools
+
+    if len(points) < 2 or any(right[0] <= left[0] for left, right in itertools.pairwise(points)):
+        raise StatisticsError("curve area: x values must be strictly increasing")
+    area = sum(
+        (right_x - left_x) * (left_y + right_y) / 2.0
+        for (left_x, left_y), (right_x, right_y) in itertools.pairwise(points)
+    )
+    return round(area, 6)

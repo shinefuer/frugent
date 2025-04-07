@@ -103,3 +103,13 @@ def test_bootstrap_interval_stays_inside_observed_range(seed: int) -> None:
 def test_bootstrap_rejects_empty_sampling(rounds: int) -> None:
     with pytest.raises(m.StatisticsError, match="bootstrap"):
         m.bootstrap_mean_ci((1.0,), seed=1, rounds=rounds)
+
+
+def test_curve_area_matches_trapezoid_geometry() -> None:
+    assert m.curve_area(((0.0, 0.0), (1.0, 2.0), (3.0, 2.0))) == 5.0
+
+
+@pytest.mark.parametrize("points", [(), ((0.0, 1.0),), ((0.0, 1.0), (0.0, 2.0))])
+def test_curve_area_requires_ordered_domain(points: tuple[tuple[float, float], ...]) -> None:
+    with pytest.raises(m.StatisticsError, match="curve area"):
+        m.curve_area(points)
