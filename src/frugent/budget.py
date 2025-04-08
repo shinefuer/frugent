@@ -73,3 +73,17 @@ def release(budget: Budget, tokens: int, cost_micros: int) -> Budget:
         budget.tokens_spent - tokens,
         budget.cost_spent_micros - cost_micros,
     )
+
+
+DEGRADATION_LADDER = ("full", "downgrade", "compress", "cache_only", "defer")
+
+
+def degradation_stage(budget: Budget, estimates: tuple[tuple[str, int, int], ...]) -> str:
+    """Select the first declared stage whose estimate fits."""
+    names = tuple(name for name, _, _ in estimates)
+    if names != DEGRADATION_LADDER[:-1]:
+        raise BudgetError("degradation: estimates must follow the declared ladder")
+    for name, tokens, cost in estimates:
+        if can_admit(budget, tokens, cost):
+            return name
+    return "defer"

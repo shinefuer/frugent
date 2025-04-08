@@ -61,3 +61,14 @@ def test_release_inverts_matching_reservation() -> None:
 def test_release_rejects_impossible_refund(amounts: tuple[int, int]) -> None:
     with pytest.raises(m.BudgetError, match="release"):
         m.release(m.Budget(100, 100, 30, 40), *amounts)
+
+
+def test_degradation_selects_first_affordable_stage() -> None:
+    estimates = (
+        ("full", 100, 100),
+        ("downgrade", 80, 40),
+        ("compress", 20, 30),
+        ("cache_only", 0, 0),
+    )
+    assert m.degradation_stage(m.Budget(50, 50), estimates) == "compress"
+    assert m.degradation_stage(m.Budget(0, 0), estimates) == "cache_only"
