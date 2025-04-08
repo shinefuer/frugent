@@ -35,3 +35,17 @@ def test_all_admissions_fit_remaining_limits(token_limit: int, cost_limit: int) 
             if m.can_admit(budget, tokens, cost):
                 assert tokens <= budget.remaining_tokens
                 assert cost <= budget.remaining_cost_micros
+
+
+def test_reserve_is_atomic_and_immutable() -> None:
+    original = m.Budget(10, 20)
+    updated = m.reserve(original, 4, 7)
+    assert updated == m.Budget(10, 20, 4, 7)
+    assert original == m.Budget(10, 20)
+
+
+def test_reserve_rejects_without_partial_spend() -> None:
+    original = m.Budget(10, 20, 9, 5)
+    with pytest.raises(m.BudgetError, match="exceeds remaining"):
+        m.reserve(original, 2, 1)
+    assert original.tokens_spent == 9

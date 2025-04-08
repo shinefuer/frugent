@@ -47,3 +47,15 @@ def can_admit(budget: Budget, tokens: int, cost_micros: int) -> bool:
     ):
         raise BudgetError("admission: estimates must be non-negative integers")
     return tokens <= budget.remaining_tokens and cost_micros <= budget.remaining_cost_micros
+
+
+def reserve(budget: Budget, tokens: int, cost_micros: int) -> Budget:
+    """Return updated immutable state or reject the whole reservation."""
+    if not can_admit(budget, tokens, cost_micros):
+        raise BudgetError("reservation: request exceeds remaining budget")
+    return Budget(
+        budget.token_limit,
+        budget.cost_limit_micros,
+        budget.tokens_spent + tokens,
+        budget.cost_spent_micros + cost_micros,
+    )
