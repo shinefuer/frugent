@@ -24,3 +24,14 @@ def test_budget_rejects_invalid_state(values: tuple[int, int, int, int]) -> None
 )
 def test_admission_checks_both_remaining_limits(tokens: int, cost: int, expected: bool) -> None:
     assert m.can_admit(m.Budget(100, 500, 30, 120), tokens, cost) is expected
+
+
+@pytest.mark.parametrize("token_limit", [0, 1, 7, 31])
+@pytest.mark.parametrize("cost_limit", [0, 1, 11, 47])
+def test_all_admissions_fit_remaining_limits(token_limit: int, cost_limit: int) -> None:
+    budget = m.Budget(token_limit, cost_limit)
+    for tokens in range(token_limit + 2):
+        for cost in range(cost_limit + 2):
+            if m.can_admit(budget, tokens, cost):
+                assert tokens <= budget.remaining_tokens
+                assert cost <= budget.remaining_cost_micros
