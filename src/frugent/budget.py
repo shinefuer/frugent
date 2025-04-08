@@ -37,3 +37,13 @@ class Budget:
     @property
     def remaining_cost_micros(self) -> int:
         return self.cost_limit_micros - self.cost_spent_micros
+
+
+def can_admit(budget: Budget, tokens: int, cost_micros: int) -> bool:
+    """Return whether a reservation fits both hard limits."""
+    if any(
+        isinstance(value, bool) or not isinstance(value, int) or value < 0
+        for value in (tokens, cost_micros)
+    ):
+        raise BudgetError("admission: estimates must be non-negative integers")
+    return tokens <= budget.remaining_tokens and cost_micros <= budget.remaining_cost_micros
