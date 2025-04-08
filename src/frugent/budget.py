@@ -59,3 +59,17 @@ def reserve(budget: Budget, tokens: int, cost_micros: int) -> Budget:
         budget.tokens_spent + tokens,
         budget.cost_spent_micros + cost_micros,
     )
+
+
+def release(budget: Budget, tokens: int, cost_micros: int) -> Budget:
+    """Return unused reserved resources without crossing zero spend."""
+    if any(value < 0 for value in (tokens, cost_micros)):
+        raise BudgetError("release: values must be non-negative")
+    if tokens > budget.tokens_spent or cost_micros > budget.cost_spent_micros:
+        raise BudgetError("release: cannot release more than spent")
+    return Budget(
+        budget.token_limit,
+        budget.cost_limit_micros,
+        budget.tokens_spent - tokens,
+        budget.cost_spent_micros - cost_micros,
+    )

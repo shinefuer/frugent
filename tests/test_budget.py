@@ -49,3 +49,15 @@ def test_reserve_rejects_without_partial_spend() -> None:
     with pytest.raises(m.BudgetError, match="exceeds remaining"):
         m.reserve(original, 2, 1)
     assert original.tokens_spent == 9
+
+
+def test_release_inverts_matching_reservation() -> None:
+    base = m.Budget(100, 100)
+    reserved = m.reserve(base, 30, 40)
+    assert m.release(reserved, 30, 40) == base
+
+
+@pytest.mark.parametrize("amounts", [(31, 0), (0, 41), (-1, 0)])
+def test_release_rejects_impossible_refund(amounts: tuple[int, int]) -> None:
+    with pytest.raises(m.BudgetError, match="release"):
+        m.release(m.Budget(100, 100, 30, 40), *amounts)
