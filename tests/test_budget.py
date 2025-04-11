@@ -72,3 +72,14 @@ def test_degradation_selects_first_affordable_stage() -> None:
     )
     assert m.degradation_stage(m.Budget(50, 50), estimates) == "compress"
     assert m.degradation_stage(m.Budget(0, 0), estimates) == "cache_only"
+
+
+def test_degradation_never_skips_an_affordable_earlier_stage() -> None:
+    estimates = (("full", 8, 8), ("downgrade", 6, 6), ("compress", 4, 4), ("cache_only", 0, 0))
+    for limit in range(0, 10):
+        selected = m.degradation_stage(m.Budget(limit, limit), estimates)
+        selected_index = m.DEGRADATION_LADDER.index(selected)
+        assert all(
+            not m.can_admit(m.Budget(limit, limit), tokens, cost)
+            for _, tokens, cost in estimates[:selected_index]
+        )
