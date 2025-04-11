@@ -90,3 +90,12 @@ def test_partition_conserves_remaining_limits() -> None:
     assert sum(part.token_limit for part in parts) == 9
     assert sum(part.cost_limit_micros for part in parts) == 18
     assert max(part.token_limit for part in parts) - min(part.token_limit for part in parts) <= 2
+
+
+@pytest.mark.parametrize(
+    ("tokens", "cost", "expected"), [(0, 0, (0, 0)), (10, 20, (7, 14)), (2, 30, (2, 14))]
+)
+def test_estimate_cap_never_exceeds_remaining_resources(
+    tokens: int, cost: int, expected: tuple[int, int]
+) -> None:
+    assert m.capped_estimate(m.Budget(10, 20, 3, 6), tokens, cost) == expected

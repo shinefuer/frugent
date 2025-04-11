@@ -103,3 +103,10 @@ def partition(budget: Budget, shares: tuple[int, ...]) -> tuple[Budget, ...]:
     for index in range(budget.remaining_cost_micros - sum(cost_parts)):
         cost_parts[index % len(cost_parts)] += 1
     return tuple(Budget(tokens, cost) for tokens, cost in zip(token_parts, cost_parts, strict=True))
+
+
+def capped_estimate(budget: Budget, tokens: int, cost_micros: int) -> tuple[int, int]:
+    """Clamp optimistic work estimates to resources that remain."""
+    if tokens < 0 or cost_micros < 0:
+        raise BudgetError("estimate cap: estimates must be non-negative")
+    return min(tokens, budget.remaining_tokens), min(cost_micros, budget.remaining_cost_micros)
