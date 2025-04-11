@@ -83,3 +83,10 @@ def test_degradation_never_skips_an_affordable_earlier_stage() -> None:
             not m.can_admit(m.Budget(limit, limit), tokens, cost)
             for _, tokens, cost in estimates[:selected_index]
         )
+
+
+def test_partition_conserves_remaining_limits() -> None:
+    parts = m.partition(m.Budget(10, 20, 1, 2), (1, 2, 1))
+    assert sum(part.token_limit for part in parts) == 9
+    assert sum(part.cost_limit_micros for part in parts) == 18
+    assert max(part.token_limit for part in parts) - min(part.token_limit for part in parts) <= 2

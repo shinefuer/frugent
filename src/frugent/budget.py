@@ -87,3 +87,19 @@ def degradation_stage(budget: Budget, estimates: tuple[tuple[str, int, int], ...
         if can_admit(budget, tokens, cost):
             return name
     return "defer"
+
+
+def partition(budget: Budget, shares: tuple[int, ...]) -> tuple[Budget, ...]:
+    """Partition unspent limits with exact remainder distribution."""
+    if not shares or any(
+        isinstance(share, bool) or not isinstance(share, int) or share <= 0 for share in shares
+    ):
+        raise BudgetError("partition: shares must be positive integers")
+    total = sum(shares)
+    token_parts = [budget.remaining_tokens * share // total for share in shares]
+    cost_parts = [budget.remaining_cost_micros * share // total for share in shares]
+    for index in range(budget.remaining_tokens - sum(token_parts)):
+        token_parts[index % len(token_parts)] += 1
+    for index in range(budget.remaining_cost_micros - sum(cost_parts)):
+        cost_parts[index % len(cost_parts)] += 1
+    return tuple(Budget(tokens, cost) for tokens, cost in zip(token_parts, cost_parts, strict=True))
