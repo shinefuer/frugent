@@ -110,3 +110,10 @@ def capped_estimate(budget: Budget, tokens: int, cost_micros: int) -> tuple[int,
     if tokens < 0 or cost_micros < 0:
         raise BudgetError("estimate cap: estimates must be non-negative")
     return min(tokens, budget.remaining_tokens), min(cost_micros, budget.remaining_cost_micros)
+
+
+def rollup(parent: Budget, children: tuple[Budget, ...]) -> Budget:
+    """Charge a parent for child spends while enforcing parent limits."""
+    tokens = sum(child.tokens_spent for child in children)
+    cost = sum(child.cost_spent_micros for child in children)
+    return reserve(parent, tokens, cost)

@@ -107,3 +107,13 @@ def test_partition_conserves_small_integer_remainders(tokens: int, cost: int) ->
     parts = m.partition(m.Budget(tokens, cost), (1, 3, 2))
     assert sum(part.token_limit for part in parts) == tokens
     assert sum(part.cost_limit_micros for part in parts) == cost
+
+
+def test_rollup_charges_only_child_spend() -> None:
+    children = (m.Budget(10, 20, 3, 4), m.Budget(5, 9, 2, 7))
+    assert m.rollup(m.Budget(100, 100), children) == m.Budget(100, 100, 5, 11)
+
+
+def test_rollup_cannot_hide_parent_overspend() -> None:
+    with pytest.raises(m.BudgetError, match="reservation"):
+        m.rollup(m.Budget(4, 100), (m.Budget(10, 10, 5, 1),))
