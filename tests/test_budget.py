@@ -99,3 +99,11 @@ def test_estimate_cap_never_exceeds_remaining_resources(
     tokens: int, cost: int, expected: tuple[int, int]
 ) -> None:
     assert m.capped_estimate(m.Budget(10, 20, 3, 6), tokens, cost) == expected
+
+
+@pytest.mark.parametrize("tokens", range(0, 12))
+@pytest.mark.parametrize("cost", range(0, 8))
+def test_partition_conserves_small_integer_remainders(tokens: int, cost: int) -> None:
+    parts = m.partition(m.Budget(tokens, cost), (1, 3, 2))
+    assert sum(part.token_limit for part in parts) == tokens
+    assert sum(part.cost_limit_micros for part in parts) == cost
