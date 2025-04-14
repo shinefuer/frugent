@@ -33,3 +33,10 @@ def test_exact_selection_never_exceeds_capacity(capacity: int) -> None:
     selected = m.exact_select(items, capacity)
     assert sum(item.tokens for item in selected) <= capacity
     assert len({item.key for item in selected}) == len(selected)
+
+
+def test_greedy_select_respects_capacity_and_stable_order() -> None:
+    items = (m.Item("c", 4, 4), m.Item("a", 2, 5), m.Item("b", 3, 6))
+    selected = m.greedy_select(items, 5)
+    assert tuple(item.key for item in selected) == ("a", "b")
+    assert sum(item.tokens for item in selected) <= 5

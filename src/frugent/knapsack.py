@@ -41,3 +41,17 @@ def exact_select(items: tuple[Item, ...], capacity: int) -> tuple[Item, ...]:
         states = updated
     _, keys = min(states.values(), key=lambda state: (-state[0], state[1]))
     return tuple(by_key[key] for key in keys)
+
+
+def greedy_select(items: tuple[Item, ...], capacity: int) -> tuple[Item, ...]:
+    """Select by value density, absolute value, then lexical key."""
+    if capacity < 0:
+        raise KnapsackError("capacity: expected non-negative integer")
+    ordered = sorted(items, key=lambda item: (-item.value / item.tokens, -item.value, item.key))
+    selected: list[Item] = []
+    remaining = capacity
+    for item in ordered:
+        if item.tokens <= remaining:
+            selected.append(item)
+            remaining -= item.tokens
+    return tuple(sorted(selected, key=lambda item: item.key))
