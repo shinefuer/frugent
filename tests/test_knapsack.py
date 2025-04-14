@@ -40,3 +40,9 @@ def test_greedy_select_respects_capacity_and_stable_order() -> None:
     selected = m.greedy_select(items, 5)
     assert tuple(item.key for item in selected) == ("a", "b")
     assert sum(item.tokens for item in selected) <= 5
+
+
+def test_selection_totals_reconcile_items() -> None:
+    items = (m.Item("a", 2, 7), m.Item("b", 5, 3))
+    assert m.selection_totals(items) == (7, 10)
+    assert m.selection_totals(()) == (0, 0)

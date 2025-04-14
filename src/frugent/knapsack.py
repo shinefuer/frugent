@@ -55,3 +55,8 @@ def greedy_select(items: tuple[Item, ...], capacity: int) -> tuple[Item, ...]:
             selected.append(item)
             remaining -= item.tokens
     return tuple(sorted(selected, key=lambda item: item.key))
+
+
+def selection_totals(items: tuple[Item, ...]) -> tuple[int, int]:
+    """Return selected token weight and planted relevance value."""
+    return sum(item.tokens for item in items), sum(item.value for item in items)
