@@ -25,3 +25,11 @@ def test_exact_select_finds_planted_non_greedy_optimum() -> None:
 def test_exact_select_uses_lexical_tie_break() -> None:
     items = (m.Item("z", 2, 3), m.Item("a", 2, 3))
     assert tuple(item.key for item in m.exact_select(items, 2)) == ("a",)
+
+
+@pytest.mark.parametrize("capacity", range(0, 8))
+def test_exact_selection_never_exceeds_capacity(capacity: int) -> None:
+    items = tuple(m.Item(chr(97 + index), index + 1, (index * 3) % 7) for index in range(6))
+    selected = m.exact_select(items, capacity)
+    assert sum(item.tokens for item in selected) <= capacity
+    assert len({item.key for item in selected}) == len(selected)
