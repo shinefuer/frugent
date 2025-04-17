@@ -52,3 +52,17 @@ def test_approximation_ratio_uses_same_item_set() -> None:
     items = (m.Item("a", 6, 12), m.Item("b", 5, 9), m.Item("c", 5, 9))
     assert m.approximation_ratio(items, 10) == 0.666667
     assert m.approximation_ratio((m.Item("x", 2, 0),), 2) == 1.0
+
+
+def test_exact_solver_matches_enumerated_subset_oracle() -> None:
+    import itertools
+
+    items = (m.Item("a", 1, 2), m.Item("b", 2, 5), m.Item("c", 3, 6), m.Item("d", 4, 8))
+    for capacity in range(8):
+        feasible_values = [
+            sum(item.value for item in subset)
+            for size in range(len(items) + 1)
+            for subset in itertools.combinations(items, size)
+            if sum(item.tokens for item in subset) <= capacity
+        ]
+        assert m.selection_totals(m.exact_select(items, capacity))[1] == max(feasible_values)
