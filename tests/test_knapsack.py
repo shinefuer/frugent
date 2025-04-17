@@ -46,3 +46,9 @@ def test_selection_totals_reconcile_items() -> None:
     items = (m.Item("a", 2, 7), m.Item("b", 5, 3))
     assert m.selection_totals(items) == (7, 10)
     assert m.selection_totals(()) == (0, 0)
+
+
+def test_approximation_ratio_uses_same_item_set() -> None:
+    items = (m.Item("a", 6, 12), m.Item("b", 5, 9), m.Item("c", 5, 9))
+    assert m.approximation_ratio(items, 10) == 0.666667
+    assert m.approximation_ratio((m.Item("x", 2, 0),), 2) == 1.0

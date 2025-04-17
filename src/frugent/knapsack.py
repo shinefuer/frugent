@@ -60,3 +60,10 @@ def greedy_select(items: tuple[Item, ...], capacity: int) -> tuple[Item, ...]:
 def selection_totals(items: tuple[Item, ...]) -> tuple[int, int]:
     """Return selected token weight and planted relevance value."""
     return sum(item.tokens for item in items), sum(item.value for item in items)
+
+
+def approximation_ratio(items: tuple[Item, ...], capacity: int) -> float:
+    """Compare greedy planted value to the exact small-problem optimum."""
+    exact_value = selection_totals(exact_select(items, capacity))[1]
+    greedy_value = selection_totals(greedy_select(items, capacity))[1]
+    return 1.0 if exact_value == 0 else round(greedy_value / exact_value, 6)
