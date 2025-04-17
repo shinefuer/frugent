@@ -67,3 +67,12 @@ def approximation_ratio(items: tuple[Item, ...], capacity: int) -> float:
     exact_value = selection_totals(exact_select(items, capacity))[1]
     greedy_value = selection_totals(greedy_select(items, capacity))[1]
     return 1.0 if exact_value == 0 else round(greedy_value / exact_value, 6)
+
+
+def capacity_curve(items: tuple[Item, ...], maximum: int) -> tuple[int, ...]:
+    """Return planted optimum values for every capacity from zero through maximum."""
+    if maximum < 0:
+        raise KnapsackError("capacity curve: maximum must be non-negative")
+    return tuple(
+        selection_totals(exact_select(items, capacity))[1] for capacity in range(maximum + 1)
+    )

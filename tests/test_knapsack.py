@@ -66,3 +66,10 @@ def test_exact_solver_matches_enumerated_subset_oracle() -> None:
             if sum(item.tokens for item in subset) <= capacity
         ]
         assert m.selection_totals(m.exact_select(items, capacity))[1] == max(feasible_values)
+
+
+def test_capacity_curve_is_monotonic() -> None:
+    items = (m.Item("a", 2, 3), m.Item("b", 3, 7))
+    curve = m.capacity_curve(items, 5)
+    assert curve == (0, 0, 3, 7, 7, 10)
+    assert all(curve[index] <= curve[index + 1] for index in range(len(curve) - 1))
