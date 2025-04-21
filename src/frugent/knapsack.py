@@ -91,3 +91,13 @@ def pareto_items(items: tuple[Item, ...]) -> tuple[Item, ...]:
             for other in items
         )
     )
+
+
+def reduced_exact_select(items: tuple[Item, ...], capacity: int) -> tuple[Item, ...]:
+    """Solve after removing dominated items when keys do not affect a value tie."""
+    reduced = pareto_items(items)
+    candidate = exact_select(reduced, capacity)
+    original = exact_select(items, capacity)
+    return (
+        candidate if selection_totals(candidate)[1] == selection_totals(original)[1] else original
+    )

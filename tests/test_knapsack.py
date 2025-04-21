@@ -89,3 +89,12 @@ def test_pareto_items_remove_strictly_dominated_blocks() -> None:
 def test_approximation_ratio_stays_in_unit_interval(capacity: int) -> None:
     items = tuple(m.Item(str(index), index + 1, index * index + 1) for index in range(8))
     assert 0.0 <= m.approximation_ratio(items, capacity) <= 1.0
+
+
+@pytest.mark.parametrize("capacity", range(0, 11))
+def test_reduced_solver_preserves_exact_planted_value(capacity: int) -> None:
+    items = (m.Item("a", 2, 5), m.Item("b", 3, 5), m.Item("c", 4, 9), m.Item("d", 1, 1))
+    assert (
+        m.selection_totals(m.reduced_exact_select(items, capacity))[1]
+        == m.selection_totals(m.exact_select(items, capacity))[1]
+    )
