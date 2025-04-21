@@ -83,3 +83,9 @@ def test_pareto_items_remove_strictly_dominated_blocks() -> None:
         m.Item("trade", 1, 2),
     )
     assert tuple(item.key for item in m.pareto_items(items)) == ("keep", "trade")
+
+
+@pytest.mark.parametrize("capacity", range(0, 16))
+def test_approximation_ratio_stays_in_unit_interval(capacity: int) -> None:
+    items = tuple(m.Item(str(index), index + 1, index * index + 1) for index in range(8))
+    assert 0.0 <= m.approximation_ratio(items, capacity) <= 1.0
