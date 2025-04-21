@@ -76,3 +76,18 @@ def capacity_curve(items: tuple[Item, ...], maximum: int) -> tuple[int, ...]:
     return tuple(
         selection_totals(exact_select(items, capacity))[1] for capacity in range(maximum + 1)
     )
+
+
+def pareto_items(items: tuple[Item, ...]) -> tuple[Item, ...]:
+    """Discard items no lighter and no more valuable than another item."""
+    return tuple(
+        item
+        for item in sorted(items, key=lambda candidate: candidate.key)
+        if not any(
+            other.key != item.key
+            and other.tokens <= item.tokens
+            and other.value >= item.value
+            and (other.tokens < item.tokens or other.value > item.value)
+            for other in items
+        )
+    )

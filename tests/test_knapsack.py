@@ -73,3 +73,13 @@ def test_capacity_curve_is_monotonic() -> None:
     curve = m.capacity_curve(items, 5)
     assert curve == (0, 0, 3, 7, 7, 10)
     assert all(curve[index] <= curve[index + 1] for index in range(len(curve) - 1))
+
+
+def test_pareto_items_remove_strictly_dominated_blocks() -> None:
+    items = (
+        m.Item("keep", 2, 5),
+        m.Item("heavy", 3, 5),
+        m.Item("weak", 2, 4),
+        m.Item("trade", 1, 2),
+    )
+    assert tuple(item.key for item in m.pareto_items(items)) == ("keep", "trade")
