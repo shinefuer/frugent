@@ -12,3 +12,10 @@ def token_savings(baseline_tokens: int, candidate_tokens: int) -> float:
     if baseline_tokens <= 0 or not 0 <= candidate_tokens <= baseline_tokens:
         raise BenchmarkError("token savings: expected 0 <= candidate <= positive baseline")
     return round((baseline_tokens - candidate_tokens) / baseline_tokens, 6)
+
+
+def cache_hit_uplift(baseline_hits: int, candidate_hits: int, requests: int) -> float:
+    """Return absolute hit-rate uplift over identical requests."""
+    if requests <= 0 or not 0 <= baseline_hits <= requests or not 0 <= candidate_hits <= requests:
+        raise BenchmarkError("cache uplift: hits must fit positive request count")
+    return round((candidate_hits - baseline_hits) / requests, 6)

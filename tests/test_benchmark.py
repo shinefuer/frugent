@@ -21,3 +21,13 @@ def test_token_savings_uses_fractional_reduction(
 def test_token_savings_rejects_invalid_comparison(values: tuple[int, int]) -> None:
     with pytest.raises(m.BenchmarkError, match="token savings"):
         m.token_savings(*values)
+
+
+@pytest.mark.parametrize(
+    ("base", "candidate", "requests", "expected"),
+    [(0, 5, 10, 0.5), (8, 8, 10, 0.0), (9, 4, 10, -0.5)],
+)
+def test_cache_uplift_preserves_direction(
+    base: int, candidate: int, requests: int, expected: float
+) -> None:
+    assert m.cache_hit_uplift(base, candidate, requests) == expected
