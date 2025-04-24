@@ -26,3 +26,10 @@ def cost_per_completed(total_cost_micros: int, completed: int) -> float:
     if total_cost_micros < 0 or completed <= 0:
         raise BenchmarkError("cost per completed: requires non-negative cost and completions")
     return round(total_cost_micros / completed, 6)
+
+
+def completion_rate(outcomes: tuple[bool, ...]) -> float:
+    """Return successful scripted tasks divided by generated tasks."""
+    if not outcomes:
+        raise BenchmarkError("completion rate: expected outcomes")
+    return round(sum(outcomes) / len(outcomes), 6)

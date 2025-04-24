@@ -48,3 +48,12 @@ def test_cost_per_completed_uses_only_successful_tasks() -> None:
 def test_cost_per_completed_rejects_zero_successes() -> None:
     with pytest.raises(m.BenchmarkError, match="completions"):
         m.cost_per_completed(10, 0)
+
+
+@pytest.mark.parametrize(
+    ("outcomes", "expected"), [((True,), 1.0), ((False,), 0.0), ((True, False, True), 0.666667)]
+)
+def test_completion_rate_counts_scripted_outcomes(
+    outcomes: tuple[bool, ...], expected: float
+) -> None:
+    assert m.completion_rate(outcomes) == expected
