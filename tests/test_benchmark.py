@@ -38,3 +38,13 @@ def test_cache_uplift_stays_between_minus_and_plus_one(requests: int) -> None:
     for baseline in range(requests + 1):
         for candidate in range(requests + 1):
             assert -1.0 <= m.cache_hit_uplift(baseline, candidate, requests) <= 1.0
+
+
+def test_cost_per_completed_uses_only_successful_tasks() -> None:
+    assert m.cost_per_completed(101, 4) == 25.25
+    assert m.cost_per_completed(0, 2) == 0.0
+
+
+def test_cost_per_completed_rejects_zero_successes() -> None:
+    with pytest.raises(m.BenchmarkError, match="completions"):
+        m.cost_per_completed(10, 0)
