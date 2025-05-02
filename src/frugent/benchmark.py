@@ -33,3 +33,12 @@ def completion_rate(outcomes: tuple[bool, ...]) -> float:
     if not outcomes:
         raise BenchmarkError("completion rate: expected outcomes")
     return round(sum(outcomes) / len(outcomes), 6)
+
+
+def quality_preserved(
+    baseline: tuple[float, ...], candidate: tuple[float, ...], floor: float
+) -> bool:
+    """Require every paired candidate score to meet baseline-scaled floor."""
+    if len(baseline) != len(candidate) or not baseline or not 0 <= floor <= 1:
+        raise BenchmarkError("quality preservation: invalid paired scores or floor")
+    return all(right >= left * floor for left, right in zip(baseline, candidate, strict=True))

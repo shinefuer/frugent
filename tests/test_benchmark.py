@@ -57,3 +57,9 @@ def test_completion_rate_counts_scripted_outcomes(
     outcomes: tuple[bool, ...], expected: float
 ) -> None:
     assert m.completion_rate(outcomes) == expected
+
+
+def test_quality_preservation_is_pairwise_not_just_average() -> None:
+    baseline = (1.0, 0.5)
+    assert m.quality_preserved(baseline, (0.9, 0.45), 0.9)
+    assert not m.quality_preserved(baseline, (1.0, 0.44), 0.9)
