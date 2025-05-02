@@ -42,3 +42,17 @@ def quality_preserved(
     if len(baseline) != len(candidate) or not baseline or not 0 <= floor <= 1:
         raise BenchmarkError("quality preservation: invalid paired scores or floor")
     return all(right >= left * floor for left, right in zip(baseline, candidate, strict=True))
+
+
+def simulated_latency(arrivals_ms: tuple[int, ...], service_ms: tuple[int, ...]) -> tuple[int, ...]:
+    """Simulate one FIFO server and return completion latency per request."""
+    if len(arrivals_ms) != len(service_ms) or any(value < 0 for value in arrivals_ms + service_ms):
+        raise BenchmarkError("latency simulation: paired non-negative inputs required")
+    if tuple(sorted(arrivals_ms)) != arrivals_ms:
+        raise BenchmarkError("latency simulation: arrivals must be sorted")
+    available = 0
+    latencies: list[int] = []
+    for arrival, service in zip(arrivals_ms, service_ms, strict=True):
+        available = max(available, arrival) + service
+        latencies.append(available - arrival)
+    return tuple(latencies)

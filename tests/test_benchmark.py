@@ -70,3 +70,13 @@ def test_quality_preservation_can_only_get_harder_as_floor_rises() -> None:
     candidate = (0.7, 0.82, 0.91)
     results = [m.quality_preserved(baseline, candidate, floor / 100) for floor in range(0, 101)]
     assert all(not results[index + 1] or results[index] for index in range(len(results) - 1))
+
+
+def test_latency_simulation_includes_queue_wait() -> None:
+    assert m.simulated_latency((0, 2, 20), (5, 5, 3)) == (5, 8, 3)
+    assert m.simulated_latency((), ()) == ()
+
+
+def test_latency_simulation_rejects_unsorted_arrivals() -> None:
+    with pytest.raises(m.BenchmarkError, match="sorted"):
+        m.simulated_latency((2, 1), (1, 1))
