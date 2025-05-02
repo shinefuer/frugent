@@ -63,3 +63,10 @@ def test_quality_preservation_is_pairwise_not_just_average() -> None:
     baseline = (1.0, 0.5)
     assert m.quality_preserved(baseline, (0.9, 0.45), 0.9)
     assert not m.quality_preserved(baseline, (1.0, 0.44), 0.9)
+
+
+def test_quality_preservation_can_only_get_harder_as_floor_rises() -> None:
+    baseline = (0.8, 0.9, 1.0)
+    candidate = (0.7, 0.82, 0.91)
+    results = [m.quality_preserved(baseline, candidate, floor / 100) for floor in range(0, 101)]
+    assert all(not results[index + 1] or results[index] for index in range(len(results) - 1))
