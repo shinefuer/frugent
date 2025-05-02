@@ -56,3 +56,10 @@ def simulated_latency(arrivals_ms: tuple[int, ...], service_ms: tuple[int, ...])
         available = max(available, arrival) + service
         latencies.append(available - arrival)
     return tuple(latencies)
+
+
+def throughput(completed: int, elapsed_ms: int) -> float:
+    """Return completed synthetic tasks per simulated second."""
+    if completed < 0 or elapsed_ms <= 0:
+        raise BenchmarkError("throughput: requires non-negative completions and positive time")
+    return round(completed * 1000 / elapsed_ms, 6)

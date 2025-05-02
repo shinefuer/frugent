@@ -80,3 +80,13 @@ def test_latency_simulation_includes_queue_wait() -> None:
 def test_latency_simulation_rejects_unsorted_arrivals() -> None:
     with pytest.raises(m.BenchmarkError, match="sorted"):
         m.simulated_latency((2, 1), (1, 1))
+
+
+@pytest.mark.parametrize(
+    ("completed", "elapsed", "expected"),
+    [(0, 100, 0.0), (1, 1000, 1.0), (5, 2000, 2.5), (3, 1, 3000.0)],
+)
+def test_throughput_uses_simulated_milliseconds(
+    completed: int, elapsed: int, expected: float
+) -> None:
+    assert m.throughput(completed, elapsed) == expected
