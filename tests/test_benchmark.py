@@ -90,3 +90,10 @@ def test_throughput_uses_simulated_milliseconds(
     completed: int, elapsed: int, expected: float
 ) -> None:
     assert m.throughput(completed, elapsed) == expected
+
+
+@pytest.mark.parametrize("service", [(0,), (1, 2, 3), (5, 0, 2, 1)])
+def test_back_to_back_fifo_completion_conserves_service(service: tuple[int, ...]) -> None:
+    arrivals = (0,) * len(service)
+    latencies = m.simulated_latency(arrivals, service)
+    assert (latencies[-1] if latencies else 0) == sum(service)
