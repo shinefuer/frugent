@@ -63,3 +63,22 @@ def throughput(completed: int, elapsed_ms: int) -> float:
     if completed < 0 or elapsed_ms <= 0:
         raise BenchmarkError("throughput: requires non-negative completions and positive time")
     return round(completed * 1000 / elapsed_ms, 6)
+
+
+def comparison_row(
+    *,
+    baseline_tokens: int,
+    candidate_tokens: int,
+    baseline_cost: int,
+    candidate_cost: int,
+    baseline_hits: int,
+    candidate_hits: int,
+    requests: int,
+) -> dict[str, float | int]:
+    """Build one report row from measured synthetic counts."""
+    return {
+        "requests": requests,
+        "token_savings": token_savings(baseline_tokens, candidate_tokens),
+        "cache_hit_uplift": cache_hit_uplift(baseline_hits, candidate_hits, requests),
+        "cost_savings_micros": baseline_cost - candidate_cost,
+    }

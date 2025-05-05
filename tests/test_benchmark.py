@@ -97,3 +97,15 @@ def test_back_to_back_fifo_completion_conserves_service(service: tuple[int, ...]
     arrivals = (0,) * len(service)
     latencies = m.simulated_latency(arrivals, service)
     assert (latencies[-1] if latencies else 0) == sum(service)
+
+
+def test_comparison_row_contains_only_derived_measured_fields() -> None:
+    assert m.comparison_row(
+        baseline_tokens=100,
+        candidate_tokens=75,
+        baseline_cost=50,
+        candidate_cost=35,
+        baseline_hits=1,
+        candidate_hits=6,
+        requests=10,
+    ) == {"requests": 10, "token_savings": 0.25, "cache_hit_uplift": 0.5, "cost_savings_micros": 15}
