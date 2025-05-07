@@ -27,3 +27,10 @@ def test_entry_lives_strictly_before_ttl(now: int) -> None:
 @pytest.mark.parametrize("now", [15, 16, 100])
 def test_entry_expires_at_or_after_ttl(now: int) -> None:
     assert m.is_expired(m.CacheEntry("k", 1, 5, 5), m.CachePolicy(10, 10), now)
+
+
+@pytest.mark.parametrize("ttl", [0, 1, 5, 100])
+@pytest.mark.parametrize("age", [0, 1, 5, 100])
+def test_ttl_boundary_matches_age_comparison(ttl: int, age: int) -> None:
+    entry = m.CacheEntry("k", 1, 10, 10)
+    assert m.is_expired(entry, m.CachePolicy(10, ttl), 10 + age) is (age >= ttl)
