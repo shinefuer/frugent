@@ -17,3 +17,13 @@ def test_cache_entry_touch_advances_access_and_hits() -> None:
 def test_cache_entry_rejects_impossible_state(values: tuple[object, ...]) -> None:
     with pytest.raises(m.PromptCacheError, match="cache entry"):
         m.CacheEntry(*values)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("now", [9, 10, 14])
+def test_entry_lives_strictly_before_ttl(now: int) -> None:
+    assert not m.is_expired(m.CacheEntry("k", 1, 5, 5), m.CachePolicy(10, 10), now)
+
+
+@pytest.mark.parametrize("now", [15, 16, 100])
+def test_entry_expires_at_or_after_ttl(now: int) -> None:
+    assert m.is_expired(m.CacheEntry("k", 1, 5, 5), m.CachePolicy(10, 10), now)
