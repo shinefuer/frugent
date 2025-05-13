@@ -50,3 +50,14 @@ def is_expired(entry: CacheEntry, policy: CachePolicy, now_ms: int) -> bool:
     if now_ms < entry.created_at_ms:
         raise PromptCacheError("cache clock: time moved before creation")
     return now_ms - entry.created_at_ms >= policy.ttl_ms
+
+
+def eviction_order(entries: tuple[CacheEntry, ...], policy: CachePolicy) -> tuple[str, ...]:
+    """Return keys in first-to-evict order with stable ties."""
+    if policy.eviction == "lru":
+        ordered = sorted(
+            entries, key=lambda entry: (entry.last_access_ms, entry.created_at_ms, entry.key)
+        )
+    else:
+        ordered = sorted(entries, key=lambda entry: (entry.hits, entry.last_access_ms, entry.key))
+    return tuple(entry.key for entry in ordered)
