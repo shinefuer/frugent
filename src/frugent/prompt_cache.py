@@ -78,3 +78,15 @@ def fit_entries(entries: tuple[CacheEntry, ...], policy: CachePolicy) -> tuple[C
             break
         total -= kept.pop(key).token_count
     return tuple(kept[key] for key in sorted(kept))
+
+
+def purge_expired(
+    entries: tuple[CacheEntry, ...], policy: CachePolicy, now_ms: int
+) -> tuple[CacheEntry, ...]:
+    """Remove every expired entry while preserving stable key order."""
+    return tuple(
+        sorted(
+            (entry for entry in entries if not is_expired(entry, policy, now_ms)),
+            key=lambda entry: entry.key,
+        )
+    )

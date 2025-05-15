@@ -57,3 +57,13 @@ def test_admission_uses_closed_policy_interval(tokens: int) -> None:
     assert m.admitted(m.CacheEntry("k", tokens, 0, 0), m.CachePolicy(10, 10, 2)) is (
         2 <= tokens <= 10
     )
+
+
+def test_purge_expired_keeps_only_live_entries() -> None:
+    entries = (m.CacheEntry("old", 1, 0, 0), m.CacheEntry("live", 1, 6, 6))
+    assert m.purge_expired(entries, m.CachePolicy(10, 10), 10) == (entries[1],)
+
+
+def test_zero_ttl_expires_immediately() -> None:
+    entry = m.CacheEntry("k", 1, 3, 3)
+    assert m.purge_expired((entry,), m.CachePolicy(10, 0), 3) == ()
