@@ -61,3 +61,20 @@ def eviction_order(entries: tuple[CacheEntry, ...], policy: CachePolicy) -> tupl
     else:
         ordered = sorted(entries, key=lambda entry: (entry.hits, entry.last_access_ms, entry.key))
     return tuple(entry.key for entry in ordered)
+
+
+def admitted(entry: CacheEntry, policy: CachePolicy) -> bool:
+    """Reject entries too small to matter or too large to ever fit."""
+    return policy.minimum_admission_tokens <= entry.token_count <= policy.capacity_tokens
+
+
+def fit_entries(entries: tuple[CacheEntry, ...], policy: CachePolicy) -> tuple[CacheEntry, ...]:
+    """Evict deterministically until total cached tokens fit."""
+    kept = {entry.key: entry for entry in entries if admitted(entry, policy)}
+    order = eviction_order(tuple(kept.values()), policy)
+    total = sum(entry.token_count for entry in kept.values())
+    for key in order:
+        if total <= policy.capacity_tokens:
+            break
+        total -= kept.pop(key).token_count
+    return tuple(kept[key] for key in sorted(kept))

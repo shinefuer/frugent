@@ -44,3 +44,16 @@ def test_lru_eviction_uses_access_then_creation_then_key() -> None:
 def test_lfu_eviction_prefers_fewer_hits() -> None:
     entries = (m.CacheEntry("hot", 1, 0, 9, 3), m.CacheEntry("cold", 1, 0, 8, 0))
     assert m.eviction_order(entries, m.CachePolicy(10, 10, eviction="lfu"))[0] == "cold"
+
+
+def test_fit_entries_enforces_capacity() -> None:
+    policy = m.CachePolicy(10, 100, eviction="lru")
+    entries = (m.CacheEntry("old", 6, 0, 0), m.CacheEntry("new", 6, 1, 5))
+    assert m.fit_entries(entries, policy) == (entries[1],)
+
+
+@pytest.mark.parametrize("tokens", [0, 1, 2, 10, 11])
+def test_admission_uses_closed_policy_interval(tokens: int) -> None:
+    assert m.admitted(m.CacheEntry("k", tokens, 0, 0), m.CachePolicy(10, 10, 2)) is (
+        2 <= tokens <= 10
+    )
