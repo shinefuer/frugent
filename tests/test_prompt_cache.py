@@ -67,3 +67,11 @@ def test_purge_expired_keeps_only_live_entries() -> None:
 def test_zero_ttl_expires_immediately() -> None:
     entry = m.CacheEntry("k", 1, 3, 3)
     assert m.purge_expired((entry,), m.CachePolicy(10, 0), 3) == ()
+
+
+@pytest.mark.parametrize("capacity", range(0, 12))
+def test_fitted_entries_never_exceed_token_capacity(capacity: int) -> None:
+    entries = tuple(m.CacheEntry(str(index), index + 1, index, index) for index in range(6))
+    kept = m.fit_entries(entries, m.CachePolicy(capacity, 100, 0))
+    assert sum(entry.token_count for entry in kept) <= capacity
+    assert len({entry.key for entry in kept}) == len(kept)
