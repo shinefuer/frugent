@@ -75,3 +75,15 @@ def test_fitted_entries_never_exceed_token_capacity(capacity: int) -> None:
     kept = m.fit_entries(entries, m.CachePolicy(capacity, 100, 0))
     assert sum(entry.token_count for entry in kept) <= capacity
     assert len({entry.key for entry in kept}) == len(kept)
+
+
+def test_cache_metrics_match_trace_counts() -> None:
+    result = m.metrics(((True, 10), (False, 0), (True, 4)))
+    assert result == m.CacheMetrics(3, 2, 14)
+    assert result.hit_rate == 0.666667
+    assert result.average_cached_tokens == 7.0
+
+
+def test_cache_metrics_reject_tokens_on_miss() -> None:
+    with pytest.raises(m.PromptCacheError, match="misses"):
+        m.metrics(((False, 1),))

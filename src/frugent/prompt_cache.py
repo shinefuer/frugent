@@ -90,3 +90,26 @@ def purge_expired(
             key=lambda entry: entry.key,
         )
     )
+
+
+@dataclass(frozen=True, slots=True)
+class CacheMetrics:
+    requests: int
+    hits: int
+    cached_tokens: int
+
+    @property
+    def hit_rate(self) -> float:
+        return 0.0 if self.requests == 0 else round(self.hits / self.requests, 6)
+
+    @property
+    def average_cached_tokens(self) -> float:
+        return 0.0 if self.hits == 0 else round(self.cached_tokens / self.hits, 6)
+
+
+def metrics(outcomes: tuple[tuple[bool, int], ...]) -> CacheMetrics:
+    if any(tokens < 0 or (not hit and tokens != 0) for hit, tokens in outcomes):
+        raise PromptCacheError("cache metrics: misses cannot report cached tokens")
+    return CacheMetrics(
+        len(outcomes), sum(hit for hit, _ in outcomes), sum(tokens for _, tokens in outcomes)
+    )
