@@ -87,3 +87,15 @@ def test_cache_metrics_match_trace_counts() -> None:
 def test_cache_metrics_reject_tokens_on_miss() -> None:
     with pytest.raises(m.PromptCacheError, match="misses"):
         m.metrics(((False, 1),))
+
+
+def test_trace_replay_observes_hits_eviction_and_ttl() -> None:
+    policy = m.CachePolicy(8, 10)
+    trace = (("a", 4, 0), ("a", 4, 1), ("b", 6, 2), ("a", 4, 3), ("b", 6, 12))
+    assert m.replay_trace(trace, policy) == (
+        (False, 0),
+        (True, 4),
+        (False, 0),
+        (False, 0),
+        (False, 0),
+    )

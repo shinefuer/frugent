@@ -113,3 +113,29 @@ def metrics(outcomes: tuple[tuple[bool, int], ...]) -> CacheMetrics:
     return CacheMetrics(
         len(outcomes), sum(hit for hit, _ in outcomes), sum(tokens for _, tokens in outcomes)
     )
+
+
+def replay_trace(
+    requests: tuple[tuple[str, int, int], ...], policy: CachePolicy
+) -> tuple[tuple[bool, int], ...]:
+    """Replay key/token/time requests through an exact deterministic cache."""
+    entries: dict[str, CacheEntry] = {}
+    outcomes: list[tuple[bool, int]] = []
+    previous_time = 0
+    for key, tokens, now_ms in requests:
+        if now_ms < previous_time:
+            raise PromptCacheError("cache trace: times must be nondecreasing")
+        previous_time = now_ms
+        entries = {
+            entry.key: entry for entry in purge_expired(tuple(entries.values()), policy, now_ms)
+        }
+        existing = entries.get(key)
+        if existing is not None:
+            entries[key] = existing.touch(now_ms)
+            outcomes.append((True, existing.token_count))
+        else:
+            candidate = CacheEntry(key, tokens, now_ms, now_ms)
+            entries[key] = candidate
+            entries = {entry.key: entry for entry in fit_entries(tuple(entries.values()), policy)}
+            outcomes.append((False, 0))
+    return tuple(outcomes)
