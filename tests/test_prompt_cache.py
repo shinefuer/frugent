@@ -99,3 +99,9 @@ def test_trace_replay_observes_hits_eviction_and_ttl() -> None:
         (False, 0),
         (False, 0),
     )
+
+
+def test_trace_replay_is_byte_for_byte_repeatable() -> None:
+    trace = tuple((str(index % 3), 2 + index % 2, index) for index in range(30))
+    policy = m.CachePolicy(7, 8, eviction="lfu")
+    assert m.replay_trace(trace, policy) == m.replay_trace(trace, policy)
