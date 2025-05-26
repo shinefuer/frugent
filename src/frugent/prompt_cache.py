@@ -139,3 +139,20 @@ def replay_trace(
             entries = {entry.key: entry for entry in fit_entries(tuple(entries.values()), policy)}
             outcomes.append((False, 0))
     return tuple(outcomes)
+
+
+def entries_to_record(entries: tuple[CacheEntry, ...]) -> dict[str, object]:
+    """Persist logical entry state rather than internal mappings."""
+    return {
+        "schema_version": 1,
+        "entries": [
+            {
+                "key": entry.key,
+                "token_count": entry.token_count,
+                "created_at_ms": entry.created_at_ms,
+                "last_access_ms": entry.last_access_ms,
+                "hits": entry.hits,
+            }
+            for entry in sorted(entries, key=lambda item: item.key)
+        ],
+    }

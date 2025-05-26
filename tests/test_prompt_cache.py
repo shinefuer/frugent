@@ -105,3 +105,9 @@ def test_trace_replay_is_byte_for_byte_repeatable() -> None:
     trace = tuple((str(index % 3), 2 + index % 2, index) for index in range(30))
     policy = m.CachePolicy(7, 8, eviction="lfu")
     assert m.replay_trace(trace, policy) == m.replay_trace(trace, policy)
+
+
+def test_cache_entry_record_is_stably_sorted() -> None:
+    record = m.entries_to_record((m.CacheEntry("z", 1, 0, 0), m.CacheEntry("a", 2, 1, 2, 3)))
+    assert record["schema_version"] == 1
+    assert [entry["key"] for entry in record["entries"]] == ["a", "z"]  # type: ignore[index]
