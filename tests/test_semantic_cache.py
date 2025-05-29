@@ -34,3 +34,11 @@ def test_payload_keeps_tool_arguments_case_sensitive() -> None:
     assert m.normalized_payload("x", "tool", {"path": "A.py"}) != m.normalized_payload(
         "x", "tool", {"path": "a.py"}
     )
+
+
+@pytest.mark.parametrize("spacing", [" ", "  ", "\n", "\t", " \n "])
+def test_normalization_equivalence_always_hits_same_key(spacing: str) -> None:
+    left = f"Fix{spacing}Cache"
+    assert m.normalized_payload(left, "EDIT", {"path": "x.py"}) == m.normalized_payload(
+        "fix cache", "edit", {"path": "x.py"}
+    )
