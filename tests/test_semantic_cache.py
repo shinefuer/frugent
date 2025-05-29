@@ -55,3 +55,14 @@ def test_exact_key_changes_for_nonequivalent_payload(change: dict[str, object]) 
     base = {"prompt": "fix x", "tool_name": "edit", "arguments": {"line": 1}}
     base.update(change)
     assert m.exact_key(**base) != m.exact_key("fix x", "edit", {"line": 1})  # type: ignore[arg-type]
+
+
+def test_shingles_fold_equivalent_text() -> None:
+    assert m.shingles(" Fix  Bug ") == m.shingles("fix bug")
+    assert m.jaccard(m.shingles("abcdef"), m.shingles("abcxef")) == 0.142857
+
+
+@pytest.mark.parametrize("width", [0, -1])
+def test_shingles_require_positive_width(width: int) -> None:
+    with pytest.raises(m.SemanticCacheError, match="width"):
+        m.shingles("text", width)

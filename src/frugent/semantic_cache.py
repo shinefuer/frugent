@@ -41,3 +41,21 @@ def exact_key(prompt: str, tool_name: str, arguments: dict[str, object]) -> str:
     from frugent.codec import payload_digest
 
     return payload_digest(normalized_payload(prompt, tool_name, arguments))
+
+
+def shingles(text: str, width: int = 3) -> frozenset[str]:
+    """Return character shingles for fuzzy candidate discovery only."""
+    if width <= 0:
+        raise SemanticCacheError("shingles: width must be positive")
+    normalized = normalize_text(text)
+    if len(normalized) < width:
+        return frozenset({normalized}) if normalized else frozenset()
+    return frozenset(
+        normalized[index : index + width] for index in range(len(normalized) - width + 1)
+    )
+
+
+def jaccard(left: frozenset[str], right: frozenset[str]) -> float:
+    if not left and not right:
+        return 1.0
+    return round(len(left & right) / len(left | right), 6)
