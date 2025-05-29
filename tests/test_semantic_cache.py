@@ -42,3 +42,16 @@ def test_normalization_equivalence_always_hits_same_key(spacing: str) -> None:
     assert m.normalized_payload(left, "EDIT", {"path": "x.py"}) == m.normalized_payload(
         "fix cache", "edit", {"path": "x.py"}
     )
+
+
+def test_exact_key_hits_equivalent_normalizations() -> None:
+    assert m.exact_key(" Fix\nX ", "EDIT", {"line": 1}) == m.exact_key("fix x", "edit", {"line": 1})
+
+
+@pytest.mark.parametrize(
+    "change", [{"prompt": "fix y"}, {"tool_name": "read"}, {"arguments": {"line": 2}}]
+)
+def test_exact_key_changes_for_nonequivalent_payload(change: dict[str, object]) -> None:
+    base = {"prompt": "fix x", "tool_name": "edit", "arguments": {"line": 1}}
+    base.update(change)
+    assert m.exact_key(**base) != m.exact_key("fix x", "edit", {"line": 1})  # type: ignore[arg-type]

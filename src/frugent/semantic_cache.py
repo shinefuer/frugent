@@ -34,3 +34,10 @@ def normalized_payload(
         "arguments": canonical_arguments,
         "fold_case": fold_case,
     }
+
+
+def exact_key(prompt: str, tool_name: str, arguments: dict[str, object]) -> str:
+    """Hash the complete normalized payload; retrieval uses this key only."""
+    from frugent.codec import payload_digest
+
+    return payload_digest(normalized_payload(prompt, tool_name, arguments))
