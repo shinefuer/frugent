@@ -77,3 +77,20 @@ def test_minhash_signature_is_seeded_and_repeatable() -> None:
 def test_identical_signatures_have_unit_similarity() -> None:
     signature = m.minhash_signature(m.shingles("same"), permutations=8)
     assert m.minhash_similarity(signature, signature) == 1.0
+
+
+@pytest.mark.parametrize(
+    ("prompt", "tool", "arguments"),
+    [
+        ("fix y", "edit", {"path": "x.py"}),
+        ("fix x", "read", {"path": "x.py"}),
+        ("fix x", "edit", {"path": "y.py"}),
+        ("fix x", "edit", {"path": "x.py", "line": 0}),
+    ],
+)
+def test_nonequivalent_payload_is_never_served(
+    prompt: str, tool: str, arguments: dict[str, object]
+) -> None:
+    original = m.exact_key("fix x", "edit", {"path": "x.py"})
+    changed = m.exact_key(prompt, tool, arguments)
+    assert changed != original
