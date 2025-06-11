@@ -59,3 +59,28 @@ def jaccard(left: frozenset[str], right: frozenset[str]) -> float:
     if not left and not right:
         return 1.0
     return round(len(left & right) / len(left | right), 6)
+
+
+def minhash_signature(
+    values: frozenset[str], *, permutations: int = 32, seed: int = 0
+) -> tuple[int, ...]:
+    """Create a stable SHA-256-based MinHash signature."""
+    import hashlib
+
+    if permutations <= 0 or seed < 0:
+        raise SemanticCacheError("minhash: permutations positive and seed non-negative")
+    if not values:
+        return (0,) * permutations
+    return tuple(
+        min(
+            int.from_bytes(hashlib.sha256(f"{seed}:{index}:{value}".encode()).digest()[:8], "big")
+            for value in values
+        )
+        for index in range(permutations)
+    )
+
+
+def minhash_similarity(left: tuple[int, ...], right: tuple[int, ...]) -> float:
+    if not left or len(left) != len(right):
+        raise SemanticCacheError("minhash similarity: signatures must have equal nonzero length")
+    return round(sum(a == b for a, b in zip(left, right, strict=True)) / len(left), 6)

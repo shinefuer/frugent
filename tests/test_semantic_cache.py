@@ -66,3 +66,14 @@ def test_shingles_fold_equivalent_text() -> None:
 def test_shingles_require_positive_width(width: int) -> None:
     with pytest.raises(m.SemanticCacheError, match="width"):
         m.shingles("text", width)
+
+
+def test_minhash_signature_is_seeded_and_repeatable() -> None:
+    values = m.shingles("deterministic prompt")
+    assert m.minhash_signature(values, seed=9) == m.minhash_signature(values, seed=9)
+    assert m.minhash_signature(values, seed=9) != m.minhash_signature(values, seed=10)
+
+
+def test_identical_signatures_have_unit_similarity() -> None:
+    signature = m.minhash_signature(m.shingles("same"), permutations=8)
+    assert m.minhash_similarity(signature, signature) == 1.0
