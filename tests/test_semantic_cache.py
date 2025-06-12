@@ -122,3 +122,11 @@ def test_fuzzy_candidates_rank_but_do_not_return_responses() -> None:
 def test_fuzzy_candidates_reject_invalid_threshold(threshold: float) -> None:
     with pytest.raises(m.SemanticCacheError, match="threshold"):
         m.fuzzy_candidates("q", {}, threshold)
+
+
+@pytest.mark.parametrize("left", ["", "a", "abc", "longer phrase"])
+@pytest.mark.parametrize("right", ["", "b", "abd", "longest phrase"])
+def test_minhash_similarity_stays_in_unit_interval(left: str, right: str) -> None:
+    first = m.minhash_signature(m.shingles(left), permutations=16, seed=3)
+    second = m.minhash_signature(m.shingles(right), permutations=16, seed=3)
+    assert 0.0 <= m.minhash_similarity(first, second) <= 1.0
