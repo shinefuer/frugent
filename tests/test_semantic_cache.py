@@ -130,3 +130,14 @@ def test_minhash_similarity_stays_in_unit_interval(left: str, right: str) -> Non
     first = m.minhash_signature(m.shingles(left), permutations=16, seed=3)
     second = m.minhash_signature(m.shingles(right), permutations=16, seed=3)
     assert 0.0 <= m.minhash_similarity(first, second) <= 1.0
+
+
+def test_semantic_metrics_separate_requests_and_evictions() -> None:
+    result = m.semantic_metrics(("hit", "miss", "eviction", "hit"))
+    assert result == m.SemanticMetrics(2, 1, 1)
+    assert result.hit_rate == 0.666667
+
+
+def test_semantic_metrics_reject_unknown_outcome() -> None:
+    with pytest.raises(m.SemanticCacheError, match="unknown outcome"):
+        m.semantic_metrics(("collision",))

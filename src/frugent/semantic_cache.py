@@ -122,3 +122,24 @@ def fuzzy_candidates(
             key=lambda item: (-item[1], item[0]),
         )
     )
+
+
+@dataclass(frozen=True, slots=True)
+class SemanticMetrics:
+    hits: int
+    misses: int
+    evictions: int
+
+    @property
+    def hit_rate(self) -> float:
+        total = self.hits + self.misses
+        return 0.0 if total == 0 else round(self.hits / total, 6)
+
+
+def semantic_metrics(outcomes: tuple[str, ...]) -> SemanticMetrics:
+    allowed = {"hit", "miss", "eviction"}
+    if any(outcome not in allowed for outcome in outcomes):
+        raise SemanticCacheError("semantic metrics: unknown outcome")
+    return SemanticMetrics(
+        outcomes.count("hit"), outcomes.count("miss"), outcomes.count("eviction")
+    )
