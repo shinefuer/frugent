@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from dataclasses import dataclass
 
 
 class SemanticCacheError(ValueError):
@@ -84,3 +85,22 @@ def minhash_similarity(left: tuple[int, ...], right: tuple[int, ...]) -> float:
     if not left or len(left) != len(right):
         raise SemanticCacheError("minhash similarity: signatures must have equal nonzero length")
     return round(sum(a == b for a, b in zip(left, right, strict=True)) / len(left), 6)
+
+
+@dataclass(frozen=True, slots=True)
+class SemanticEntry:
+    key: str
+    response: bytes
+    created_at_ms: int
+
+
+def exact_lookup(
+    entries: tuple[SemanticEntry, ...], key: str, now_ms: int, ttl_ms: int
+) -> bytes | None:
+    """Return only an exact content-addressed hit that has not expired."""
+    if now_ms < 0 or ttl_ms < 0:
+        raise SemanticCacheError("semantic lookup: times must be non-negative")
+    for entry in entries:
+        if entry.key == key and now_ms - entry.created_at_ms < ttl_ms:
+            return entry.response
+    return None

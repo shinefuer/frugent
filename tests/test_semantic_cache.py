@@ -94,3 +94,17 @@ def test_nonequivalent_payload_is_never_served(
     original = m.exact_key("fix x", "edit", {"path": "x.py"})
     changed = m.exact_key(prompt, tool, arguments)
     assert changed != original
+
+
+def test_exact_lookup_never_returns_nonequivalent_key() -> None:
+    key = m.exact_key("fix x", "edit", {"line": 1})
+    entry = m.SemanticEntry(key, b"result", 0)
+    assert m.exact_lookup((entry,), key, 1, 10) == b"result"
+    other = m.exact_key("fix y", "edit", {"line": 1})
+    assert m.exact_lookup((entry,), other, 1, 10) is None
+
+
+def test_exact_lookup_expires_at_ttl_boundary() -> None:
+    entry = m.SemanticEntry("k", b"x", 5)
+    assert m.exact_lookup((entry,), "k", 14, 10) == b"x"
+    assert m.exact_lookup((entry,), "k", 15, 10) is None
