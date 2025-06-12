@@ -108,3 +108,17 @@ def test_exact_lookup_expires_at_ttl_boundary() -> None:
     entry = m.SemanticEntry("k", b"x", 5)
     assert m.exact_lookup((entry,), "k", 14, 10) == b"x"
     assert m.exact_lookup((entry,), "k", 15, 10) is None
+
+
+def test_fuzzy_candidates_rank_but_do_not_return_responses() -> None:
+    candidates = m.fuzzy_candidates(
+        "fix cache bug", {"a": "fix cache bug", "b": "fix cache bugs", "x": "write docs"}, 0.4
+    )
+    assert candidates[0] == ("a", 1.0)
+    assert all(isinstance(score, float) for _, score in candidates)
+
+
+@pytest.mark.parametrize("threshold", [-0.1, 1.1, float("nan")])
+def test_fuzzy_candidates_reject_invalid_threshold(threshold: float) -> None:
+    with pytest.raises(m.SemanticCacheError, match="threshold"):
+        m.fuzzy_candidates("q", {}, threshold)

@@ -104,3 +104,21 @@ def exact_lookup(
         if entry.key == key and now_ms - entry.created_at_ms < ttl_ms:
             return entry.response
     return None
+
+
+def fuzzy_candidates(
+    query: str, prompts: dict[str, str], threshold: float
+) -> tuple[tuple[str, float], ...]:
+    """Rank suggestions; callers must still verify exact equivalence before retrieval."""
+    if not 0 <= threshold <= 1:
+        raise SemanticCacheError("fuzzy threshold: expected [0, 1]")
+    query_shingles = shingles(query)
+    candidates = [
+        (key, jaccard(query_shingles, shingles(prompt))) for key, prompt in prompts.items()
+    ]
+    return tuple(
+        sorted(
+            (item for item in candidates if item[1] >= threshold),
+            key=lambda item: (-item[1], item[0]),
+        )
+    )
