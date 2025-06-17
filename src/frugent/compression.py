@@ -27,3 +27,17 @@ class Block:
             or self.planted_relevance < 0
         ):
             raise CompressionError("compression block: invalid field")
+
+
+def sliding_window(blocks: tuple[Block, ...], token_budget: int) -> tuple[Block, ...]:
+    """Keep the newest suffix that fits the token budget."""
+    if token_budget < 0:
+        raise CompressionError("sliding window: budget must be non-negative")
+    selected: list[Block] = []
+    remaining = token_budget
+    for block in reversed(blocks):
+        if block.tokens > remaining:
+            break
+        selected.append(block)
+        remaining -= block.tokens
+    return tuple(reversed(selected))

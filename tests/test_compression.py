@@ -16,3 +16,11 @@ def test_block_keeps_explicit_synthetic_relevance() -> None:
 def test_block_rejects_invalid_identity_weight_or_recency(values: tuple[object, ...]) -> None:
     with pytest.raises(m.CompressionError, match="block"):
         m.Block(*values)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    ("budget", "keys"), [(0, ()), (2, ("c",)), (4, ("b", "c")), (9, ("a", "b", "c"))]
+)
+def test_sliding_window_keeps_newest_contiguous_suffix(budget: int, keys: tuple[str, ...]) -> None:
+    blocks = (m.Block("a", "a", 5, 0), m.Block("b", "b", 2, 1), m.Block("c", "c", 2, 2))
+    assert tuple(block.key for block in m.sliding_window(blocks, budget)) == keys
