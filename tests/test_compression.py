@@ -24,3 +24,11 @@ def test_block_rejects_invalid_identity_weight_or_recency(values: tuple[object, 
 def test_sliding_window_keeps_newest_contiguous_suffix(budget: int, keys: tuple[str, ...]) -> None:
     blocks = (m.Block("a", "a", 5, 0), m.Block("b", "b", 2, 1), m.Block("c", "c", 2, 2))
     assert tuple(block.key for block in m.sliding_window(blocks, budget)) == keys
+
+
+@pytest.mark.parametrize("budget", range(0, 20))
+def test_sliding_window_never_exceeds_budget(budget: int) -> None:
+    blocks = tuple(m.Block(str(index), "x", index % 4 + 1, index) for index in range(10))
+    selected = m.sliding_window(blocks, budget)
+    assert sum(block.tokens for block in selected) <= budget
+    assert blocks[-len(selected) :] == selected if selected else True
