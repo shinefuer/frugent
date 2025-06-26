@@ -73,3 +73,11 @@ def exact_budget_select(blocks: tuple[Block, ...], token_budget: int) -> tuple[B
     )
     keys = {item.key for item in chosen}
     return tuple(block for block in blocks if block.key in keys)
+
+
+def needle_recall(selected: tuple[Block, ...], needle_keys: frozenset[str]) -> float:
+    """Measure retained planted keys; empty ground truth has perfect recall."""
+    if not needle_keys:
+        return 1.0
+    selected_keys = {block.key for block in selected}
+    return round(len(selected_keys & needle_keys) / len(needle_keys), 6)

@@ -53,3 +53,17 @@ def test_exact_budget_select_finds_planted_relevance_optimum() -> None:
         m.Block("b", "x", 5, 0, planted_relevance=8),
     )
     assert tuple(block.key for block in m.exact_budget_select(blocks, 10)) == ("a", "b")
+
+
+@pytest.mark.parametrize(
+    ("selected", "needles", "expected"),
+    [
+        ((), frozenset(), 1.0),
+        ((), frozenset({"a"}), 0.0),
+        ((m.Block("a", "x", 1, 0),), frozenset({"a", "b"}), 0.5),
+    ],
+)
+def test_needle_recall_uses_planted_key_ground_truth(
+    selected: tuple[m.Block, ...], needles: frozenset[str], expected: float
+) -> None:
+    assert m.needle_recall(selected, needles) == expected
