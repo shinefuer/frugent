@@ -32,3 +32,15 @@ def test_sliding_window_never_exceeds_budget(budget: int) -> None:
     selected = m.sliding_window(blocks, budget)
     assert sum(block.tokens for block in selected) <= budget
     assert blocks[-len(selected) :] == selected if selected else True
+
+
+def test_extractive_summary_prefers_planted_fact_signal() -> None:
+    blocks = (m.Block("old", "needle: port 7", 4, 0), m.Block("new", "chat", 2, 10))
+    assert m.extractive_summary(blocks, 1) == (blocks[0],)
+
+
+def test_extractive_summary_preserves_conversation_order() -> None:
+    blocks = tuple(
+        m.Block(str(index), "needle" if index != 1 else "plain", 1, index) for index in range(3)
+    )
+    assert tuple(block.key for block in m.extractive_summary(blocks, 2)) == ("0", "2")

@@ -41,3 +41,23 @@ def sliding_window(blocks: tuple[Block, ...], token_budget: int) -> tuple[Block,
         selected.append(block)
         remaining -= block.tokens
     return tuple(reversed(selected))
+
+
+def block_score(block: Block, keywords: tuple[str, ...] = ("needle", "constraint", "error")) -> int:
+    """Combine recency, tool density, and planted-fact keyword signals."""
+    lowered = block.text.casefold()
+    keyword_hits = sum(keyword.casefold() in lowered for keyword in keywords)
+    return (
+        block.recency
+        + block.tool_density_ppm // 100_000
+        + keyword_hits * 20
+        + block.planted_relevance
+    )
+
+
+def extractive_summary(blocks: tuple[Block, ...], count: int) -> tuple[Block, ...]:
+    if count < 0:
+        raise CompressionError("extractive summary: count must be non-negative")
+    selected = sorted(blocks, key=lambda block: (-block_score(block), block.key))[:count]
+    keys = {block.key for block in selected}
+    return tuple(block for block in blocks if block.key in keys)
