@@ -61,3 +61,15 @@ def extractive_summary(blocks: tuple[Block, ...], count: int) -> tuple[Block, ..
     selected = sorted(blocks, key=lambda block: (-block_score(block), block.key))[:count]
     keys = {block.key for block in selected}
     return tuple(block for block in blocks if block.key in keys)
+
+
+def exact_budget_select(blocks: tuple[Block, ...], token_budget: int) -> tuple[Block, ...]:
+    """Use planted relevance as knapsack value for synthetic recall checks."""
+    from frugent.knapsack import Item, exact_select
+
+    chosen = exact_select(
+        tuple(Item(block.key, block.tokens, block.planted_relevance) for block in blocks),
+        token_budget,
+    )
+    keys = {item.key for item in chosen}
+    return tuple(block for block in blocks if block.key in keys)

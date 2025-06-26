@@ -44,3 +44,12 @@ def test_extractive_summary_preserves_conversation_order() -> None:
         m.Block(str(index), "needle" if index != 1 else "plain", 1, index) for index in range(3)
     )
     assert tuple(block.key for block in m.extractive_summary(blocks, 2)) == ("0", "2")
+
+
+def test_exact_budget_select_finds_planted_relevance_optimum() -> None:
+    blocks = (
+        m.Block("big", "x", 6, 0, planted_relevance=9),
+        m.Block("a", "x", 5, 0, planted_relevance=8),
+        m.Block("b", "x", 5, 0, planted_relevance=8),
+    )
+    assert tuple(block.key for block in m.exact_budget_select(blocks, 10)) == ("a", "b")
