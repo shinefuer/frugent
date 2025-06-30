@@ -103,3 +103,8 @@ def scripted_summary(blocks: tuple[Block, ...], hook: object) -> str:
     if not isinstance(result, str):
         raise CompressionError("summary hook: expected string result")
     return result
+
+
+def render_blocks(blocks: tuple[Block, ...]) -> str:
+    """Render selected blocks with escaped stable delimiters."""
+    return "\n".join(f"[{block.key}] {block.text.replace(chr(10), ' ')}" for block in blocks)

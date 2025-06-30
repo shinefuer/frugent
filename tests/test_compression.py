@@ -105,3 +105,9 @@ def test_recall_curve_is_repeatable_for_same_planted_corpus() -> None:
     )
     args = (blocks, frozenset({"1", "3", "7"}), tuple(range(0, 17, 2)))
     assert m.recall_curve(*args) == m.recall_curve(*args)
+
+
+def test_render_blocks_is_stable_and_single_line_per_block() -> None:
+    blocks = (m.Block("a", "line1\nline2", 2, 0), m.Block("b", "done", 1, 1))
+    assert m.render_blocks(blocks) == "[a] line1 line2\n[b] done"
+    assert m.render_blocks(()) == ""
