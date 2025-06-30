@@ -96,3 +96,12 @@ def test_scripted_summary_passes_ordered_text() -> None:
 def test_scripted_summary_rejects_non_text_result() -> None:
     with pytest.raises(m.CompressionError, match="string result"):
         m.scripted_summary((), lambda _: 1)
+
+
+def test_recall_curve_is_repeatable_for_same_planted_corpus() -> None:
+    blocks = tuple(
+        m.Block(str(index), f"fact {index}", 2, index, planted_relevance=index)
+        for index in range(8)
+    )
+    args = (blocks, frozenset({"1", "3", "7"}), tuple(range(0, 17, 2)))
+    assert m.recall_curve(*args) == m.recall_curve(*args)
