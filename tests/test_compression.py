@@ -67,3 +67,13 @@ def test_needle_recall_uses_planted_key_ground_truth(
     selected: tuple[m.Block, ...], needles: frozenset[str], expected: float
 ) -> None:
     assert m.needle_recall(selected, needles) == expected
+
+
+@pytest.mark.parametrize("budget", range(0, 16))
+def test_exact_compression_never_exceeds_budget(budget: int) -> None:
+    blocks = tuple(
+        m.Block(str(index), "needle", index + 1, index, planted_relevance=9 - index)
+        for index in range(7)
+    )
+    selected = m.exact_budget_select(blocks, budget)
+    assert sum(block.tokens for block in selected) <= budget
