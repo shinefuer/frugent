@@ -81,3 +81,15 @@ def needle_recall(selected: tuple[Block, ...], needle_keys: frozenset[str]) -> f
         return 1.0
     selected_keys = {block.key for block in selected}
     return round(len(selected_keys & needle_keys) / len(needle_keys), 6)
+
+
+def recall_curve(
+    blocks: tuple[Block, ...], needle_keys: frozenset[str], budgets: tuple[int, ...]
+) -> tuple[tuple[int, float], ...]:
+    """Evaluate exact selection over nondecreasing token budgets."""
+    if tuple(sorted(budgets)) != budgets or any(budget < 0 for budget in budgets):
+        raise CompressionError("recall curve: budgets must be nondecreasing and non-negative")
+    return tuple(
+        (budget, needle_recall(exact_budget_select(blocks, budget), needle_keys))
+        for budget in budgets
+    )

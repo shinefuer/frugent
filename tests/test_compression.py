@@ -77,3 +77,12 @@ def test_exact_compression_never_exceeds_budget(budget: int) -> None:
     )
     selected = m.exact_budget_select(blocks, budget)
     assert sum(block.tokens for block in selected) <= budget
+
+
+def test_recall_curve_degrades_monotonically_with_less_budget() -> None:
+    blocks = tuple(
+        m.Block(str(index), "needle", index + 1, index, planted_relevance=10) for index in range(4)
+    )
+    curve = m.recall_curve(blocks, frozenset({"0", "1", "2", "3"}), tuple(range(11)))
+    recalls = tuple(value for _, value in curve)
+    assert all(recalls[index] <= recalls[index + 1] for index in range(len(recalls) - 1))
