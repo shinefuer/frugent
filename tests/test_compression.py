@@ -86,3 +86,13 @@ def test_recall_curve_degrades_monotonically_with_less_budget() -> None:
     curve = m.recall_curve(blocks, frozenset({"0", "1", "2", "3"}), tuple(range(11)))
     recalls = tuple(value for _, value in curve)
     assert all(recalls[index] <= recalls[index + 1] for index in range(len(recalls) - 1))
+
+
+def test_scripted_summary_passes_ordered_text() -> None:
+    blocks = (m.Block("a", "first", 1, 0), m.Block("b", "second", 1, 1))
+    assert m.scripted_summary(blocks, lambda texts: " | ".join(texts)) == "first | second"
+
+
+def test_scripted_summary_rejects_non_text_result() -> None:
+    with pytest.raises(m.CompressionError, match="string result"):
+        m.scripted_summary((), lambda _: 1)

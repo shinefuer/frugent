@@ -93,3 +93,13 @@ def recall_curve(
         (budget, needle_recall(exact_budget_select(blocks, budget), needle_keys))
         for budget in budgets
     )
+
+
+def scripted_summary(blocks: tuple[Block, ...], hook: object) -> str:
+    """Invoke a local callable and validate its deterministic text result."""
+    if not callable(hook):
+        raise CompressionError("summary hook: expected callable")
+    result = hook(tuple(block.text for block in blocks))
+    if not isinstance(result, str):
+        raise CompressionError("summary hook: expected string result")
+    return result
