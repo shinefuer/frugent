@@ -24,3 +24,16 @@ class BatchRequest:
     @property
     def equivalence_key(self) -> str:
         return payload_digest({"payload_hex": self.payload.hex()})
+
+
+def coalesce(requests: tuple[BatchRequest, ...]) -> tuple[tuple[BatchRequest, ...], ...]:
+    """Group exact payload equivalents in first-arrival key order."""
+    groups: dict[str, list[BatchRequest]] = {}
+    order: list[str] = []
+    for request in requests:
+        key = request.equivalence_key
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(request)
+    return tuple(tuple(groups[key]) for key in order)
