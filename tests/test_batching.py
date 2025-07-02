@@ -31,3 +31,11 @@ def test_coalesce_groups_only_byte_equivalent_payloads() -> None:
         ("1", "3"),
         ("2",),
     )
+
+
+@pytest.mark.parametrize("size", [0, 1, 2, 10, 50])
+def test_coalescing_preserves_request_identity_exactly_once(size: int) -> None:
+    requests = tuple(m.BatchRequest(str(index), bytes([index % 4]), index) for index in range(size))
+    flattened = tuple(request.request_id for group in m.coalesce(requests) for request in group)
+    assert sorted(flattened) == sorted(request.request_id for request in requests)
+    assert len(flattened) == len(set(flattened))
