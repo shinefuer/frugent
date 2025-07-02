@@ -37,3 +37,14 @@ def coalesce(requests: tuple[BatchRequest, ...]) -> tuple[tuple[BatchRequest, ..
             order.append(key)
         groups[key].append(request)
     return tuple(tuple(groups[key]) for key in order)
+
+
+def fan_out(group: tuple[BatchRequest, ...], response: bytes) -> dict[str, bytes]:
+    """Give every subscriber the exact same immutable response bytes."""
+    if not group:
+        raise BatchingError("fan out: expected subscribers")
+    if len({request.equivalence_key for request in group}) != 1:
+        raise BatchingError("fan out: subscribers are not equivalent")
+    if len({request.request_id for request in group}) != len(group):
+        raise BatchingError("fan out: duplicate request id")
+    return {request.request_id: response for request in group}
