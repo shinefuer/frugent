@@ -48,3 +48,26 @@ def fan_out(group: tuple[BatchRequest, ...], response: bytes) -> dict[str, bytes
     if len({request.request_id for request in group}) != len(group):
         raise BatchingError("fan out: duplicate request id")
     return {request.request_id: response for request in group}
+
+
+def micro_batches(
+    requests: tuple[BatchRequest, ...], *, window_ms: int, max_size: int
+) -> tuple[tuple[BatchRequest, ...], ...]:
+    """Batch ordered arrivals without exceeding size or first-item wait window."""
+    if (
+        window_ms < 0
+        or max_size <= 0
+        or tuple(sorted(r.arrival_ms for r in requests)) != tuple(r.arrival_ms for r in requests)
+    ):
+        raise BatchingError("micro batch: invalid window, size, or arrival order")
+    batches: list[list[BatchRequest]] = []
+    for request in requests:
+        if (
+            not batches
+            or len(batches[-1]) >= max_size
+            or request.arrival_ms - batches[-1][0].arrival_ms > window_ms
+        ):
+            batches.append([request])
+        else:
+            batches[-1].append(request)
+    return tuple(tuple(batch) for batch in batches)

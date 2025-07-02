@@ -50,3 +50,22 @@ def test_fan_out_preserves_response_bytes_per_subscriber() -> None:
 def test_fan_out_rejects_nonequivalent_group() -> None:
     with pytest.raises(m.BatchingError, match="not equivalent"):
         m.fan_out((m.BatchRequest("1", b"x", 0), m.BatchRequest("2", b"y", 0)), b"r")
+
+
+def test_micro_batches_honor_window_and_size() -> None:
+    requests = tuple(
+        m.BatchRequest(str(index), bytes([index]), arrival)
+        for index, arrival in enumerate((0, 2, 4, 9, 10))
+    )
+    assert tuple(len(batch) for batch in m.micro_batches(requests, window_ms=5, max_size=2)) == (
+        2,
+        2,
+        1,
+    )
+
+
+def test_micro_batches_reject_unsorted_arrivals() -> None:
+    with pytest.raises(m.BatchingError, match="arrival order"):
+        m.micro_batches(
+            (m.BatchRequest("a", b"x", 2), m.BatchRequest("b", b"y", 1)), window_ms=1, max_size=2
+        )
