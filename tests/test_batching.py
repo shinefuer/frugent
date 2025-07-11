@@ -123,3 +123,9 @@ def test_every_equivalent_subscriber_observes_identical_bytes(payload: bytes) ->
     response = payload[::-1]
     results = m.execute_single_flights(requests, lambda _: response)
     assert tuple(results.values()) == (response,) * len(requests)
+
+
+def test_batch_completion_simulation_amortizes_service() -> None:
+    requests = tuple(m.BatchRequest(str(index), b"x", index) for index in range(4))
+    batches = m.micro_batches(requests, window_ms=2, max_size=3)
+    assert m.simulated_completion_times(batches, 5) == {"0": 7, "1": 7, "2": 7, "3": 12}

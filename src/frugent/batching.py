@@ -115,3 +115,19 @@ def execute_single_flights(
             raise BatchingError("single flight: executor must return bytes")
         responses.update(fan_out(group, result))
     return responses
+
+
+def simulated_completion_times(
+    batches: tuple[tuple[BatchRequest, ...], ...], service_ms: int
+) -> dict[str, int]:
+    """Simulate serial batch execution with one fixed service time per batch."""
+    if service_ms < 0:
+        raise BatchingError("batch latency: service must be non-negative")
+    available = 0
+    completed: dict[str, int] = {}
+    for batch in batches:
+        if not batch:
+            raise BatchingError("batch latency: empty batch")
+        available = max(available, batch[-1].arrival_ms) + service_ms
+        completed.update({request.request_id: available for request in batch})
+    return completed
