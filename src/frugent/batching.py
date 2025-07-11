@@ -100,3 +100,18 @@ def batch_metrics(
 ) -> BatchMetrics:
     executions = sum(len(coalesce(batch)) for batch in batches)
     return BatchMetrics(len(requests), executions, len(batches))
+
+
+def execute_single_flights(
+    requests: tuple[BatchRequest, ...], executor: object
+) -> dict[str, bytes]:
+    """Execute once per exact key and fan out byte-identical results."""
+    if not callable(executor):
+        raise BatchingError("single flight: executor must be callable")
+    responses: dict[str, bytes] = {}
+    for group in coalesce(requests):
+        result = executor(group[0].payload)
+        if not isinstance(result, bytes):
+            raise BatchingError("single flight: executor must return bytes")
+        responses.update(fan_out(group, result))
+    return responses

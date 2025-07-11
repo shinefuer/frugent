@@ -99,3 +99,19 @@ def test_batch_metrics_separate_dedup_and_batching() -> None:
     assert result == m.BatchMetrics(3, 2, 1)
     assert result.dedup_ratio == 0.333333
     assert result.mean_batch_size == 2.0
+
+
+def test_single_flight_executes_once_per_equivalent_payload() -> None:
+    calls: list[bytes] = []
+
+    def execute(payload: bytes) -> bytes:
+        calls.append(payload)
+        return payload.upper()
+
+    requests = (
+        m.BatchRequest("1", b"x", 0),
+        m.BatchRequest("2", b"x", 1),
+        m.BatchRequest("3", b"y", 2),
+    )
+    assert m.execute_single_flights(requests, execute) == {"1": b"X", "2": b"X", "3": b"Y"}
+    assert calls == [b"x", b"y"]
