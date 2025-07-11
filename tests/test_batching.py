@@ -87,3 +87,15 @@ def test_each_micro_batch_stays_inside_first_arrival_window(window: int) -> None
     for batch in m.micro_batches(requests, window_ms=window, max_size=7):
         assert batch[-1].arrival_ms - batch[0].arrival_ms <= window
         assert len(batch) <= 7
+
+
+def test_batch_metrics_separate_dedup_and_batching() -> None:
+    requests = (
+        m.BatchRequest("1", b"x", 0),
+        m.BatchRequest("2", b"x", 0),
+        m.BatchRequest("3", b"y", 0),
+    )
+    result = m.batch_metrics(requests, (requests,))
+    assert result == m.BatchMetrics(3, 2, 1)
+    assert result.dedup_ratio == 0.333333
+    assert result.mean_batch_size == 2.0

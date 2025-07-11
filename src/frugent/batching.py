@@ -78,3 +78,25 @@ def wait_times(batch: tuple[BatchRequest, ...], dispatch_ms: int) -> tuple[int, 
     if any(dispatch_ms < request.arrival_ms for request in batch):
         raise BatchingError("batch wait: dispatch precedes arrival")
     return tuple(dispatch_ms - request.arrival_ms for request in batch)
+
+
+@dataclass(frozen=True, slots=True)
+class BatchMetrics:
+    requests: int
+    executions: int
+    batches: int
+
+    @property
+    def dedup_ratio(self) -> float:
+        return 0.0 if self.requests == 0 else round(1 - self.executions / self.requests, 6)
+
+    @property
+    def mean_batch_size(self) -> float:
+        return 0.0 if self.batches == 0 else round(self.executions / self.batches, 6)
+
+
+def batch_metrics(
+    requests: tuple[BatchRequest, ...], batches: tuple[tuple[BatchRequest, ...], ...]
+) -> BatchMetrics:
+    executions = sum(len(coalesce(batch)) for batch in batches)
+    return BatchMetrics(len(requests), executions, len(batches))
