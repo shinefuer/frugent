@@ -69,3 +69,13 @@ def test_micro_batches_reject_unsorted_arrivals() -> None:
         m.micro_batches(
             (m.BatchRequest("a", b"x", 2), m.BatchRequest("b", b"y", 1)), window_ms=1, max_size=2
         )
+
+
+def test_wait_times_preserve_subscriber_order() -> None:
+    batch = (m.BatchRequest("a", b"x", 2), m.BatchRequest("b", b"y", 5))
+    assert m.wait_times(batch, 7) == (5, 2)
+
+
+def test_wait_times_reject_early_dispatch() -> None:
+    with pytest.raises(m.BatchingError, match="precedes arrival"):
+        m.wait_times((m.BatchRequest("a", b"x", 3),), 2)

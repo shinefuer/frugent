@@ -71,3 +71,10 @@ def micro_batches(
         else:
             batches[-1].append(request)
     return tuple(tuple(batch) for batch in batches)
+
+
+def wait_times(batch: tuple[BatchRequest, ...], dispatch_ms: int) -> tuple[int, ...]:
+    """Return non-negative wait per subscriber in batch order."""
+    if any(dispatch_ms < request.arrival_ms for request in batch):
+        raise BatchingError("batch wait: dispatch precedes arrival")
+    return tuple(dispatch_ms - request.arrival_ms for request in batch)
