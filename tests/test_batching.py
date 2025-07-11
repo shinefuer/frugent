@@ -79,3 +79,11 @@ def test_wait_times_preserve_subscriber_order() -> None:
 def test_wait_times_reject_early_dispatch() -> None:
     with pytest.raises(m.BatchingError, match="precedes arrival"):
         m.wait_times((m.BatchRequest("a", b"x", 3),), 2)
+
+
+@pytest.mark.parametrize("window", [0, 1, 5, 20])
+def test_each_micro_batch_stays_inside_first_arrival_window(window: int) -> None:
+    requests = tuple(m.BatchRequest(str(index), b"x", index * 2) for index in range(20))
+    for batch in m.micro_batches(requests, window_ms=window, max_size=7):
+        assert batch[-1].arrival_ms - batch[0].arrival_ms <= window
+        assert len(batch) <= 7
