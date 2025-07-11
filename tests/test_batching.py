@@ -115,3 +115,11 @@ def test_single_flight_executes_once_per_equivalent_payload() -> None:
     )
     assert m.execute_single_flights(requests, execute) == {"1": b"X", "2": b"X", "3": b"Y"}
     assert calls == [b"x", b"y"]
+
+
+@pytest.mark.parametrize("payload", [b"", b"text", b"\x00\xff", bytes(range(32))])
+def test_every_equivalent_subscriber_observes_identical_bytes(payload: bytes) -> None:
+    requests = tuple(m.BatchRequest(str(index), payload, index) for index in range(8))
+    response = payload[::-1]
+    results = m.execute_single_flights(requests, lambda _: response)
+    assert tuple(results.values()) == (response,) * len(requests)
