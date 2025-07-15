@@ -48,3 +48,13 @@ def route_and_record(
     selected = choose_instance(instances, tokens, load_penalty_ppm)
     selected.cache.insert(tokens)
     return selected.name
+
+
+def route_trace(
+    names: tuple[str, ...], requests: tuple[tuple[str, ...], ...], load_penalty_ppm: int = 0
+) -> tuple[str, ...]:
+    """Route a planted-affinity trace from empty instance caches."""
+    if len(set(names)) != len(names) or not names:
+        raise PromptRouterError("routing trace: unique instance names required")
+    instances = tuple(Instance(name, PrefixTrie()) for name in names)
+    return tuple(route_and_record(instances, request, load_penalty_ppm) for request in requests)

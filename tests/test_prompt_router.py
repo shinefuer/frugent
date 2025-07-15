@@ -49,3 +49,11 @@ def test_route_and_record_makes_followup_affine() -> None:
     assert m.route_and_record(instances, ("prefix", "task")) == "a"
     assert m.choose_instance(instances, ("prefix", "task", "next")).name == "a"
     assert instances[0].cache.sequence_count == 1
+
+
+def test_route_trace_clusters_repeated_prefixes() -> None:
+    requests = (("sys-a", "one"), ("sys-b", "one"), ("sys-a", "two"), ("sys-b", "two"))
+    routed = m.route_trace(("a", "b"), requests)
+    assert routed == ("a", "a", "a", "a")
+    # With no planted initial placement the stable tie puts first misses on a;
+    # later tests seed pools to compare cross-instance affinity.
