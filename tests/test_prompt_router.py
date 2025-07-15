@@ -33,3 +33,12 @@ def test_choose_instance_uses_stable_name_tie_break() -> None:
         ).name
         == "a"
     )
+
+
+def test_load_penalty_can_move_only_low_affinity_work() -> None:
+    high = m.Instance("high", m.PrefixTrie(), queued_tokens=100)
+    idle = m.Instance("idle", m.PrefixTrie(), queued_tokens=0)
+    high.cache.insert(("a", "b", "c"))
+    idle.cache.insert(("a",))
+    assert m.choose_instance((high, idle), ("a", "b", "c"), load_penalty_ppm=1_000).name == "high"
+    assert m.choose_instance((high, idle), ("a",), load_penalty_ppm=20_000).name == "idle"
