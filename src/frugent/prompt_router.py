@@ -20,3 +20,22 @@ class Instance:
     def __post_init__(self) -> None:
         if not self.name or self.queued_tokens < 0:
             raise PromptRouterError("router instance: invalid name or queue")
+
+
+def affinity_score(instance: Instance, tokens: tuple[str, ...], load_penalty_ppm: int = 0) -> int:
+    """Score matched tokens in ppm units minus queued-token penalty."""
+    if not 0 <= load_penalty_ppm <= 1_000_000:
+        raise PromptRouterError("affinity score: load penalty must be ppm")
+    matched = instance.cache.longest_prefix(tokens)
+    return matched * 1_000_000 - instance.queued_tokens * load_penalty_ppm
+
+
+def choose_instance(
+    instances: tuple[Instance, ...], tokens: tuple[str, ...], load_penalty_ppm: int = 0
+) -> Instance:
+    if not instances or len({instance.name for instance in instances}) != len(instances):
+        raise PromptRouterError("router pool: expected unique nonempty instances")
+    return min(
+        instances,
+        key=lambda instance: (-affinity_score(instance, tokens, load_penalty_ppm), instance.name),
+    )
