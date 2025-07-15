@@ -58,3 +58,16 @@ def route_trace(
         raise PromptRouterError("routing trace: unique instance names required")
     instances = tuple(Instance(name, PrefixTrie()) for name in names)
     return tuple(route_and_record(instances, request, load_penalty_ppm) for request in requests)
+
+
+def seeded_instances(placements: dict[str, tuple[tuple[str, ...], ...]]) -> tuple[Instance, ...]:
+    """Create a pool from explicit planted cache prefixes."""
+    instances: list[Instance] = []
+    for name in sorted(placements):
+        trie = PrefixTrie()
+        for sequence in placements[name]:
+            trie.insert(sequence)
+        instances.append(Instance(name, trie))
+    if not instances:
+        raise PromptRouterError("seeded pool: expected placements")
+    return tuple(instances)

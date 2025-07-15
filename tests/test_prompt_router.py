@@ -57,3 +57,9 @@ def test_route_trace_clusters_repeated_prefixes() -> None:
     assert routed == ("a", "a", "a", "a")
     # With no planted initial placement the stable tie puts first misses on a;
     # later tests seed pools to compare cross-instance affinity.
+
+
+def test_seeded_pool_routes_each_planted_prefix() -> None:
+    instances = m.seeded_instances({"a": (("alpha", "rules"),), "b": (("beta", "rules"),)})
+    assert m.choose_instance(instances, ("alpha", "rules", "task")).name == "a"
+    assert m.choose_instance(instances, ("beta", "rules", "task")).name == "b"
