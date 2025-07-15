@@ -42,3 +42,10 @@ def test_load_penalty_can_move_only_low_affinity_work() -> None:
     idle.cache.insert(("a",))
     assert m.choose_instance((high, idle), ("a", "b", "c"), load_penalty_ppm=1_000).name == "high"
     assert m.choose_instance((high, idle), ("a",), load_penalty_ppm=20_000).name == "idle"
+
+
+def test_route_and_record_makes_followup_affine() -> None:
+    instances = (m.Instance("a", m.PrefixTrie()), m.Instance("b", m.PrefixTrie()))
+    assert m.route_and_record(instances, ("prefix", "task")) == "a"
+    assert m.choose_instance(instances, ("prefix", "task", "next")).name == "a"
+    assert instances[0].cache.sequence_count == 1

@@ -39,3 +39,12 @@ def choose_instance(
         instances,
         key=lambda instance: (-affinity_score(instance, tokens, load_penalty_ppm), instance.name),
     )
+
+
+def route_and_record(
+    instances: tuple[Instance, ...], tokens: tuple[str, ...], load_penalty_ppm: int = 0
+) -> str:
+    """Choose one instance, record the complete prefix, and return its name."""
+    selected = choose_instance(instances, tokens, load_penalty_ppm)
+    selected.cache.insert(tokens)
+    return selected.name
