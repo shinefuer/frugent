@@ -104,3 +104,16 @@ def exhaustive_assignment(
         candidates,
         key=lambda assignment: (-routed_hit_tokens(instances, assignment, requests), assignment),
     )
+
+
+def greedy_fixed_assignment(
+    instances: tuple[Instance, ...], requests: tuple[tuple[str, ...], ...]
+) -> tuple[str, ...]:
+    """Choose independently against a fixed cache snapshot."""
+    return tuple(choose_instance(instances, request).name for request in requests)
+
+
+def optimum_ratio(instances: tuple[Instance, ...], requests: tuple[tuple[str, ...], ...]) -> float:
+    optimum = routed_hit_tokens(instances, exhaustive_assignment(instances, requests), requests)
+    greedy = routed_hit_tokens(instances, greedy_fixed_assignment(instances, requests), requests)
+    return 1.0 if optimum == 0 else round(greedy / optimum, 6)

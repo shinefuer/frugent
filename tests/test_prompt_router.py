@@ -94,3 +94,12 @@ def test_exhaustive_router_recovers_planted_hits(seed: int) -> None:
     requests = ((str(seed), "a", "x"), (str(seed), "b", "y"), ("miss", str(seed)))
     optimum = m.exhaustive_assignment(instances, requests)
     assert m.routed_hit_tokens(instances, optimum, requests) == 4
+
+
+def test_greedy_fixed_router_matches_separable_optimum() -> None:
+    instances = m.seeded_instances({"a": (("a", "x"),), "b": (("b", "x"),)})
+    requests = (("a", "x", "1"), ("b", "x", "2"), ("none",))
+    assert m.greedy_fixed_assignment(instances, requests) == m.exhaustive_assignment(
+        instances, requests
+    )
+    assert m.optimum_ratio(instances, requests) == 1.0
