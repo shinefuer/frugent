@@ -71,3 +71,20 @@ def seeded_instances(placements: dict[str, tuple[tuple[str, ...], ...]]) -> tupl
     if not instances:
         raise PromptRouterError("seeded pool: expected placements")
     return tuple(instances)
+
+
+def routed_hit_tokens(
+    instances: tuple[Instance, ...],
+    assignments: tuple[str, ...],
+    requests: tuple[tuple[str, ...], ...],
+) -> int:
+    """Measure matched tokens against a fixed pre-route cache snapshot."""
+    if len(assignments) != len(requests):
+        raise PromptRouterError("routing measurement: assignments and requests differ")
+    by_name = {instance.name: instance for instance in instances}
+    if any(name not in by_name for name in assignments):
+        raise PromptRouterError("routing measurement: unknown instance")
+    return sum(
+        by_name[name].cache.longest_prefix(request)
+        for name, request in zip(assignments, requests, strict=True)
+    )

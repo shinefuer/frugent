@@ -70,3 +70,10 @@ def test_routed_hits_never_exceed_request_tokens(length: int) -> None:
     instance = m.seeded_instances({"a": (tuple(str(index) for index in range(20)),)})
     request = tuple(str(index) for index in range(length))
     assert 0 <= instance[0].cache.longest_prefix(request) <= length
+
+
+def test_routed_hit_tokens_sum_fixed_snapshot_matches() -> None:
+    instances = m.seeded_instances({"a": (("x", "a"),), "b": (("x", "b"),)})
+    requests = (("x", "a", "1"), ("x", "b", "2"))
+    assert m.routed_hit_tokens(instances, ("a", "b"), requests) == 4
+    assert m.routed_hit_tokens(instances, ("b", "a"), requests) == 2
