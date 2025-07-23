@@ -63,3 +63,10 @@ def test_seeded_pool_routes_each_planted_prefix() -> None:
     instances = m.seeded_instances({"a": (("alpha", "rules"),), "b": (("beta", "rules"),)})
     assert m.choose_instance(instances, ("alpha", "rules", "task")).name == "a"
     assert m.choose_instance(instances, ("beta", "rules", "task")).name == "b"
+
+
+@pytest.mark.parametrize("length", range(0, 12))
+def test_routed_hits_never_exceed_request_tokens(length: int) -> None:
+    instance = m.seeded_instances({"a": (tuple(str(index) for index in range(20)),)})
+    request = tuple(str(index) for index in range(length))
+    assert 0 <= instance[0].cache.longest_prefix(request) <= length
