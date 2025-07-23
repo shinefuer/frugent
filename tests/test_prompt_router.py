@@ -85,3 +85,12 @@ def test_exhaustive_assignment_recovers_planted_optimum() -> None:
     optimum = m.exhaustive_assignment(instances, requests)
     assert optimum == ("a", "b", "a")
     assert m.routed_hit_tokens(instances, optimum, requests) == 6
+
+
+@pytest.mark.parametrize("seed", range(8))
+def test_exhaustive_router_recovers_planted_hits(seed: int) -> None:
+    prefixes = {"a": ((str(seed), "a"),), "b": ((str(seed), "b"),)}
+    instances = m.seeded_instances(prefixes)
+    requests = ((str(seed), "a", "x"), (str(seed), "b", "y"), ("miss", str(seed)))
+    optimum = m.exhaustive_assignment(instances, requests)
+    assert m.routed_hit_tokens(instances, optimum, requests) == 4
