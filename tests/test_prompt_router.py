@@ -77,3 +77,11 @@ def test_routed_hit_tokens_sum_fixed_snapshot_matches() -> None:
     requests = (("x", "a", "1"), ("x", "b", "2"))
     assert m.routed_hit_tokens(instances, ("a", "b"), requests) == 4
     assert m.routed_hit_tokens(instances, ("b", "a"), requests) == 2
+
+
+def test_exhaustive_assignment_recovers_planted_optimum() -> None:
+    instances = m.seeded_instances({"a": (("alpha", "rules"),), "b": (("beta", "rules"),)})
+    requests = (("alpha", "rules", "1"), ("beta", "rules", "2"), ("alpha", "rules", "3"))
+    optimum = m.exhaustive_assignment(instances, requests)
+    assert optimum == ("a", "b", "a")
+    assert m.routed_hit_tokens(instances, optimum, requests) == 6

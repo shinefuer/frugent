@@ -88,3 +88,19 @@ def routed_hit_tokens(
         by_name[name].cache.longest_prefix(request)
         for name, request in zip(assignments, requests, strict=True)
     )
+
+
+def exhaustive_assignment(
+    instances: tuple[Instance, ...], requests: tuple[tuple[str, ...], ...]
+) -> tuple[str, ...]:
+    """Find maximum fixed-snapshot hit tokens for a small trace."""
+    import itertools
+
+    if len(instances) ** len(requests) > 100_000:
+        raise PromptRouterError("exhaustive routing: search space too large")
+    names = tuple(instance.name for instance in instances)
+    candidates = itertools.product(names, repeat=len(requests))
+    return min(
+        candidates,
+        key=lambda assignment: (-routed_hit_tokens(instances, assignment, requests), assignment),
+    )
