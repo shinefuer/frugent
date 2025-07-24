@@ -16,3 +16,14 @@ def test_model_profile_keeps_scripted_success_curve() -> None:
 def test_model_profile_rejects_invalid_success_curve(curve: tuple[float, ...]) -> None:
     with pytest.raises(m.CascadeError, match="model profile"):
         m.ModelProfile("m", 1, 1, curve)
+
+
+def test_valid_ladder_accepts_more_capable_expensive_profiles() -> None:
+    ladder = (m.ModelProfile("small", 1, 1, (0.8, 0.3)), m.ModelProfile("large", 5, 3, (0.9, 0.8)))
+    assert m.validate_ladder(ladder) is None
+
+
+def test_ladder_rejects_quality_regression() -> None:
+    ladder = (m.ModelProfile("a", 1, 1, (0.8,)), m.ModelProfile("b", 2, 1, (0.7,)))
+    with pytest.raises(m.CascadeError, match="success must"):
+        m.validate_ladder(ladder)
