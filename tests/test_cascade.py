@@ -60,3 +60,10 @@ def test_attempted_profiles_respect_retry_and_ladder_bounds(
     selected: int, retries: int, count: int, expected: tuple[int, ...]
 ) -> None:
     assert m.attempted_profiles(selected, retries, count) == expected
+
+
+@pytest.mark.parametrize("selected", range(4))
+def test_retry_indexes_stay_inside_ladder(selected: int) -> None:
+    indexes = m.attempted_profiles(selected, 10, 4)
+    assert indexes[0] == selected
+    assert all(selected <= index < 4 for index in indexes)
