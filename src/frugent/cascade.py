@@ -76,3 +76,13 @@ def verified_route(
         if score >= threshold and passed:
             return index
     return len(profiles) - 1
+
+
+def attempted_profiles(
+    selected_index: int, retry_budget: int, profile_count: int
+) -> tuple[int, ...]:
+    """Return bounded forward attempts beginning at selected profile."""
+    if not 0 <= selected_index < profile_count or retry_budget < 0:
+        raise CascadeError("cascade retries: invalid index, budget, or count")
+    stop = min(profile_count, selected_index + retry_budget + 1)
+    return tuple(range(selected_index, stop))

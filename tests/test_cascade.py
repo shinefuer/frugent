@@ -50,3 +50,13 @@ def test_verifier_can_force_escalation_despite_confidence() -> None:
     ladder = (m.ModelProfile("small", 1, 1, (0.5,)), m.ModelProfile("large", 2, 2, (0.9,)))
     assert m.verified_route(ladder, (0.95, 0.95), (False, True), 0.8) == 1
     assert m.verified_route(ladder, (0.95, 0.95), (True, True), 0.8) == 0
+
+
+@pytest.mark.parametrize(
+    ("selected", "retries", "count", "expected"),
+    [(0, 0, 3, (0,)), (0, 1, 3, (0, 1)), (1, 9, 3, (1, 2))],
+)
+def test_attempted_profiles_respect_retry_and_ladder_bounds(
+    selected: int, retries: int, count: int, expected: tuple[int, ...]
+) -> None:
+    assert m.attempted_profiles(selected, retries, count) == expected
