@@ -33,3 +33,14 @@ def test_ladder_rejects_different_difficulty_dimensions() -> None:
     profiles = (m.ModelProfile("a", 1, 1, (0.5,)), m.ModelProfile("b", 2, 1, (0.6, 0.7)))
     with pytest.raises(m.CascadeError, match="align"):
         m.validate_ladder(profiles)
+
+
+@pytest.mark.parametrize(
+    ("scores", "threshold", "expected"),
+    [((0.9, 0.9, 0.9), 0.8, 0), ((0.2, 0.8, 0.9), 0.8, 1), ((0.1, 0.2, 0.3), 0.8, 2)],
+)
+def test_confidence_gate_stops_at_first_eligible_profile(
+    scores: tuple[float, ...], threshold: float, expected: int
+) -> None:
+    ladder = tuple(m.ModelProfile(str(i), i + 1, 1, (0.5 + i * 0.1,)) for i in range(3))
+    assert m.confidence_route(ladder, scores, threshold) == expected

@@ -44,3 +44,17 @@ def validate_ladder(profiles: tuple[ModelProfile, ...]) -> None:
             for a, b in zip(left.success_by_difficulty, right.success_by_difficulty, strict=True)
         ):
             raise CascadeError("model ladder: success must be nondecreasing")
+
+
+def confidence_route(
+    profiles: tuple[ModelProfile, ...], confidences: tuple[float, ...], threshold: float
+) -> int:
+    """Return index of first profile meeting confidence, else final profile."""
+    validate_ladder(profiles)
+    if len(confidences) != len(profiles) or not 0 <= threshold <= 1:
+        raise CascadeError("confidence gate: invalid scores or threshold")
+    if any(not 0 <= score <= 1 for score in confidences):
+        raise CascadeError("confidence gate: scores must be in [0, 1]")
+    return next(
+        (index for index, score in enumerate(confidences) if score >= threshold), len(profiles) - 1
+    )
