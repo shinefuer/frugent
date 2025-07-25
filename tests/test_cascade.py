@@ -44,3 +44,9 @@ def test_confidence_gate_stops_at_first_eligible_profile(
 ) -> None:
     ladder = tuple(m.ModelProfile(str(i), i + 1, 1, (0.5 + i * 0.1,)) for i in range(3))
     assert m.confidence_route(ladder, scores, threshold) == expected
+
+
+def test_verifier_can_force_escalation_despite_confidence() -> None:
+    ladder = (m.ModelProfile("small", 1, 1, (0.5,)), m.ModelProfile("large", 2, 2, (0.9,)))
+    assert m.verified_route(ladder, (0.95, 0.95), (False, True), 0.8) == 1
+    assert m.verified_route(ladder, (0.95, 0.95), (True, True), 0.8) == 0

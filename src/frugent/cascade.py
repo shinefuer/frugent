@@ -58,3 +58,21 @@ def confidence_route(
     return next(
         (index for index, score in enumerate(confidences) if score >= threshold), len(profiles) - 1
     )
+
+
+def verified_route(
+    profiles: tuple[ModelProfile, ...],
+    confidences: tuple[float, ...],
+    verified: tuple[bool, ...],
+    threshold: float,
+) -> int:
+    """Stop only when both the confidence and local verifier accept."""
+    if len(verified) != len(profiles):
+        raise CascadeError("verifier gate: result length mismatch")
+    validate_ladder(profiles)
+    if len(confidences) != len(profiles):
+        raise CascadeError("verifier gate: confidence length mismatch")
+    for index, (score, passed) in enumerate(zip(confidences, verified, strict=True)):
+        if score >= threshold and passed:
+            return index
+    return len(profiles) - 1
