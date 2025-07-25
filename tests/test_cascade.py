@@ -27,3 +27,9 @@ def test_ladder_rejects_quality_regression() -> None:
     ladder = (m.ModelProfile("a", 1, 1, (0.8,)), m.ModelProfile("b", 2, 1, (0.7,)))
     with pytest.raises(m.CascadeError, match="success must"):
         m.validate_ladder(ladder)
+
+
+def test_ladder_rejects_different_difficulty_dimensions() -> None:
+    profiles = (m.ModelProfile("a", 1, 1, (0.5,)), m.ModelProfile("b", 2, 1, (0.6, 0.7)))
+    with pytest.raises(m.CascadeError, match="align"):
+        m.validate_ladder(profiles)
