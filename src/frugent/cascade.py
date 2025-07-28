@@ -129,3 +129,16 @@ def outcome(
         sum(profile.latency_ms for profile in selected),
         accepted,
     )
+
+
+def cheapest_profile_at_floor(
+    profiles: tuple[ModelProfile, ...], weights: tuple[float, ...], quality_floor: float
+) -> ModelProfile:
+    """Choose cheapest profile meeting floor; never save by violating it."""
+    validate_ladder(profiles)
+    eligible = [
+        profile for profile in profiles if expected_quality(profile, weights) >= quality_floor
+    ]
+    if not eligible:
+        raise CascadeError("quality floor: no profile is eligible")
+    return min(eligible, key=lambda profile: (profile.cost_micros, profile.name))

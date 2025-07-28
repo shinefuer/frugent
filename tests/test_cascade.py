@@ -90,3 +90,10 @@ def test_additional_attempts_cannot_reduce_total_cost() -> None:
         m.outcome(profiles, tuple(range(count)), False).total_cost_micros for count in (1, 2, 3)
     ]
     assert costs == sorted(costs)
+
+
+def test_cheapest_profile_never_degrades_below_floor() -> None:
+    profiles = (m.ModelProfile("s", 1, 1, (0.7, 0.2)), m.ModelProfile("l", 5, 2, (0.95, 0.8)))
+    selected = m.cheapest_profile_at_floor(profiles, (1.0, 1.0), 0.75)
+    assert selected.name == "l"
+    assert m.expected_quality(selected, (1.0, 1.0)) >= 0.75
