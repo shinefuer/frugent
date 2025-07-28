@@ -107,3 +107,25 @@ def expected_quality(profile: ModelProfile, difficulty_weights: tuple[float, ...
         / total,
         6,
     )
+
+
+@dataclass(frozen=True, slots=True)
+class CascadeOutcome:
+    attempts: tuple[str, ...]
+    total_cost_micros: int
+    total_latency_ms: int
+    accepted: bool
+
+
+def outcome(
+    profiles: tuple[ModelProfile, ...], indexes: tuple[int, ...], accepted: bool
+) -> CascadeOutcome:
+    if any(not 0 <= index < len(profiles) for index in indexes):
+        raise CascadeError("cascade outcome: profile index out of range")
+    selected = tuple(profiles[index] for index in indexes)
+    return CascadeOutcome(
+        tuple(profile.name for profile in selected),
+        sum(profile.cost_micros for profile in selected),
+        sum(profile.latency_ms for profile in selected),
+        accepted,
+    )

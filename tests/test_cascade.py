@@ -73,3 +73,8 @@ def test_expected_quality_weights_scripted_difficulties() -> None:
     profile = m.ModelProfile("m", 1, 1, (1.0, 0.5, 0.0))
     assert m.expected_quality(profile, (1.0, 2.0, 1.0)) == 0.5
     assert m.expected_quality(profile, (1.0, 0.0, 0.0)) == 1.0
+
+
+def test_cascade_outcome_sums_every_attempt() -> None:
+    profiles = (m.ModelProfile("s", 2, 3, (0.5,)), m.ModelProfile("l", 7, 11, (0.9,)))
+    assert m.outcome(profiles, (0, 1), True) == m.CascadeOutcome(("s", "l"), 9, 14, True)
