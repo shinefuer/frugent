@@ -67,3 +67,9 @@ def test_retry_indexes_stay_inside_ladder(selected: int) -> None:
     indexes = m.attempted_profiles(selected, 10, 4)
     assert indexes[0] == selected
     assert all(selected <= index < 4 for index in indexes)
+
+
+def test_expected_quality_weights_scripted_difficulties() -> None:
+    profile = m.ModelProfile("m", 1, 1, (1.0, 0.5, 0.0))
+    assert m.expected_quality(profile, (1.0, 2.0, 1.0)) == 0.5
+    assert m.expected_quality(profile, (1.0, 0.0, 0.0)) == 1.0

@@ -86,3 +86,24 @@ def attempted_profiles(
         raise CascadeError("cascade retries: invalid index, budget, or count")
     stop = min(profile_count, selected_index + retry_budget + 1)
     return tuple(range(selected_index, stop))
+
+
+def expected_quality(profile: ModelProfile, difficulty_weights: tuple[float, ...]) -> float:
+    """Weight scripted success by an explicit synthetic difficulty mixture."""
+    if len(difficulty_weights) != len(profile.success_by_difficulty) or any(
+        weight < 0 for weight in difficulty_weights
+    ):
+        raise CascadeError("expected quality: invalid difficulty weights")
+    total = sum(difficulty_weights)
+    if total <= 0:
+        raise CascadeError("expected quality: weights must sum positive")
+    return round(
+        sum(
+            success * weight
+            for success, weight in zip(
+                profile.success_by_difficulty, difficulty_weights, strict=True
+            )
+        )
+        / total,
+        6,
+    )
