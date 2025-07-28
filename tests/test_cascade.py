@@ -78,3 +78,15 @@ def test_expected_quality_weights_scripted_difficulties() -> None:
 def test_cascade_outcome_sums_every_attempt() -> None:
     profiles = (m.ModelProfile("s", 2, 3, (0.5,)), m.ModelProfile("l", 7, 11, (0.9,)))
     assert m.outcome(profiles, (0, 1), True) == m.CascadeOutcome(("s", "l"), 9, 14, True)
+
+
+def test_additional_attempts_cannot_reduce_total_cost() -> None:
+    profiles = (
+        m.ModelProfile("s", 1, 1, (0.5,)),
+        m.ModelProfile("m", 3, 2, (0.75,)),
+        m.ModelProfile("l", 9, 3, (0.95,)),
+    )
+    costs = [
+        m.outcome(profiles, tuple(range(count)), False).total_cost_micros for count in (1, 2, 3)
+    ]
+    assert costs == sorted(costs)
