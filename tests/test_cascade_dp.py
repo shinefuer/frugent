@@ -15,3 +15,13 @@ def test_difficulty_mixture_normalizes_weights() -> None:
 def test_difficulty_mixture_rejects_invalid_weights(weights: tuple[float, ...]) -> None:
     with pytest.raises(m.CascadeDPError, match="difficulty mixture"):
         m.DifficultyMixture(weights)
+
+
+def test_policy_preserves_difficulty_action_order() -> None:
+    policy = m.Policy((m.Action("small", 1, 0.8), m.Action("large", 5, 0.9)))
+    assert policy.models == ("small", "large")
+
+
+def test_action_rejects_success_above_one() -> None:
+    with pytest.raises(m.CascadeDPError, match="cascade action"):
+        m.Action("m", 1, 1.1)

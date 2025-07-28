@@ -23,3 +23,23 @@ class DifficultyMixture:
     def normalized(self) -> tuple[float, ...]:
         total = sum(self.weights)
         return tuple(round(weight / total, 6) for weight in self.weights)
+
+
+@dataclass(frozen=True, slots=True)
+class Action:
+    model: str
+    cost_micros: int
+    success: float
+
+    def __post_init__(self) -> None:
+        if not self.model or self.cost_micros < 0 or not 0 <= self.success <= 1:
+            raise CascadeDPError("cascade action: invalid model, cost, or success")
+
+
+@dataclass(frozen=True, slots=True)
+class Policy:
+    actions: tuple[Action, ...]
+
+    @property
+    def models(self) -> tuple[str, ...]:
+        return tuple(action.model for action in self.actions)
