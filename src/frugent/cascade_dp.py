@@ -69,3 +69,19 @@ def enumerate_policies(options: tuple[tuple[Action, ...], ...]) -> tuple[Policy,
         tuple(sorted(actions, key=lambda action: action.model)) for actions in options
     )
     return tuple(Policy(tuple(actions)) for actions in itertools.product(*normalized))
+
+
+def optimal_policy(
+    options: tuple[tuple[Action, ...], ...], mixture: DifficultyMixture, quality_floor: float
+) -> Policy:
+    """Choose least expected cost among policies meeting quality floor."""
+    if not 0 <= quality_floor <= 1:
+        raise CascadeDPError("policy optimization: quality floor must be in [0, 1]")
+    feasible = [
+        policy
+        for policy in enumerate_policies(options)
+        if evaluate(policy, mixture)[1] >= quality_floor
+    ]
+    if not feasible:
+        raise CascadeDPError("policy optimization: quality floor is infeasible")
+    return min(feasible, key=lambda policy: (evaluate(policy, mixture)[0], policy.models))

@@ -46,3 +46,13 @@ def test_policy_enumeration_covers_cartesian_choices() -> None:
     assert len(policies) == 8
     assert policies[0].models == ("a", "a", "a")
     assert policies[-1].models == ("b", "b", "b")
+
+
+def test_optimal_policy_uses_expensive_action_only_where_needed() -> None:
+    options = (
+        (m.Action("small", 1, 0.9), m.Action("large", 5, 0.95)),
+        (m.Action("small", 1, 0.2), m.Action("large", 5, 0.9)),
+    )
+    policy = m.optimal_policy(options, m.DifficultyMixture((1.0, 1.0)), 0.85)
+    assert policy.models == ("small", "large")
+    assert m.evaluate(policy, m.DifficultyMixture((1.0, 1.0))) == (3.0, 0.9)
