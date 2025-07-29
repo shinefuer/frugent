@@ -43,3 +43,17 @@ class Policy:
     @property
     def models(self) -> tuple[str, ...]:
         return tuple(action.model for action in self.actions)
+
+
+def evaluate(policy: Policy, mixture: DifficultyMixture) -> tuple[float, float]:
+    """Return expected fictional micro-cost and scripted success."""
+    weights = mixture.normalized
+    if len(policy.actions) != len(weights):
+        raise CascadeDPError("policy evaluation: difficulty dimensions differ")
+    cost = sum(
+        action.cost_micros * weight for action, weight in zip(policy.actions, weights, strict=True)
+    )
+    quality = sum(
+        action.success * weight for action, weight in zip(policy.actions, weights, strict=True)
+    )
+    return round(cost, 6), round(quality, 6)

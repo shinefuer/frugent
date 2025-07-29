@@ -33,3 +33,8 @@ def test_mixture_normalization_is_scale_invariant(scale: float) -> None:
     assert (
         m.DifficultyMixture(weights).normalized == m.DifficultyMixture((1.0, 2.0, 3.0)).normalized
     )
+
+
+def test_policy_evaluation_matches_hand_weighted_values() -> None:
+    policy = m.Policy((m.Action("s", 1, 0.5), m.Action("l", 9, 1.0)))
+    assert m.evaluate(policy, m.DifficultyMixture((3.0, 1.0))) == (3.0, 0.625)
