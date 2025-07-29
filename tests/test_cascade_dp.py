@@ -25,3 +25,11 @@ def test_policy_preserves_difficulty_action_order() -> None:
 def test_action_rejects_success_above_one() -> None:
     with pytest.raises(m.CascadeDPError, match="cascade action"):
         m.Action("m", 1, 1.1)
+
+
+@pytest.mark.parametrize("scale", [0.1, 1.0, 10.0, 1000.0])
+def test_mixture_normalization_is_scale_invariant(scale: float) -> None:
+    weights = tuple(scale * value for value in (1.0, 2.0, 3.0))
+    assert (
+        m.DifficultyMixture(weights).normalized == m.DifficultyMixture((1.0, 2.0, 3.0)).normalized
+    )
