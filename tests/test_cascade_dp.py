@@ -38,3 +38,11 @@ def test_mixture_normalization_is_scale_invariant(scale: float) -> None:
 def test_policy_evaluation_matches_hand_weighted_values() -> None:
     policy = m.Policy((m.Action("s", 1, 0.5), m.Action("l", 9, 1.0)))
     assert m.evaluate(policy, m.DifficultyMixture((3.0, 1.0))) == (3.0, 0.625)
+
+
+def test_policy_enumeration_covers_cartesian_choices() -> None:
+    option = (m.Action("a", 1, 0.5), m.Action("b", 2, 0.8))
+    policies = m.enumerate_policies((option, option, option))
+    assert len(policies) == 8
+    assert policies[0].models == ("a", "a", "a")
+    assert policies[-1].models == ("b", "b", "b")

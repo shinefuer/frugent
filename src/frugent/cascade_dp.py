@@ -57,3 +57,15 @@ def evaluate(policy: Policy, mixture: DifficultyMixture) -> tuple[float, float]:
         action.success * weight for action, weight in zip(policy.actions, weights, strict=True)
     )
     return round(cost, 6), round(quality, 6)
+
+
+def enumerate_policies(options: tuple[tuple[Action, ...], ...]) -> tuple[Policy, ...]:
+    """Enumerate one action per difficulty in lexical model order."""
+    import itertools
+
+    if not options or any(not actions for actions in options):
+        raise CascadeDPError("policy enumeration: options required for every difficulty")
+    normalized = tuple(
+        tuple(sorted(actions, key=lambda action: action.model)) for actions in options
+    )
+    return tuple(Policy(tuple(actions)) for actions in itertools.product(*normalized))
