@@ -56,3 +56,11 @@ def test_optimal_policy_uses_expensive_action_only_where_needed() -> None:
     policy = m.optimal_policy(options, m.DifficultyMixture((1.0, 1.0)), 0.85)
     assert policy.models == ("small", "large")
     assert m.evaluate(policy, m.DifficultyMixture((1.0, 1.0))) == (3.0, 0.9)
+
+
+@pytest.mark.parametrize("floor", [0.2, 0.5, 0.8, 0.95])
+def test_optimal_policy_always_meets_requested_floor(floor: float) -> None:
+    actions = (m.Action("s", 1, 0.5), m.Action("m", 3, 0.8), m.Action("l", 7, 1.0))
+    mixture = m.DifficultyMixture((1.0, 1.0))
+    policy = m.optimal_policy((actions, actions), mixture, floor)
+    assert m.evaluate(policy, mixture)[1] >= floor
