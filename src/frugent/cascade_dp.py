@@ -85,3 +85,24 @@ def optimal_policy(
     if not feasible:
         raise CascadeDPError("policy optimization: quality floor is infeasible")
     return min(feasible, key=lambda policy: (evaluate(policy, mixture)[0], policy.models))
+
+
+def pareto_frontier(policies: tuple[Policy, ...], mixture: DifficultyMixture) -> tuple[Policy, ...]:
+    """Keep policies not dominated in expected cost and quality."""
+    scored = {policy: evaluate(policy, mixture) for policy in policies}
+    return tuple(
+        sorted(
+            (
+                policy
+                for policy, (cost, quality) in scored.items()
+                if not any(
+                    other_cost <= cost
+                    and other_quality >= quality
+                    and (other_cost < cost or other_quality > quality)
+                    for other, (other_cost, other_quality) in scored.items()
+                    if other != policy
+                )
+            ),
+            key=lambda policy: (scored[policy][0], -scored[policy][1], policy.models),
+        )
+    )

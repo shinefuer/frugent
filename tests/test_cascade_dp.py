@@ -64,3 +64,16 @@ def test_optimal_policy_always_meets_requested_floor(floor: float) -> None:
     mixture = m.DifficultyMixture((1.0, 1.0))
     policy = m.optimal_policy((actions, actions), mixture, floor)
     assert m.evaluate(policy, mixture)[1] >= floor
+
+
+def test_pareto_frontier_removes_costlier_equal_quality_policy() -> None:
+    mixture = m.DifficultyMixture((1.0,))
+    policies = (
+        m.Policy((m.Action("a", 1, 0.8),)),
+        m.Policy((m.Action("b", 2, 0.8),)),
+        m.Policy((m.Action("c", 3, 0.9),)),
+    )
+    assert tuple(policy.models for policy in m.pareto_frontier(policies, mixture)) == (
+        ("a",),
+        ("c",),
+    )
