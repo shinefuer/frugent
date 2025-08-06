@@ -77,3 +77,10 @@ def test_pareto_frontier_removes_costlier_equal_quality_policy() -> None:
         ("a",),
         ("c",),
     )
+
+
+def test_planted_optimal_policy_has_zero_gap() -> None:
+    options = ((m.Action("s", 1, 0.6), m.Action("l", 4, 0.95)),) * 2
+    mixture = m.DifficultyMixture((1.0, 2.0))
+    optimum = m.optimal_policy(options, mixture, 0.8)
+    assert m.optimum_gap(optimum, options, mixture, 0.8) == 0.0

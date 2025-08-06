@@ -106,3 +106,17 @@ def pareto_frontier(policies: tuple[Policy, ...], mixture: DifficultyMixture) ->
             key=lambda policy: (scored[policy][0], -scored[policy][1], policy.models),
         )
     )
+
+
+def optimum_gap(
+    runtime_policy: Policy,
+    options: tuple[tuple[Action, ...], ...],
+    mixture: DifficultyMixture,
+    floor: float,
+) -> float:
+    """Return runtime expected-cost excess over exhaustive optimum."""
+    optimum = optimal_policy(options, mixture, floor)
+    runtime_cost, runtime_quality = evaluate(runtime_policy, mixture)
+    if runtime_quality < floor:
+        raise CascadeDPError("optimum gap: runtime policy violates quality floor")
+    return round(runtime_cost - evaluate(optimum, mixture)[0], 6)
