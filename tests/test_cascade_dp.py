@@ -84,3 +84,10 @@ def test_planted_optimal_policy_has_zero_gap() -> None:
     mixture = m.DifficultyMixture((1.0, 2.0))
     optimum = m.optimal_policy(options, mixture, 0.8)
     assert m.optimum_gap(optimum, options, mixture, 0.8) == 0.0
+
+
+def test_below_floor_runtime_policy_has_no_cost_gap_claim() -> None:
+    options = ((m.Action("cheap", 1, 0.2), m.Action("safe", 5, 0.9)),)
+    unsafe = m.Policy((options[0][0],))
+    with pytest.raises(m.CascadeDPError, match="violates quality floor"):
+        m.optimum_gap(unsafe, options, m.DifficultyMixture((1.0,)), 0.8)
