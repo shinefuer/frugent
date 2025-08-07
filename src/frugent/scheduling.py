@@ -22,3 +22,10 @@ class Task:
             isinstance(value, bool) or not isinstance(value, int) or value < 0 for value in values
         ):
             raise SchedulingError("scheduled task: invalid identity or resources")
+
+
+def task_order(tasks: tuple[Task, ...]) -> tuple[Task, ...]:
+    """Order high priority first, then smaller token estimate and stable id."""
+    if len({task.task_id for task in tasks}) != len(tasks):
+        raise SchedulingError("task order: duplicate task id")
+    return tuple(sorted(tasks, key=lambda task: (-task.priority, task.tokens, task.task_id)))
