@@ -25,3 +25,13 @@ def test_task_order_is_priority_aware_and_stable() -> None:
 def test_task_order_rejects_duplicate_identity() -> None:
     with pytest.raises(m.SchedulingError, match="duplicate"):
         m.task_order((m.Task("x", 1, 1, 1), m.Task("x", 2, 2, 2)))
+
+
+@pytest.mark.parametrize("size", [0, 1, 5, 10])
+def test_task_order_preserves_identity_and_priority(size: int) -> None:
+    tasks = tuple(m.Task(str(index), index % 3, index + 1, 8 + index) for index in range(size))
+    ordered = m.task_order(tuple(reversed(tasks)))
+    assert {task.task_id for task in ordered} == {task.task_id for task in tasks}
+    assert tuple(task.priority for task in ordered) == tuple(
+        sorted((task.priority for task in tasks), reverse=True)
+    )
