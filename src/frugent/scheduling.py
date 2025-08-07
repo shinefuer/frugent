@@ -45,3 +45,17 @@ def admit_tasks(
             remaining_tokens -= task.tokens
             remaining_cost -= task.cost_micros
     return tuple(admitted)
+
+
+def fair_shares(total: int, weights: tuple[int, ...]) -> tuple[int, ...]:
+    """Allocate integer units by weight with stable largest remainders."""
+    if total < 0 or not weights or any(weight <= 0 for weight in weights):
+        raise SchedulingError("fair shares: invalid total or weights")
+    weight_sum = sum(weights)
+    base = [total * weight // weight_sum for weight in weights]
+    remainders = [total * weight % weight_sum for weight in weights]
+    for index in sorted(range(len(weights)), key=lambda i: (-remainders[i], i))[
+        : total - sum(base)
+    ]:
+        base[index] += 1
+    return tuple(base)

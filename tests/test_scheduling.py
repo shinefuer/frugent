@@ -43,3 +43,14 @@ def test_task_admission_respects_both_limits() -> None:
     assert tuple(task.task_id for task in admitted) == ("a", "c")
     assert sum(task.tokens for task in admitted) <= 7
     assert sum(task.cost_micros for task in admitted) <= 10
+
+
+@pytest.mark.parametrize(
+    ("total", "weights", "expected"),
+    [(0, (1, 1), (0, 0)), (5, (1, 1), (3, 2)), (10, (1, 2, 1), (3, 5, 2))],
+)
+def test_fair_shares_conserve_integer_total(
+    total: int, weights: tuple[int, ...], expected: tuple[int, ...]
+) -> None:
+    assert m.fair_shares(total, weights) == expected
+    assert sum(expected) == total
