@@ -91,3 +91,15 @@ def test_below_floor_runtime_policy_has_no_cost_gap_claim() -> None:
     unsafe = m.Policy((options[0][0],))
     with pytest.raises(m.CascadeDPError, match="violates quality floor"):
         m.optimum_gap(unsafe, options, m.DifficultyMixture((1.0,)), 0.8)
+
+
+def test_policy_record_is_complete_and_deterministic() -> None:
+    policy = m.Policy((m.Action("s", 1, 0.5), m.Action("l", 7, 0.9)))
+    mixture = m.DifficultyMixture((1.0, 1.0))
+    assert m.policy_record(policy, mixture) == {
+        "schema_version": 1,
+        "models": ["s", "l"],
+        "expected_cost_micros": 4.0,
+        "expected_quality": 0.7,
+        "mixture": [0.5, 0.5],
+    }

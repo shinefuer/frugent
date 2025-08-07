@@ -120,3 +120,14 @@ def optimum_gap(
     if runtime_quality < floor:
         raise CascadeDPError("optimum gap: runtime policy violates quality floor")
     return round(runtime_cost - evaluate(optimum, mixture)[0], 6)
+
+
+def policy_record(policy: Policy, mixture: DifficultyMixture) -> dict[str, object]:
+    cost, quality = evaluate(policy, mixture)
+    return {
+        "schema_version": 1,
+        "models": list(policy.models),
+        "expected_cost_micros": cost,
+        "expected_quality": quality,
+        "mixture": list(mixture.normalized),
+    }
