@@ -59,3 +59,17 @@ def fair_shares(total: int, weights: tuple[int, ...]) -> tuple[int, ...]:
     ]:
         base[index] += 1
     return tuple(base)
+
+
+def task_budgets(
+    tasks: tuple[Task, ...], token_limit: int, cost_limit_micros: int
+) -> dict[str, tuple[int, int]]:
+    """Allocate token and cost shares using priority+1 as fair weight."""
+    ordered = task_order(tasks)
+    weights = tuple(task.priority + 1 for task in ordered)
+    token_shares = fair_shares(token_limit, weights)
+    cost_shares = fair_shares(cost_limit_micros, weights)
+    return {
+        task.task_id: (tokens, cost)
+        for task, tokens, cost in zip(ordered, token_shares, cost_shares, strict=True)
+    }

@@ -54,3 +54,11 @@ def test_fair_shares_conserve_integer_total(
 ) -> None:
     assert m.fair_shares(total, weights) == expected
     assert sum(expected) == total
+
+
+def test_task_budgets_give_higher_priority_no_smaller_share() -> None:
+    tasks = (m.Task("low", 0, 1, 1), m.Task("high", 3, 1, 1))
+    budgets = m.task_budgets(tasks, 10, 100)
+    assert budgets["high"][0] >= budgets["low"][0]
+    assert sum(tokens for tokens, _ in budgets.values()) == 10
+    assert sum(cost for _, cost in budgets.values()) == 100
