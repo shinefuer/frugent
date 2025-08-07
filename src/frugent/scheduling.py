@@ -29,3 +29,19 @@ def task_order(tasks: tuple[Task, ...]) -> tuple[Task, ...]:
     if len({task.task_id for task in tasks}) != len(tasks):
         raise SchedulingError("task order: duplicate task id")
     return tuple(sorted(tasks, key=lambda task: (-task.priority, task.tokens, task.task_id)))
+
+
+def admit_tasks(
+    tasks: tuple[Task, ...], token_limit: int, cost_limit_micros: int
+) -> tuple[Task, ...]:
+    """Greedily admit deterministic order without overspending either limit."""
+    if token_limit < 0 or cost_limit_micros < 0:
+        raise SchedulingError("task admission: limits must be non-negative")
+    admitted: list[Task] = []
+    remaining_tokens, remaining_cost = token_limit, cost_limit_micros
+    for task in task_order(tasks):
+        if task.tokens <= remaining_tokens and task.cost_micros <= remaining_cost:
+            admitted.append(task)
+            remaining_tokens -= task.tokens
+            remaining_cost -= task.cost_micros
+    return tuple(admitted)

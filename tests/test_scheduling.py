@@ -35,3 +35,11 @@ def test_task_order_preserves_identity_and_priority(size: int) -> None:
     assert tuple(task.priority for task in ordered) == tuple(
         sorted((task.priority for task in tasks), reverse=True)
     )
+
+
+def test_task_admission_respects_both_limits() -> None:
+    tasks = (m.Task("a", 2, 6, 1), m.Task("b", 1, 4, 9), m.Task("c", 0, 1, 1))
+    admitted = m.admit_tasks(tasks, 7, 10)
+    assert tuple(task.task_id for task in admitted) == ("a", "c")
+    assert sum(task.tokens for task in admitted) <= 7
+    assert sum(task.cost_micros for task in admitted) <= 10
