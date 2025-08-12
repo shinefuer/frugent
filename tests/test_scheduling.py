@@ -62,3 +62,11 @@ def test_task_budgets_give_higher_priority_no_smaller_share() -> None:
     assert budgets["high"][0] >= budgets["low"][0]
     assert sum(tokens for tokens, _ in budgets.values()) == 10
     assert sum(cost for _, cost in budgets.values()) == 100
+
+
+@pytest.mark.parametrize("total", range(0, 30))
+def test_fair_shares_always_conserve_total(total: int) -> None:
+    for weights in ((1,), (1, 1), (1, 2, 3), (9, 1, 4, 2)):
+        shares = m.fair_shares(total, weights)
+        assert sum(shares) == total
+        assert all(share >= 0 for share in shares)
