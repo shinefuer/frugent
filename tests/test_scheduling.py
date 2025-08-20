@@ -93,3 +93,8 @@ def test_schedule_is_deterministic_for_identical_inputs() -> None:
     first = m.schedule(tasks, 10, 10)
     assert first == m.schedule(tasks, 10, 10)
     assert tuple(row[0] for row in first) == ("a", "b")
+
+
+def test_schedule_record_is_independent_of_input_order() -> None:
+    tasks = tuple(m.Task(str(index), index % 4, index + 1, index * 2) for index in range(12))
+    assert m.schedule(tasks, 100, 200) == m.schedule(tuple(reversed(tasks)), 100, 200)
