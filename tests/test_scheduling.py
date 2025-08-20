@@ -98,3 +98,8 @@ def test_schedule_is_deterministic_for_identical_inputs() -> None:
 def test_schedule_record_is_independent_of_input_order() -> None:
     tasks = tuple(m.Task(str(index), index % 4, index + 1, index * 2) for index in range(12))
     assert m.schedule(tasks, 100, 200) == m.schedule(tuple(reversed(tasks)), 100, 200)
+
+
+def test_schedule_totals_reconcile_allocated_limits() -> None:
+    decisions = m.schedule((m.Task("a", 1, 2, 3), m.Task("b", 0, 4, 5)), 11, 17)
+    assert m.schedule_totals(decisions) == (11, 17)

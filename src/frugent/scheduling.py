@@ -102,3 +102,10 @@ def schedule(
         )
         for task in task_order(tasks)
     )
+
+
+def schedule_totals(decisions: tuple[tuple[str, str, int, int], ...]) -> tuple[int, int]:
+    """Roll up allocated shares without interpreting unused capacity as spend."""
+    if len({task_id for task_id, _, _, _ in decisions}) != len(decisions):
+        raise SchedulingError("schedule totals: duplicate task id")
+    return sum(tokens for _, _, tokens, _ in decisions), sum(cost for _, _, _, cost in decisions)
