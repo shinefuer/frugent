@@ -87,3 +87,18 @@ def degradation_decision(task: Task, allocation: tuple[int, int]) -> str:
     if tokens == 0 and cost == 0:
         return "cache_only"
     return "defer"
+
+
+def schedule(
+    tasks: tuple[Task, ...], token_limit: int, cost_limit_micros: int
+) -> tuple[tuple[str, str, int, int], ...]:
+    """Return task, degradation, token share, and cost share records."""
+    allocations = task_budgets(tasks, token_limit, cost_limit_micros)
+    return tuple(
+        (
+            task.task_id,
+            degradation_decision(task, allocations[task.task_id]),
+            *allocations[task.task_id],
+        )
+        for task in task_order(tasks)
+    )

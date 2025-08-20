@@ -86,3 +86,10 @@ def test_degradation_decision_follows_declared_order(
     allocation: tuple[int, int], expected: str
 ) -> None:
     assert m.degradation_decision(m.Task("t", 1, 10, 10), allocation) == expected
+
+
+def test_schedule_is_deterministic_for_identical_inputs() -> None:
+    tasks = (m.Task("b", 1, 5, 7), m.Task("a", 2, 9, 3))
+    first = m.schedule(tasks, 10, 10)
+    assert first == m.schedule(tasks, 10, 10)
+    assert tuple(row[0] for row in first) == ("a", "b")
