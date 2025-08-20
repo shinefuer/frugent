@@ -73,3 +73,17 @@ def task_budgets(
         task.task_id: (tokens, cost)
         for task, tokens, cost in zip(ordered, token_shares, cost_shares, strict=True)
     }
+
+
+def degradation_decision(task: Task, allocation: tuple[int, int]) -> str:
+    """Apply downgrade, compression, cache-only, then defer thresholds."""
+    tokens, cost = allocation
+    if task.tokens <= tokens and task.cost_micros <= cost:
+        return "full"
+    if task.tokens <= tokens and task.cost_micros <= cost * 2:
+        return "downgrade"
+    if task.tokens <= tokens * 2 and task.cost_micros <= cost * 2:
+        return "compress"
+    if tokens == 0 and cost == 0:
+        return "cache_only"
+    return "defer"

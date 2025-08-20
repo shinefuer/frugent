@@ -70,3 +70,19 @@ def test_fair_shares_always_conserve_total(total: int) -> None:
         shares = m.fair_shares(total, weights)
         assert sum(shares) == total
         assert all(share >= 0 for share in shares)
+
+
+@pytest.mark.parametrize(
+    ("allocation", "expected"),
+    [
+        ((10, 10), "full"),
+        ((10, 5), "downgrade"),
+        ((5, 5), "compress"),
+        ((0, 0), "cache_only"),
+        ((2, 9), "defer"),
+    ],
+)
+def test_degradation_decision_follows_declared_order(
+    allocation: tuple[int, int], expected: str
+) -> None:
+    assert m.degradation_decision(m.Task("t", 1, 10, 10), allocation) == expected
