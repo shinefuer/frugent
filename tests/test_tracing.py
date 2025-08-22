@@ -18,3 +18,13 @@ def test_span_duration_uses_half_open_timestamps() -> None:
 def test_span_rejects_invalid_identity_or_timing(values: tuple[object, ...]) -> None:
     with pytest.raises(m.TraceError, match="span"):
         m.Span(*values)  # type: ignore[arg-type]
+
+
+def test_validate_forest_accepts_nested_timings() -> None:
+    spans = (m.Span("root", "run", 0, 10), m.Span("child", "route", 2, 8, "root"))
+    assert m.validate_forest(spans) is None
+
+
+def test_validate_forest_rejects_child_outside_parent() -> None:
+    with pytest.raises(m.TraceError, match="outside parent"):
+        m.validate_forest((m.Span("p", "p", 0, 5), m.Span("c", "c", 4, 6, "p")))

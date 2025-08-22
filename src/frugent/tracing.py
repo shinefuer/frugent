@@ -29,3 +29,27 @@ class Span:
     @property
     def duration_us(self) -> int:
         return self.end_us - self.start_us
+
+
+def validate_forest(spans: tuple[Span, ...]) -> None:
+    """Check unique ids, parent existence, containment, and acyclicity."""
+    by_id = {span.span_id: span for span in spans}
+    if len(by_id) != len(spans):
+        raise TraceError("span forest: duplicate span id")
+    for span in spans:
+        if span.parent_id is None:
+            continue
+        parent = by_id.get(span.parent_id)
+        if parent is None:
+            raise TraceError("span forest: missing parent")
+        if not parent.start_us <= span.start_us <= span.end_us <= parent.end_us:
+            raise TraceError("span forest: child is outside parent timing")
+        seen = {span.span_id}
+        cursor = parent
+        while cursor.parent_id is not None:
+            if cursor.span_id in seen:
+                raise TraceError("span forest: parent cycle")
+            seen.add(cursor.span_id)
+            cursor = by_id.get(cursor.parent_id)  # type: ignore[assignment]
+            if cursor is None:
+                raise TraceError("span forest: missing parent")
