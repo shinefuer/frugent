@@ -53,3 +53,15 @@ def validate_forest(spans: tuple[Span, ...]) -> None:
             cursor = by_id.get(cursor.parent_id)  # type: ignore[assignment]
             if cursor is None:
                 raise TraceError("span forest: missing parent")
+
+
+def child_index(spans: tuple[Span, ...]) -> dict[str | None, tuple[Span, ...]]:
+    """Group direct children by parent and sort by time then id."""
+    validate_forest(spans)
+    groups: dict[str | None, list[Span]] = {}
+    for span in spans:
+        groups.setdefault(span.parent_id, []).append(span)
+    return {
+        parent: tuple(sorted(children, key=lambda span: (span.start_us, span.span_id)))
+        for parent, children in groups.items()
+    }

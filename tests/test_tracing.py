@@ -39,3 +39,15 @@ def test_span_forest_rejects_parent_cycle() -> None:
     spans = (m.Span("a", "a", 0, 2, "b"), m.Span("b", "b", 0, 2, "a"))
     with pytest.raises(m.TraceError, match="cycle"):
         m.validate_forest(spans)
+
+
+def test_child_index_sorts_roots_and_siblings() -> None:
+    spans = (
+        m.Span("b", "b", 2, 3),
+        m.Span("root", "r", 0, 9),
+        m.Span("a", "a", 1, 2, "root"),
+        m.Span("c", "c", 1, 3, "root"),
+    )
+    index = m.child_index(spans)
+    assert tuple(span.span_id for span in index[None]) == ("root", "b")
+    assert tuple(span.span_id for span in index["root"]) == ("a", "c")
