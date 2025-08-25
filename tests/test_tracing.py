@@ -67,3 +67,10 @@ def test_exclusive_duration_rejects_overlapping_siblings() -> None:
     spans = (m.Span("r", "r", 0, 10), m.Span("a", "a", 1, 6, "r"), m.Span("b", "b", 5, 9, "r"))
     with pytest.raises(m.TraceError, match="overlap"):
         m.exclusive_duration(spans[0], spans)
+
+
+def test_root_duration_partitions_into_exclusive_and_children() -> None:
+    spans = (m.Span("r", "r", 0, 20), m.Span("a", "a", 1, 5, "r"), m.Span("b", "b", 8, 15, "r"))
+    root = spans[0]
+    child_total = sum(span.duration_us for span in spans[1:])
+    assert m.exclusive_duration(root, spans) + child_total == root.duration_us
