@@ -80,3 +80,16 @@ def preorder(spans: tuple[Span, ...]) -> tuple[Span, ...]:
     for root in index.get(None, ()):
         visit(root)
     return tuple(ordered)
+
+
+def exclusive_duration(span: Span, spans: tuple[Span, ...]) -> int:
+    """Subtract direct-child wall time, rejecting overlapping siblings."""
+    children = child_index(spans).get(span.span_id, ())
+    previous_end = span.start_us
+    total = 0
+    for child in children:
+        if child.start_us < previous_end:
+            raise TraceError("exclusive duration: sibling spans overlap")
+        total += child.duration_us
+        previous_end = child.end_us
+    return span.duration_us - total

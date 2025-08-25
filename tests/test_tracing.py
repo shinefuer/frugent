@@ -56,3 +56,14 @@ def test_child_index_sorts_roots_and_siblings() -> None:
 def test_preorder_places_parent_before_descendants() -> None:
     spans = (m.Span("g", "g", 2, 3, "c"), m.Span("c", "c", 1, 5, "r"), m.Span("r", "r", 0, 6))
     assert tuple(span.span_id for span in m.preorder(spans)) == ("r", "c", "g")
+
+
+def test_exclusive_duration_subtracts_direct_children_only() -> None:
+    spans = (m.Span("r", "r", 0, 10), m.Span("a", "a", 1, 4, "r"), m.Span("b", "b", 6, 9, "r"))
+    assert m.exclusive_duration(spans[0], spans) == 4
+
+
+def test_exclusive_duration_rejects_overlapping_siblings() -> None:
+    spans = (m.Span("r", "r", 0, 10), m.Span("a", "a", 1, 6, "r"), m.Span("b", "b", 5, 9, "r"))
+    with pytest.raises(m.TraceError, match="overlap"):
+        m.exclusive_duration(spans[0], spans)
