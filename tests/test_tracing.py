@@ -28,3 +28,14 @@ def test_validate_forest_accepts_nested_timings() -> None:
 def test_validate_forest_rejects_child_outside_parent() -> None:
     with pytest.raises(m.TraceError, match="outside parent"):
         m.validate_forest((m.Span("p", "p", 0, 5), m.Span("c", "c", 4, 6, "p")))
+
+
+def test_span_forest_rejects_missing_parent() -> None:
+    with pytest.raises(m.TraceError, match="missing parent"):
+        m.validate_forest((m.Span("c", "c", 0, 1, "missing"),))
+
+
+def test_span_forest_rejects_parent_cycle() -> None:
+    spans = (m.Span("a", "a", 0, 2, "b"), m.Span("b", "b", 0, 2, "a"))
+    with pytest.raises(m.TraceError, match="cycle"):
+        m.validate_forest(spans)
