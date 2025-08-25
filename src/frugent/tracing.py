@@ -65,3 +65,18 @@ def child_index(spans: tuple[Span, ...]) -> dict[str | None, tuple[Span, ...]]:
         parent: tuple(sorted(children, key=lambda span: (span.start_us, span.span_id)))
         for parent, children in groups.items()
     }
+
+
+def preorder(spans: tuple[Span, ...]) -> tuple[Span, ...]:
+    """Return roots and descendants in stable depth-first order."""
+    index = child_index(spans)
+    ordered: list[Span] = []
+
+    def visit(span: Span) -> None:
+        ordered.append(span)
+        for child in index.get(span.span_id, ()):
+            visit(child)
+
+    for root in index.get(None, ()):
+        visit(root)
+    return tuple(ordered)

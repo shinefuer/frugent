@@ -51,3 +51,8 @@ def test_child_index_sorts_roots_and_siblings() -> None:
     index = m.child_index(spans)
     assert tuple(span.span_id for span in index[None]) == ("root", "b")
     assert tuple(span.span_id for span in index["root"]) == ("a", "c")
+
+
+def test_preorder_places_parent_before_descendants() -> None:
+    spans = (m.Span("g", "g", 2, 3, "c"), m.Span("c", "c", 1, 5, "r"), m.Span("r", "r", 0, 6))
+    assert tuple(span.span_id for span in m.preorder(spans)) == ("r", "c", "g")
