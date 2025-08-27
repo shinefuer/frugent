@@ -93,3 +93,12 @@ def test_span_record_golden_roundtrip() -> None:
         "attributes": {"tool": "read"},
     }
     assert m.span_from_record(m.span_record(span)) == span
+
+
+@pytest.mark.parametrize("sequence", range(12))
+def test_span_roundtrip_preserves_deterministic_ids(sequence: int) -> None:
+    identifier = m.span_id(9, sequence, f"step-{sequence}")
+    span = m.Span(
+        identifier, "step", sequence, sequence + 1, attributes=(("sequence", str(sequence)),)
+    )
+    assert m.span_from_record(m.span_record(span)) == span
