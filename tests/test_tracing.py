@@ -74,3 +74,9 @@ def test_root_duration_partitions_into_exclusive_and_children() -> None:
     root = spans[0]
     child_total = sum(span.duration_us for span in spans[1:])
     assert m.exclusive_duration(root, spans) + child_total == root.duration_us
+
+
+def test_span_id_is_repeatable_and_sequence_sensitive() -> None:
+    assert m.span_id(7, 2, "route") == m.span_id(7, 2, "route")
+    assert m.span_id(7, 2, "route") != m.span_id(7, 3, "route")
+    assert len(m.span_id(7, 2, "route")) == 16

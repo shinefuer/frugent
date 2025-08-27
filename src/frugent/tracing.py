@@ -93,3 +93,12 @@ def exclusive_duration(span: Span, spans: tuple[Span, ...]) -> int:
         total += child.duration_us
         previous_end = child.end_us
     return span.duration_us - total
+
+
+def span_id(seed: int, sequence: int, name: str) -> str:
+    """Create a compact content-derived id without wall-clock entropy."""
+    from frugent.codec import payload_digest
+
+    if seed < 0 or sequence < 0 or not name:
+        raise TraceError("span id: invalid seed, sequence, or name")
+    return payload_digest({"seed": seed, "sequence": sequence, "name": name})[7:23]
