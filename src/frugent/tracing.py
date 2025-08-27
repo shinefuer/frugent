@@ -102,3 +102,36 @@ def span_id(seed: int, sequence: int, name: str) -> str:
     if seed < 0 or sequence < 0 or not name:
         raise TraceError("span id: invalid seed, sequence, or name")
     return payload_digest({"seed": seed, "sequence": sequence, "name": name})[7:23]
+
+
+def span_record(span: Span) -> dict[str, object]:
+    return {
+        "span_id": span.span_id,
+        "parent_id": span.parent_id,
+        "name": span.name,
+        "start_us": span.start_us,
+        "end_us": span.end_us,
+        "attributes": dict(span.attributes),
+    }
+
+
+def span_from_record(record: dict[str, object]) -> Span:
+    expected = {"span_id", "parent_id", "name", "start_us", "end_us", "attributes"}
+    if set(record) != expected or not isinstance(record["attributes"], dict):
+        raise TraceError("span record: unexpected shape")
+    attributes = record["attributes"]
+    if not all(
+        isinstance(key, str) and isinstance(value, str) for key, value in attributes.items()
+    ):
+        raise TraceError("span record: attributes must be strings")
+    try:
+        return Span(
+            record["span_id"],
+            record["name"],
+            record["start_us"],
+            record["end_us"],
+            record["parent_id"],
+            tuple(sorted(attributes.items())),
+        )
+    except TypeError as error:
+        raise TraceError(f"span record: invalid scalar type: {error}") from error

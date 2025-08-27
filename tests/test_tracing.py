@@ -80,3 +80,16 @@ def test_span_id_is_repeatable_and_sequence_sensitive() -> None:
     assert m.span_id(7, 2, "route") == m.span_id(7, 2, "route")
     assert m.span_id(7, 2, "route") != m.span_id(7, 3, "route")
     assert len(m.span_id(7, 2, "route")) == 16
+
+
+def test_span_record_golden_roundtrip() -> None:
+    span = m.Span("s", "tool", 1, 4, "p", (("tool", "read"),))
+    assert m.span_record(span) == {
+        "span_id": "s",
+        "parent_id": "p",
+        "name": "tool",
+        "start_us": 1,
+        "end_us": 4,
+        "attributes": {"tool": "read"},
+    }
+    assert m.span_from_record(m.span_record(span)) == span
