@@ -135,3 +135,20 @@ def span_from_record(record: dict[str, object]) -> Span:
         )
     except TypeError as error:
         raise TraceError(f"span record: invalid scalar type: {error}") from error
+
+
+def span_diff(left: tuple[Span, ...], right: tuple[Span, ...]) -> dict[str, tuple[str, ...]]:
+    """Compare logical span records without depending on input order."""
+    left_map, right_map = (
+        {span.span_id: span for span in left},
+        {span.span_id: span for span in right},
+    )
+    return {
+        "added": tuple(sorted(right_map.keys() - left_map.keys())),
+        "removed": tuple(sorted(left_map.keys() - right_map.keys())),
+        "changed": tuple(
+            sorted(
+                key for key in left_map.keys() & right_map.keys() if left_map[key] != right_map[key]
+            )
+        ),
+    }

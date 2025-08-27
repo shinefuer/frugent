@@ -102,3 +102,13 @@ def test_span_roundtrip_preserves_deterministic_ids(sequence: int) -> None:
         identifier, "step", sequence, sequence + 1, attributes=(("sequence", str(sequence)),)
     )
     assert m.span_from_record(m.span_record(span)) == span
+
+
+def test_span_diff_separates_added_removed_and_changed() -> None:
+    left = (m.Span("same", "x", 0, 1), m.Span("old", "x", 0, 1), m.Span("change", "x", 0, 1))
+    right = (m.Span("same", "x", 0, 1), m.Span("new", "x", 0, 1), m.Span("change", "x", 0, 2))
+    assert m.span_diff(left, right) == {
+        "added": ("new",),
+        "removed": ("old",),
+        "changed": ("change",),
+    }
