@@ -52,3 +52,16 @@ def add_costs(costs: tuple[Cost, ...]) -> Cost:
         sum(cost.batch_saved_micros for cost in costs),
         sum(cost.adjustment_micros for cost in costs),
     )
+
+
+def conserved(parent: Cost, children: tuple[Cost, ...]) -> bool:
+    """Require parent net cost to equal child net sum plus parent adjustment."""
+    child_total = sum(child.net_micros for child in children)
+    return parent.net_micros == child_total + parent.adjustment_micros
+
+
+def require_conserved(parent: Cost, children: tuple[Cost, ...]) -> None:
+    if not conserved(parent, children):
+        raise AttributionError(
+            "cost conservation: children plus explicit adjustment differ from parent"
+        )

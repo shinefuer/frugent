@@ -32,3 +32,14 @@ def test_cost_rollup_net_equals_child_net_sum(size: int) -> None:
     )
     combined = m.add_costs(costs)
     assert combined.net_micros == sum(cost.net_micros for cost in costs)
+
+
+def test_cost_conservation_allows_explicit_parent_adjustment() -> None:
+    children = (m.Cost(4), m.Cost(5))
+    parent = m.Cost(9, adjustment_micros=-1)
+    assert m.conserved(parent, children)
+
+
+def test_cost_conservation_rejects_hidden_difference() -> None:
+    with pytest.raises(m.AttributionError, match="conservation"):
+        m.require_conserved(m.Cost(10), (m.Cost(4), m.Cost(5)))
