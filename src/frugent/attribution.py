@@ -41,3 +41,14 @@ class Cost:
             - self.batch_saved_micros
             + self.adjustment_micros
         )
+
+
+def add_costs(costs: tuple[Cost, ...]) -> Cost:
+    """Add each attribution component independently."""
+    return Cost(
+        sum(cost.prompt_micros for cost in costs),
+        sum(cost.completion_micros for cost in costs),
+        sum(cost.cache_saved_micros for cost in costs),
+        sum(cost.batch_saved_micros for cost in costs),
+        sum(cost.adjustment_micros for cost in costs),
+    )
