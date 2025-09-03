@@ -23,3 +23,12 @@ def test_add_costs_preserves_every_component() -> None:
     combined = m.add_costs(costs)
     assert combined == m.Cost(5, 7, 1, 2, 2)
     assert combined.net_micros == sum(cost.net_micros for cost in costs)
+
+
+@pytest.mark.parametrize("size", range(0, 12))
+def test_cost_rollup_net_equals_child_net_sum(size: int) -> None:
+    costs = tuple(
+        m.Cost(index, index * 2, index // 2, index // 3, -index % 2) for index in range(size)
+    )
+    combined = m.add_costs(costs)
+    assert combined.net_micros == sum(cost.net_micros for cost in costs)
