@@ -65,3 +65,13 @@ def require_conserved(parent: Cost, children: tuple[Cost, ...]) -> None:
         raise AttributionError(
             "cost conservation: children plus explicit adjustment differ from parent"
         )
+
+
+def group_costs(records: tuple[tuple[str, Cost], ...]) -> dict[str, Cost]:
+    """Roll up costs by task/session/tool/model label."""
+    groups: dict[str, list[Cost]] = {}
+    for label, cost in records:
+        if not label:
+            raise AttributionError("cost grouping: label must be non-empty")
+        groups.setdefault(label, []).append(cost)
+    return {label: add_costs(tuple(groups[label])) for label in sorted(groups)}

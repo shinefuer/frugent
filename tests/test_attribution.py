@@ -43,3 +43,11 @@ def test_cost_conservation_allows_explicit_parent_adjustment() -> None:
 def test_cost_conservation_rejects_hidden_difference() -> None:
     with pytest.raises(m.AttributionError, match="conservation"):
         m.require_conserved(m.Cost(10), (m.Cost(4), m.Cost(5)))
+
+
+def test_group_costs_sorts_labels_and_sums_records() -> None:
+    grouped = m.group_costs(
+        (("tool:read", m.Cost(2)), ("model:small", m.Cost(3)), ("tool:read", m.Cost(5)))
+    )
+    assert tuple(grouped) == ("model:small", "tool:read")
+    assert grouped["tool:read"].net_micros == 7
