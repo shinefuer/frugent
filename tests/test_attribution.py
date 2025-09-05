@@ -79,3 +79,9 @@ def test_rate_attribution_matches_priced_usage(cached: int) -> None:
 def test_net_shares_use_grouped_actual_cost() -> None:
     assert m.net_shares({"a": m.Cost(1), "b": m.Cost(3)}) == {"a": 0.25, "b": 0.75}
     assert m.net_shares({"a": m.Cost()}) == {"a": 0.0}
+
+
+def test_cost_delta_includes_added_and_removed_labels() -> None:
+    left = {"same": m.Cost(3), "removed": m.Cost(2)}
+    right = {"same": m.Cost(5), "added": m.Cost(7)}
+    assert m.cost_delta(left, right) == {"added": 7, "removed": -2, "same": 2}

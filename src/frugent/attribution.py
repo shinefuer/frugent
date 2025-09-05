@@ -100,3 +100,12 @@ def net_shares(costs: dict[str, Cost]) -> dict[str, float]:
     if total == 0:
         return {label: 0.0 for label in sorted(costs)}
     return {label: round(costs[label].net_micros / total, 6) for label in sorted(costs)}
+
+
+def cost_delta(left: dict[str, Cost], right: dict[str, Cost]) -> dict[str, int]:
+    """Return right-minus-left net micro-cost for every observed label."""
+    labels = left.keys() | right.keys()
+    return {
+        label: right.get(label, Cost()).net_micros - left.get(label, Cost()).net_micros
+        for label in sorted(labels)
+    }
