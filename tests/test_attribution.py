@@ -85,3 +85,9 @@ def test_cost_delta_includes_added_and_removed_labels() -> None:
     left = {"same": m.Cost(3), "removed": m.Cost(2)}
     right = {"same": m.Cost(5), "added": m.Cost(7)}
     assert m.cost_delta(left, right) == {"added": 7, "removed": -2, "same": 2}
+
+
+def test_cost_delta_is_antisymmetric() -> None:
+    left, right = {"a": m.Cost(3), "b": m.Cost(2)}, {"a": m.Cost(9), "c": m.Cost(1)}
+    forward, backward = m.cost_delta(left, right), m.cost_delta(right, left)
+    assert {label: -value for label, value in forward.items()} == backward
