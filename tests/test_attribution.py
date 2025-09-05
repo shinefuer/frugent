@@ -60,3 +60,17 @@ def test_rate_breakdown_conversion_reconciles_actual_cost() -> None:
     cost = m.from_rate_breakdown(breakdown, baseline_micros=120)
     assert cost == m.Cost(100, 20, 30, 5)
     assert cost.net_micros == breakdown.total_micros
+
+
+@pytest.mark.parametrize("cached", [0, 10, 50, 100])
+def test_rate_attribution_matches_priced_usage(cached: int) -> None:
+    from frugent.ratecard import ModelRate, attribute_savings, price_usage
+    from frugent.types import Usage
+
+    rate, usage = ModelRate("m", 1000, 2000, 250_000, 800_000), Usage(100, 10, cached)
+    breakdown = price_usage(rate, usage, batched=True)
+    savings = attribute_savings(rate, usage, batched=True)
+    assert (
+        m.from_rate_breakdown(breakdown, savings.baseline_micros).net_micros
+        == savings.actual_micros
+    )
