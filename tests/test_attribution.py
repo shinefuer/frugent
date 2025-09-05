@@ -51,3 +51,12 @@ def test_group_costs_sorts_labels_and_sums_records() -> None:
     )
     assert tuple(grouped) == ("model:small", "tool:read")
     assert grouped["tool:read"].net_micros == 7
+
+
+def test_rate_breakdown_conversion_reconciles_actual_cost() -> None:
+    from frugent.ratecard import CostBreakdown
+
+    breakdown = CostBreakdown(60, 10, 20, 5)
+    cost = m.from_rate_breakdown(breakdown, baseline_micros=120)
+    assert cost == m.Cost(100, 20, 30, 5)
+    assert cost.net_micros == breakdown.total_micros

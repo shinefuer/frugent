@@ -75,3 +75,18 @@ def group_costs(records: tuple[tuple[str, Cost], ...]) -> dict[str, Cost]:
             raise AttributionError("cost grouping: label must be non-empty")
         groups.setdefault(label, []).append(cost)
     return {label: add_costs(tuple(groups[label])) for label in sorted(groups)}
+
+
+def from_rate_breakdown(breakdown: object, baseline_micros: int) -> Cost:
+    """Translate the shared rate-card result without recomputing prices."""
+    from frugent.ratecard import CostBreakdown
+
+    if not isinstance(breakdown, CostBreakdown) or baseline_micros < breakdown.total_micros:
+        raise AttributionError("rate breakdown: invalid object or baseline")
+    cache_saved = baseline_micros - breakdown.gross_micros
+    return Cost(
+        breakdown.uncached_prompt_micros + breakdown.cached_prompt_micros + cache_saved,
+        breakdown.completion_micros,
+        cache_saved,
+        breakdown.batch_discount_micros,
+    )
