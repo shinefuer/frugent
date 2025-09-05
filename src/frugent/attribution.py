@@ -90,3 +90,13 @@ def from_rate_breakdown(breakdown: object, baseline_micros: int) -> Cost:
         cache_saved,
         breakdown.batch_discount_micros,
     )
+
+
+def net_shares(costs: dict[str, Cost]) -> dict[str, float]:
+    """Return quantized non-negative shares of total net cost."""
+    if any(cost.net_micros < 0 for cost in costs.values()):
+        raise AttributionError("cost shares: negative net cost")
+    total = sum(cost.net_micros for cost in costs.values())
+    if total == 0:
+        return {label: 0.0 for label in sorted(costs)}
+    return {label: round(costs[label].net_micros / total, 6) for label in sorted(costs)}

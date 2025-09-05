@@ -74,3 +74,8 @@ def test_rate_attribution_matches_priced_usage(cached: int) -> None:
         m.from_rate_breakdown(breakdown, savings.baseline_micros).net_micros
         == savings.actual_micros
     )
+
+
+def test_net_shares_use_grouped_actual_cost() -> None:
+    assert m.net_shares({"a": m.Cost(1), "b": m.Cost(3)}) == {"a": 0.25, "b": 0.75}
+    assert m.net_shares({"a": m.Cost()}) == {"a": 0.0}
