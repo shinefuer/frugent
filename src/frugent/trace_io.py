@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from frugent.codec import decode_envelope, encode_envelope
+
 
 class TraceIOError(ValueError):
     """Raised for corrupted or unsupported trace streams."""
@@ -35,3 +37,24 @@ class TraceHeader:
             "rate_card_hash": self.rate_card_hash,
             "schema_version": self.schema_version,
         }
+
+
+def encode_event(sequence: int, event: dict[str, object]) -> bytes:
+    """Encode one sequence-bearing event with the shared checksum codec."""
+    if sequence < 0 or "sequence" in event:
+        raise TraceIOError("trace event: invalid or duplicate sequence")
+    return encode_envelope("frugent.trace.event", 2, {"sequence": sequence, **event})
+
+
+def decode_event(data: bytes | str) -> dict[str, object]:
+    try:
+        version, payload = decode_envelope(data, "frugent.trace.event")
+    except ValueError as error:
+        raise TraceIOError(f"trace event: {error}") from error
+    if (
+        version != 2
+        or not isinstance(payload, dict)
+        or not isinstance(payload.get("sequence"), int)
+    ):
+        raise TraceIOError("trace event: unsupported version or payload")
+    return payload
