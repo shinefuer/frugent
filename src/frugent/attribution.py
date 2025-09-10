@@ -109,3 +109,14 @@ def cost_delta(left: dict[str, Cost], right: dict[str, Cost]) -> dict[str, int]:
         label: right.get(label, Cost()).net_micros - left.get(label, Cost()).net_micros
         for label in sorted(labels)
     }
+
+
+def cost_record(cost: Cost) -> dict[str, int]:
+    return {
+        "prompt_micros": cost.prompt_micros,
+        "completion_micros": cost.completion_micros,
+        "cache_saved_micros": cost.cache_saved_micros,
+        "batch_saved_micros": cost.batch_saved_micros,
+        "adjustment_micros": cost.adjustment_micros,
+        "net_micros": cost.net_micros,
+    }

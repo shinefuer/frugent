@@ -91,3 +91,14 @@ def test_cost_delta_is_antisymmetric() -> None:
     left, right = {"a": m.Cost(3), "b": m.Cost(2)}, {"a": m.Cost(9), "c": m.Cost(1)}
     forward, backward = m.cost_delta(left, right), m.cost_delta(right, left)
     assert {label: -value for label, value in forward.items()} == backward
+
+
+def test_cost_record_golden_shape() -> None:
+    assert m.cost_record(m.Cost(5, 7, 2, 1, -1)) == {
+        "prompt_micros": 5,
+        "completion_micros": 7,
+        "cache_saved_micros": 2,
+        "batch_saved_micros": 1,
+        "adjustment_micros": -1,
+        "net_micros": 8,
+    }
