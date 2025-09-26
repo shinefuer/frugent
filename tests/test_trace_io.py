@@ -45,3 +45,11 @@ def test_trace_export_has_header_and_one_line_per_event() -> None:
     data = m.export_trace(m.TraceHeader("r", 1, "c", "p"), ({"kind": "a"}, {"kind": "b"}))
     assert data.count(b"\n") == 3
     assert data.endswith(b"\n")
+
+
+def test_trace_import_inverts_export() -> None:
+    header = m.TraceHeader("r", 1, "c", "p")
+    data = m.export_trace(header, ({"kind": "a"}, {"kind": "b"}))
+    restored_header, events = m.import_trace(data)
+    assert restored_header == header
+    assert events == ({"sequence": 0, "kind": "a"}, {"sequence": 1, "kind": "b"})

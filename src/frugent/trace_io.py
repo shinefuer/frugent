@@ -65,3 +65,25 @@ def export_trace(header: TraceHeader, events: tuple[dict[str, object], ...]) -> 
     lines = [encode_envelope("frugent.trace.header", 2, header.to_record())]
     lines.extend(encode_event(index, event) for index, event in enumerate(events))
     return b"\n".join(lines) + b"\n"
+
+
+def import_trace(data: bytes | str) -> tuple[TraceHeader, tuple[dict[str, object], ...]]:
+    """Verify every line, schema, and contiguous sequence."""
+    raw = data.encode() if isinstance(data, str) else data
+    if not raw.endswith(b"\n") or not raw:
+        raise TraceIOError("trace stream: expected complete newline-terminated data")
+    lines = raw.splitlines()
+    try:
+        version, header_record = decode_envelope(lines[0], "frugent.trace.header")
+    except ValueError as error:
+        raise TraceIOError(f"trace header: {error}") from error
+    if version != 2 or not isinstance(header_record, dict):
+        raise TraceIOError("trace header: unsupported schema")
+    try:
+        header = TraceHeader(**header_record)
+    except TypeError as error:
+        raise TraceIOError(f"trace header: invalid shape: {error}") from error
+    events = tuple(decode_event(line) for line in lines[1:])
+    if tuple(event["sequence"] for event in events) != tuple(range(len(events))):
+        raise TraceIOError("trace stream: event sequence is not contiguous")
+    return header, events
