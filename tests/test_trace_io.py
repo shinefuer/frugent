@@ -64,3 +64,12 @@ def test_verify_trace_detects_single_byte_tampering() -> None:
 def test_verify_trace_rejects_truncated_tail() -> None:
     data = m.export_trace(m.TraceHeader("r", 1, "c", "p"), ())
     assert not m.verify_trace(data.rstrip(b"\n"))
+
+
+@pytest.mark.parametrize("index", range(5))
+def test_tampering_any_event_line_invalidates_stream(index: int) -> None:
+    data = m.export_trace(
+        m.TraceHeader("r", 1, "c", "p"), tuple({"kind": f"event-{i}"} for i in range(5))
+    )
+    changed = data.replace(f"event-{index}".encode(), f"event-X{index}".encode())
+    assert not m.verify_trace(changed)
