@@ -31,3 +31,11 @@ def test_trace_event_roundtrip_preserves_payload() -> None:
 def test_trace_event_rejects_duplicate_sequence_field() -> None:
     with pytest.raises(m.TraceIOError, match="duplicate sequence"):
         m.encode_event(1, {"sequence": 2})
+
+
+@pytest.mark.parametrize("field", ["run_id", "config_hash", "rate_card_hash"])
+def test_header_requires_each_identity_field(field: str) -> None:
+    values = {"run_id": "r", "seed": 1, "config_hash": "c", "rate_card_hash": "p"}
+    values[field] = ""
+    with pytest.raises(m.TraceIOError, match="trace header"):
+        m.TraceHeader(**values)
