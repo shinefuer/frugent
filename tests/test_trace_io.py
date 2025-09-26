@@ -39,3 +39,9 @@ def test_header_requires_each_identity_field(field: str) -> None:
     values[field] = ""
     with pytest.raises(m.TraceIOError, match="trace header"):
         m.TraceHeader(**values)
+
+
+def test_trace_export_has_header_and_one_line_per_event() -> None:
+    data = m.export_trace(m.TraceHeader("r", 1, "c", "p"), ({"kind": "a"}, {"kind": "b"}))
+    assert data.count(b"\n") == 3
+    assert data.endswith(b"\n")

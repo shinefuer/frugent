@@ -58,3 +58,10 @@ def decode_event(data: bytes | str) -> dict[str, object]:
     ):
         raise TraceIOError("trace event: unsupported version or payload")
     return payload
+
+
+def export_trace(header: TraceHeader, events: tuple[dict[str, object], ...]) -> bytes:
+    """Write header then ordered events as independently checksummed lines."""
+    lines = [encode_envelope("frugent.trace.header", 2, header.to_record())]
+    lines.extend(encode_event(index, event) for index, event in enumerate(events))
+    return b"\n".join(lines) + b"\n"
