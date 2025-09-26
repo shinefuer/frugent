@@ -53,3 +53,14 @@ def test_trace_import_inverts_export() -> None:
     restored_header, events = m.import_trace(data)
     assert restored_header == header
     assert events == ({"sequence": 0, "kind": "a"}, {"sequence": 1, "kind": "b"})
+
+
+def test_verify_trace_detects_single_byte_tampering() -> None:
+    data = m.export_trace(m.TraceHeader("r", 1, "c", "p"), ({"kind": "alpha"},))
+    assert m.verify_trace(data)
+    assert not m.verify_trace(data.replace(b"alpha", b"omega"))
+
+
+def test_verify_trace_rejects_truncated_tail() -> None:
+    data = m.export_trace(m.TraceHeader("r", 1, "c", "p"), ())
+    assert not m.verify_trace(data.rstrip(b"\n"))

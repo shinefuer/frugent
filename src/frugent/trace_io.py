@@ -87,3 +87,12 @@ def import_trace(data: bytes | str) -> tuple[TraceHeader, tuple[dict[str, object
     if tuple(event["sequence"] for event in events) != tuple(range(len(events))):
         raise TraceIOError("trace stream: event sequence is not contiguous")
     return header, events
+
+
+def verify_trace(data: bytes | str) -> bool:
+    """Return true only when the complete trace can be imported."""
+    try:
+        import_trace(data)
+    except TraceIOError:
+        return False
+    return True
