@@ -90,3 +90,9 @@ def test_trace_fingerprint_is_exact_byte_digest() -> None:
     assert m.trace_fingerprint(data) == m.trace_fingerprint(data)
     changed = m.export_trace(m.TraceHeader("r", 1, "c", "p"), ({"kind": "y"},))
     assert m.trace_fingerprint(data) != m.trace_fingerprint(changed)
+
+
+def test_same_header_and_events_export_identical_bytes() -> None:
+    header = m.TraceHeader("run", 42, "config", "rate")
+    events = tuple({"kind": "step", "value": index} for index in range(20))
+    assert m.export_trace(header, events) == m.export_trace(header, events)
