@@ -119,3 +119,17 @@ def trace_fingerprint(data: bytes | str) -> str:
     if not verify_trace(raw):
         raise TraceIOError("trace fingerprint: stream is invalid")
     return "sha256:" + hashlib.sha256(raw).hexdigest()
+
+
+def event_diff(left: bytes, right: bytes) -> tuple[dict[str, object], ...]:
+    """Return paired sequence records whose logical payload changed."""
+    _, left_events = import_trace(left)
+    _, right_events = import_trace(right)
+    length = max(len(left_events), len(right_events))
+    changes: list[dict[str, object]] = []
+    for index in range(length):
+        before = left_events[index] if index < len(left_events) else None
+        after = right_events[index] if index < len(right_events) else None
+        if before != after:
+            changes.append({"sequence": index, "before": before, "after": after})
+    return tuple(changes)

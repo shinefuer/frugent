@@ -96,3 +96,12 @@ def test_same_header_and_events_export_identical_bytes() -> None:
     header = m.TraceHeader("run", 42, "config", "rate")
     events = tuple({"kind": "step", "value": index} for index in range(20))
     assert m.export_trace(header, events) == m.export_trace(header, events)
+
+
+def test_event_diff_reports_change_and_addition() -> None:
+    header = m.TraceHeader("r", 1, "c", "p")
+    left = m.export_trace(header, ({"kind": "a"},))
+    right = m.export_trace(header, ({"kind": "b"}, {"kind": "c"}))
+    changes = m.event_diff(left, right)
+    assert tuple(change["sequence"] for change in changes) == (0, 1)
+    assert changes[1]["before"] is None
