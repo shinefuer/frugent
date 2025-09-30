@@ -73,3 +73,13 @@ def test_tampering_any_event_line_invalidates_stream(index: int) -> None:
     )
     changed = data.replace(f"event-{index}".encode(), f"event-X{index}".encode())
     assert not m.verify_trace(changed)
+
+
+def test_v1_header_migration_renames_reproducibility_fields() -> None:
+    legacy = {"schema_version": 1, "run": "r", "seed": 3, "config": "c", "rate": "p"}
+    assert m.migrate_header(legacy) == m.TraceHeader("r", 3, "c", "p").to_record()
+
+
+def test_current_header_migration_is_idempotent() -> None:
+    record = m.TraceHeader("r", 3, "c", "p").to_record()
+    assert m.migrate_header(m.migrate_header(record)) == record

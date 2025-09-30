@@ -96,3 +96,16 @@ def verify_trace(data: bytes | str) -> bool:
     except TraceIOError:
         return False
     return True
+
+
+def migrate_header(record: dict[str, object]) -> dict[str, object]:
+    """Migrate v1 run/config/rate fields to explicit v2 names."""
+    version = record.get("schema_version")
+    if version == 2:
+        return TraceHeader(**record).to_record()
+    expected = {"schema_version", "run", "seed", "config", "rate"}
+    if version != 1 or set(record) != expected:
+        raise TraceIOError("trace migration: unsupported legacy header")
+    return TraceHeader(
+        str(record["run"]), int(record["seed"]), str(record["config"]), str(record["rate"])
+    ).to_record()
