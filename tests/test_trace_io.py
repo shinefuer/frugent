@@ -83,3 +83,10 @@ def test_v1_header_migration_renames_reproducibility_fields() -> None:
 def test_current_header_migration_is_idempotent() -> None:
     record = m.TraceHeader("r", 3, "c", "p").to_record()
     assert m.migrate_header(m.migrate_header(record)) == record
+
+
+def test_trace_fingerprint_is_exact_byte_digest() -> None:
+    data = m.export_trace(m.TraceHeader("r", 1, "c", "p"), ({"kind": "x"},))
+    assert m.trace_fingerprint(data) == m.trace_fingerprint(data)
+    changed = m.export_trace(m.TraceHeader("r", 1, "c", "p"), ({"kind": "y"},))
+    assert m.trace_fingerprint(data) != m.trace_fingerprint(changed)

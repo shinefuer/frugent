@@ -109,3 +109,13 @@ def migrate_header(record: dict[str, object]) -> dict[str, object]:
     return TraceHeader(
         str(record["run"]), int(record["seed"]), str(record["config"]), str(record["rate"])
     ).to_record()
+
+
+def trace_fingerprint(data: bytes | str) -> str:
+    """Hash exact verified bytes for report metadata."""
+    import hashlib
+
+    raw = data.encode() if isinstance(data, str) else data
+    if not verify_trace(raw):
+        raise TraceIOError("trace fingerprint: stream is invalid")
+    return "sha256:" + hashlib.sha256(raw).hexdigest()
