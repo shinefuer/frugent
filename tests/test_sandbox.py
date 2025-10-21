@@ -69,3 +69,11 @@ def test_environment_decision_reports_unknown_names() -> None:
 def test_environment_decision_accepts_only_declared_values() -> None:
     policy = m.Policy((("run",),), (), frozenset({"SAFE"}))
     assert m.environment_decision(policy, {"SAFE": "1"}).allowed
+
+
+@pytest.mark.parametrize(
+    "path", ["..", "../a", "a/../b", "a/b/../../c", "/tmp/x", "//server/share", "src/../../../etc"]
+)
+def test_path_traversal_corpus_is_always_denied(path: str) -> None:
+    policy = m.Policy((("read",),), ("**",), frozenset())
+    assert not m.path_decision(policy, path).allowed
