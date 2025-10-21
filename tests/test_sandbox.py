@@ -26,3 +26,22 @@ def test_command_decision_matches_complete_prefix_tokens() -> None:
     assert m.command_decision(policy, ("git", "diff", "--stat")).allowed
     assert not m.command_decision(policy, ("git", "status")).allowed
     assert not m.command_decision(policy, ("git-diff",)).allowed
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ("sh", "-c", "echo ok; rm x"),
+        ("echo", "$(touch x)"),
+        ("cat", "x > y"),
+        ("printf", "`id`"),
+        ("cmd", "a||b"),
+        ("cmd", "a&&b"),
+    ],
+)
+def test_shell_injection_corpus_is_always_denied(argv: tuple[str, ...]) -> None:
+    assert not m.injection_decision(argv).allowed
+
+
+def test_literal_argv_without_shell_syntax_is_allowed() -> None:
+    assert m.injection_decision(("python", "-m", "pytest", "tests/test_x.py::test_ok")).allowed

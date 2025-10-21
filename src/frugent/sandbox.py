@@ -41,3 +41,16 @@ def command_decision(policy: Policy, argv: tuple[str, ...]) -> Decision:
         if argv[: len(prefix)] == prefix:
             return Decision(True, "command prefix allowed", " ".join(prefix))
     return Decision(False, "command prefix is not allowlisted")
+
+
+SHELL_METACHARACTERS = frozenset({";", "&&", "||", "|", "`", "$(", ">", "<"})
+
+
+def injection_decision(argv: tuple[str, ...]) -> Decision:
+    """Reject shell syntax even though execution uses argv directly."""
+    for argument in argv:
+        if any(token in argument for token in SHELL_METACHARACTERS):
+            return Decision(False, f"shell metacharacter in argument: {argument!r}")
+        if "\n" in argument or "\x00" in argument:
+            return Decision(False, "control character in argument")
+    return Decision(True, "arguments contain no shell syntax")
