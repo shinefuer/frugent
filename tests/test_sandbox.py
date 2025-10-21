@@ -45,3 +45,15 @@ def test_shell_injection_corpus_is_always_denied(argv: tuple[str, ...]) -> None:
 
 def test_literal_argv_without_shell_syntax_is_allowed() -> None:
     assert m.injection_decision(("python", "-m", "pytest", "tests/test_x.py::test_ok")).allowed
+
+
+@pytest.mark.parametrize("path", ["../x", "src/../../x", "/etc/passwd", ""])
+def test_path_decision_rejects_traversal_and_absolute_paths(path: str) -> None:
+    policy = m.Policy((("read",),), ("src/**",), frozenset())
+    assert not m.path_decision(policy, path).allowed
+
+
+def test_path_decision_accepts_declared_relative_glob() -> None:
+    policy = m.Policy((("read",),), ("src/**/*.py",), frozenset())
+    assert m.path_decision(policy, "src/frugent/cache.py").allowed
+    assert not m.path_decision(policy, "tests/test_cache.py").allowed

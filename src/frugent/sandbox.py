@@ -54,3 +54,17 @@ def injection_decision(argv: tuple[str, ...]) -> Decision:
         if "\n" in argument or "\x00" in argument:
             return Decision(False, "control character in argument")
     return Decision(True, "arguments contain no shell syntax")
+
+
+def path_decision(policy: Policy, path: str) -> Decision:
+    """Resolve a relative POSIX path and apply declared glob rules."""
+    from pathlib import PurePosixPath
+
+    candidate = PurePosixPath(path)
+    if candidate.is_absolute() or ".." in candidate.parts or not path:
+        return Decision(False, "path is absolute, empty, or traverses parent")
+    normalized = str(candidate)
+    for pattern in policy.path_globs:
+        if candidate.match(pattern):
+            return Decision(True, "path glob allowed", pattern)
+    return Decision(False, f"path is outside allowlist: {normalized}")
