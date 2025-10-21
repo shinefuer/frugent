@@ -68,3 +68,13 @@ def path_decision(policy: Policy, path: str) -> Decision:
         if candidate.match(pattern):
             return Decision(True, "path glob allowed", pattern)
     return Decision(False, f"path is outside allowlist: {normalized}")
+
+
+def environment_decision(policy: Policy, environment: dict[str, str]) -> Decision:
+    """Reject undeclared variables and non-string values."""
+    unknown = sorted(set(environment) - policy.allowed_env)
+    if unknown:
+        return Decision(False, f"environment variables are not allowlisted: {unknown}")
+    if not all(isinstance(value, str) and "\x00" not in value for value in environment.values()):
+        return Decision(False, "environment values must be NUL-free strings")
+    return Decision(True, "environment allowlist satisfied")

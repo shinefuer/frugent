@@ -57,3 +57,15 @@ def test_path_decision_accepts_declared_relative_glob() -> None:
     policy = m.Policy((("read",),), ("src/**/*.py",), frozenset())
     assert m.path_decision(policy, "src/frugent/cache.py").allowed
     assert not m.path_decision(policy, "tests/test_cache.py").allowed
+
+
+def test_environment_decision_reports_unknown_names() -> None:
+    policy = m.Policy((("run",),), (), frozenset({"SAFE"}))
+    decision = m.environment_decision(policy, {"SAFE": "1", "SECRET": "x"})
+    assert not decision.allowed
+    assert "SECRET" in decision.reason
+
+
+def test_environment_decision_accepts_only_declared_values() -> None:
+    policy = m.Policy((("run",),), (), frozenset({"SAFE"}))
+    assert m.environment_decision(policy, {"SAFE": "1"}).allowed
