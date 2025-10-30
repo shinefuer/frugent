@@ -84,3 +84,18 @@ def test_combined_decision_returns_first_denial() -> None:
     assert "metacharacter" in m.decide(policy, ("python", "x;bad"), ("../x",)).reason
     assert "outside allowlist" in m.decide(policy, ("python", "safe"), ("tests/x",)).reason
     assert m.decide(policy, ("python", "safe"), ("src/x",)).allowed
+
+
+def test_dry_run_record_contains_decision_without_output() -> None:
+    policy = m.Policy((("echo",),), (), frozenset())
+    record = m.dry_run_record(policy, ("echo", "safe"))
+    assert record == {
+        "schema_version": 1,
+        "mode": "dry_run",
+        "argv": ["echo", "safe"],
+        "paths": [],
+        "allowed": True,
+        "reason": "all sandbox rules allowed",
+        "rule": None,
+    }
+    assert "stdout" not in record

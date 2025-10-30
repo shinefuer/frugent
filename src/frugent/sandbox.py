@@ -94,3 +94,22 @@ def decide(
         (decision for decision in checks if not decision.allowed),
         Decision(True, "all sandbox rules allowed"),
     )
+
+
+def dry_run_record(
+    policy: Policy,
+    argv: tuple[str, ...],
+    paths: tuple[str, ...] = (),
+    environment: dict[str, str] | None = None,
+) -> dict[str, object]:
+    """Describe a decision without executing anything."""
+    decision = decide(policy, argv, paths, environment)
+    return {
+        "schema_version": 1,
+        "mode": "dry_run",
+        "argv": list(argv),
+        "paths": list(paths),
+        "allowed": decision.allowed,
+        "reason": decision.reason,
+        "rule": decision.rule,
+    }
