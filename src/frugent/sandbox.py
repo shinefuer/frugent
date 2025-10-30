@@ -78,3 +78,19 @@ def environment_decision(policy: Policy, environment: dict[str, str]) -> Decisio
     if not all(isinstance(value, str) and "\x00" not in value for value in environment.values()):
         return Decision(False, "environment values must be NUL-free strings")
     return Decision(True, "environment allowlist satisfied")
+
+
+def decide(
+    policy: Policy,
+    argv: tuple[str, ...],
+    paths: tuple[str, ...] = (),
+    environment: dict[str, str] | None = None,
+) -> Decision:
+    """Return the first precise denial or a final allow decision."""
+    checks = [injection_decision(argv), command_decision(policy, argv)]
+    checks.extend(path_decision(policy, path) for path in paths)
+    checks.append(environment_decision(policy, environment or {}))
+    return next(
+        (decision for decision in checks if not decision.allowed),
+        Decision(True, "all sandbox rules allowed"),
+    )

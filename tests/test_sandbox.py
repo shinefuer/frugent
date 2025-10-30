@@ -77,3 +77,10 @@ def test_environment_decision_accepts_only_declared_values() -> None:
 def test_path_traversal_corpus_is_always_denied(path: str) -> None:
     policy = m.Policy((("read",),), ("**",), frozenset())
     assert not m.path_decision(policy, path).allowed
+
+
+def test_combined_decision_returns_first_denial() -> None:
+    policy = m.Policy((("python",),), ("src/**",), frozenset())
+    assert "metacharacter" in m.decide(policy, ("python", "x;bad"), ("../x",)).reason
+    assert "outside allowlist" in m.decide(policy, ("python", "safe"), ("tests/x",)).reason
+    assert m.decide(policy, ("python", "safe"), ("src/x",)).allowed
