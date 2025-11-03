@@ -105,3 +105,15 @@ def test_same_policy_request_produces_identical_dry_run_record() -> None:
     policy = m.Policy((("python", "-m"),), ("src/**",), frozenset({"SAFE"}))
     args = (policy, ("python", "-m", "module"), ("src/x.py",), {"SAFE": "1"})
     assert m.dry_run_record(*args) == m.dry_run_record(*args)
+
+
+def test_policy_record_golden_roundtrip() -> None:
+    policy = m.Policy((("git", "diff"),), ("src/**",), frozenset({"LANG", "SAFE"}))
+    record = m.policy_record(policy)
+    assert record == {
+        "schema_version": 1,
+        "command_prefixes": [["git", "diff"]],
+        "path_globs": ["src/**"],
+        "allowed_env": ["LANG", "SAFE"],
+    }
+    assert m.policy_from_record(record) == policy

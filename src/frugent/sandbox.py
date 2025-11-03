@@ -113,3 +113,26 @@ def dry_run_record(
         "reason": decision.reason,
         "rule": decision.rule,
     }
+
+
+def policy_record(policy: Policy) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "command_prefixes": [list(prefix) for prefix in policy.command_prefixes],
+        "path_globs": list(policy.path_globs),
+        "allowed_env": sorted(policy.allowed_env),
+    }
+
+
+def policy_from_record(record: dict[str, object]) -> Policy:
+    expected = {"schema_version", "command_prefixes", "path_globs", "allowed_env"}
+    if set(record) != expected or record["schema_version"] != 1:
+        raise SandboxError("sandbox policy record: unexpected schema")
+    try:
+        return Policy(
+            tuple(tuple(part for part in prefix) for prefix in record["command_prefixes"]),
+            tuple(record["path_globs"]),
+            frozenset(record["allowed_env"]),
+        )
+    except (TypeError, ValueError) as error:
+        raise SandboxError(f"sandbox policy record: invalid shape: {error}") from error
