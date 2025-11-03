@@ -99,3 +99,9 @@ def test_dry_run_record_contains_decision_without_output() -> None:
         "rule": None,
     }
     assert "stdout" not in record
+
+
+def test_same_policy_request_produces_identical_dry_run_record() -> None:
+    policy = m.Policy((("python", "-m"),), ("src/**",), frozenset({"SAFE"}))
+    args = (policy, ("python", "-m", "module"), ("src/x.py",), {"SAFE": "1"})
+    assert m.dry_run_record(*args) == m.dry_run_record(*args)
