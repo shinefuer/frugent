@@ -50,3 +50,13 @@ def test_scripted_tools_reject_mismatched_call() -> None:
     tools = m.ScriptedTools(((expected, m.ToolResult("a", 0, b"", b"")),))
     with pytest.raises(m.ToolError, match="does not match"):
         tools.execute(m.ToolCall("b", ("read", "x")))
+
+
+def test_tool_dry_run_does_not_execute_command() -> None:
+    from frugent.sandbox import Policy
+
+    call = m.ToolCall("c", ("echo", "safe"))
+    result = m.dry_run(call, Policy((("echo",),), (), frozenset()))
+    assert result.exit_code == 0
+    assert b'"mode":"dry_run"' in result.stdout
+    assert b"safe\n" not in result.stdout

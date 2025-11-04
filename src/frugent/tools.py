@@ -62,3 +62,15 @@ class ScriptedTools:
     @property
     def complete(self) -> bool:
         return self._cursor == len(self._scripts)
+
+
+def dry_run(call: ToolCall, policy: object) -> ToolResult:
+    """Return a decision trace without spawning a process."""
+    from frugent.codec import canonical_json
+    from frugent.sandbox import Policy, dry_run_record
+
+    if not isinstance(policy, Policy):
+        raise ToolError("tool dry run: expected sandbox policy")
+    record = dry_run_record(policy, call.argv, call.paths, dict(call.environment))
+    exit_code = 0 if record["allowed"] else 126
+    return ToolResult(call.call_id, exit_code, canonical_json(record), b"")
