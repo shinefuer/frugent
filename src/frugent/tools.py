@@ -74,3 +74,33 @@ def dry_run(call: ToolCall, policy: object) -> ToolResult:
     record = dry_run_record(policy, call.argv, call.paths, dict(call.environment))
     exit_code = 0 if record["allowed"] else 126
     return ToolResult(call.call_id, exit_code, canonical_json(record), b"")
+
+
+def execute(call: ToolCall, policy: object, *, cwd: str, timeout_s: float = 5.0) -> ToolResult:
+    """Execute an allowed argv vector without a shell and capture bytes."""
+    import subprocess
+
+    from frugent.sandbox import Policy, decide
+
+    if not isinstance(policy, Policy) or timeout_s <= 0:
+        raise ToolError("tool execute: invalid policy or timeout")
+    decision = decide(policy, call.argv, call.paths, dict(call.environment))
+    if not decision.allowed:
+        return ToolResult(call.call_id, 126, b"", decision.reason.encode())
+    try:
+        completed = subprocess.run(
+            call.argv,
+            cwd=cwd,
+            env=dict(call.environment),
+            capture_output=True,
+            timeout=timeout_s,
+            check=False,
+            shell=False,
+        )
+    except subprocess.TimeoutExpired as error:
+        stdout = error.stdout or b""
+        stderr = error.stderr or b""
+        return ToolResult(call.call_id, 124, stdout, stderr, timed_out=True)
+    except OSError as error:
+        return ToolResult(call.call_id, 127, b"", str(error).encode())
+    return ToolResult(call.call_id, completed.returncode, completed.stdout, completed.stderr)

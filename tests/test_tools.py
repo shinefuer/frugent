@@ -60,3 +60,25 @@ def test_tool_dry_run_does_not_execute_command() -> None:
     assert result.exit_code == 0
     assert b'"mode":"dry_run"' in result.stdout
     assert b"safe\n" not in result.stdout
+
+
+def test_execute_runs_allowed_argv_without_shell(tmp_path: object) -> None:
+    import sys
+    from pathlib import Path
+
+    from frugent.sandbox import Policy
+
+    call = m.ToolCall("c", (sys.executable, "-c", "__import__('sys').stdout.buffer.write(b'ok')"))
+    policy = Policy(((sys.executable, "-c"),), (), frozenset())
+    result = m.execute(call, policy, cwd=str(Path.cwd()))
+    assert result == m.ToolResult("c", 0, b"ok", b"")
+
+
+def test_execute_returns_denial_without_spawning() -> None:
+    from frugent.sandbox import Policy
+
+    result = m.execute(
+        m.ToolCall("c", ("forbidden",)), Policy((("allowed",),), (), frozenset()), cwd="."
+    )
+    assert result.exit_code == 126
+    assert b"allowlisted" in result.stderr
