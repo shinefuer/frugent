@@ -35,3 +35,18 @@ def test_tool_results_preserve_signed_exit_codes(exit_code: int) -> None:
 def test_tool_result_rejects_boolean_exit_code() -> None:
     with pytest.raises(m.ToolError, match="exit code"):
         m.ToolResult("c", True, b"", b"")
+
+
+def test_scripted_tools_require_exact_call_order() -> None:
+    call = m.ToolCall("c", ("read", "x"))
+    result = m.ToolResult("c", 0, b"data", b"")
+    tools = m.ScriptedTools(((call, result),))
+    assert tools.execute(call) == result
+    assert tools.complete
+
+
+def test_scripted_tools_reject_mismatched_call() -> None:
+    expected = m.ToolCall("a", ("read", "x"))
+    tools = m.ScriptedTools(((expected, m.ToolResult("a", 0, b"", b"")),))
+    with pytest.raises(m.ToolError, match="does not match"):
+        tools.execute(m.ToolCall("b", ("read", "x")))
