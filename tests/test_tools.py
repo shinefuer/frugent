@@ -90,3 +90,11 @@ def test_dry_run_and_execute_agree_on_denial() -> None:
     policy = Policy((("allowed",),), (), frozenset())
     call = m.ToolCall("c", ("denied",))
     assert m.dry_run(call, policy).exit_code == m.execute(call, policy, cwd=".").exit_code == 126
+
+
+def test_timeout_result_preserves_clean_partial_output() -> None:
+    result = m.timeout_result("c", b"before", b"warning")
+    assert result.exit_code == 124
+    assert result.timed_out
+    assert result.stdout == b"before"
+    assert not result.cancelled

@@ -104,3 +104,10 @@ def execute(call: ToolCall, policy: object, *, cwd: str, timeout_s: float = 5.0)
     except OSError as error:
         return ToolResult(call.call_id, 127, b"", str(error).encode())
     return ToolResult(call.call_id, completed.returncode, completed.stdout, completed.stderr)
+
+
+def timeout_result(
+    call_id: str, partial_stdout: bytes = b"", partial_stderr: bytes = b""
+) -> ToolResult:
+    """Construct a canonical timeout result for adapters and tests."""
+    return ToolResult(call_id, 124, partial_stdout, partial_stderr, timed_out=True)
