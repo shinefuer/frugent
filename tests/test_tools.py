@@ -82,3 +82,11 @@ def test_execute_returns_denial_without_spawning() -> None:
     )
     assert result.exit_code == 126
     assert b"allowlisted" in result.stderr
+
+
+def test_dry_run_and_execute_agree_on_denial() -> None:
+    from frugent.sandbox import Policy
+
+    policy = Policy((("allowed",),), (), frozenset())
+    call = m.ToolCall("c", ("denied",))
+    assert m.dry_run(call, policy).exit_code == m.execute(call, policy, cwd=".").exit_code == 126
