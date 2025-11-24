@@ -118,3 +118,32 @@ def cancelled_result(
 ) -> ToolResult:
     """Construct a canonical cancellation result distinct from timeout."""
     return ToolResult(call_id, 130, partial_stdout, partial_stderr, cancelled=True)
+
+
+def result_record(result: ToolResult) -> dict[str, object]:
+    """Use hex so arbitrary bytes roundtrip through canonical JSON."""
+    return {
+        "schema_version": 1,
+        "call_id": result.call_id,
+        "exit_code": result.exit_code,
+        "stdout_hex": result.stdout.hex(),
+        "stderr_hex": result.stderr.hex(),
+        "timed_out": result.timed_out,
+        "cancelled": result.cancelled,
+    }
+
+
+def result_from_record(record: dict[str, object]) -> ToolResult:
+    try:
+        if record["schema_version"] != 1:
+            raise ToolError("tool result record: unsupported schema")
+        return ToolResult(
+            str(record["call_id"]),
+            int(record["exit_code"]),
+            bytes.fromhex(str(record["stdout_hex"])),
+            bytes.fromhex(str(record["stderr_hex"])),
+            bool(record["timed_out"]),
+            bool(record["cancelled"]),
+        )
+    except (KeyError, ValueError) as error:
+        raise ToolError(f"tool result record: invalid shape: {error}") from error

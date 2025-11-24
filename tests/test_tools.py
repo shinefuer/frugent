@@ -111,3 +111,10 @@ def test_cancelled_result_is_distinct_from_timeout() -> None:
 def test_timeout_and_cancellation_preserve_partial_bytes(payload: bytes) -> None:
     assert m.timeout_result("t", payload).stdout == payload
     assert m.cancelled_result("c", payload).stdout == payload
+
+
+def test_tool_result_record_roundtrip_handles_binary() -> None:
+    result = m.ToolResult("c", 7, b"\x00\xff", b"err")
+    record = m.result_record(result)
+    assert record["stdout_hex"] == "00ff"
+    assert m.result_from_record(record) == result
