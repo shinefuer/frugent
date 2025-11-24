@@ -105,3 +105,9 @@ def test_cancelled_result_is_distinct_from_timeout() -> None:
     assert result.exit_code == 130
     assert result.cancelled and not result.timed_out
     assert result != m.timeout_result("c", b"partial")
+
+
+@pytest.mark.parametrize("payload", [b"", b"text", b"\x00\xff", bytes(range(64))])
+def test_timeout_and_cancellation_preserve_partial_bytes(payload: bytes) -> None:
+    assert m.timeout_result("t", payload).stdout == payload
+    assert m.cancelled_result("c", payload).stdout == payload
