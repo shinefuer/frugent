@@ -111,3 +111,10 @@ def timeout_result(
 ) -> ToolResult:
     """Construct a canonical timeout result for adapters and tests."""
     return ToolResult(call_id, 124, partial_stdout, partial_stderr, timed_out=True)
+
+
+def cancelled_result(
+    call_id: str, partial_stdout: bytes = b"", partial_stderr: bytes = b""
+) -> ToolResult:
+    """Construct a canonical cancellation result distinct from timeout."""
+    return ToolResult(call_id, 130, partial_stdout, partial_stderr, cancelled=True)

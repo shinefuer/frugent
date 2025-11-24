@@ -98,3 +98,10 @@ def test_timeout_result_preserves_clean_partial_output() -> None:
     assert result.timed_out
     assert result.stdout == b"before"
     assert not result.cancelled
+
+
+def test_cancelled_result_is_distinct_from_timeout() -> None:
+    result = m.cancelled_result("c", b"partial")
+    assert result.exit_code == 130
+    assert result.cancelled and not result.timed_out
+    assert result != m.timeout_result("c", b"partial")
