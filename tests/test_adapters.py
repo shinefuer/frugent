@@ -29,3 +29,9 @@ def test_scripted_adapter_returns_planted_exact_response() -> None:
 def test_scripted_adapter_rejects_unplanted_prompt() -> None:
     with pytest.raises(m.AdapterError, match="not planted"):
         m.ScriptedAdapter("m", {}).complete(m.AdapterRequest("r", b"unknown", 0))
+
+
+def test_scripted_adapter_detects_one_byte_prompt_drift() -> None:
+    adapter = m.ScriptedAdapter("m", {b"prompt": b"result"})
+    with pytest.raises(m.AdapterError, match="not planted"):
+        adapter.complete(m.AdapterRequest("r", b"prompT", 0))
