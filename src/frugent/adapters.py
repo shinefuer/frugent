@@ -33,3 +33,25 @@ class AdapterResponse:
 @runtime_checkable
 class Adapter(Protocol):
     def complete(self, request: AdapterRequest) -> AdapterResponse: ...
+
+
+class ScriptedAdapter:
+    """Map exact prompt bytes to planted responses without model inference."""
+
+    def __init__(self, model: str, scripts: dict[bytes, bytes]) -> None:
+        if not model:
+            raise AdapterError("scripted adapter: model must be non-empty")
+        self.model = model
+        self.scripts = dict(scripts)
+
+    def complete(self, request: AdapterRequest) -> AdapterResponse:
+        if request.prompt not in self.scripts:
+            raise AdapterError("scripted adapter: prompt is not planted")
+        content = self.scripts[request.prompt]
+        return AdapterResponse(
+            request.request_id,
+            content,
+            self.model,
+            len(request.prompt.split()),
+            len(content.split()),
+        )

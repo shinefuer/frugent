@@ -17,3 +17,15 @@ def test_adapter_records_preserve_binary_payloads() -> None:
 def test_adapter_request_requires_identity() -> None:
     with pytest.raises(m.AdapterError, match="adapter request"):
         m.AdapterRequest("", b"x", 0)
+
+
+def test_scripted_adapter_returns_planted_exact_response() -> None:
+    adapter = m.ScriptedAdapter("scripted-small", {b"fix x": b"edit x"})
+    response = adapter.complete(m.AdapterRequest("r", b"fix x", 1))
+    assert response == m.AdapterResponse("r", b"edit x", "scripted-small", 2, 2)
+    assert isinstance(adapter, m.Adapter)
+
+
+def test_scripted_adapter_rejects_unplanted_prompt() -> None:
+    with pytest.raises(m.AdapterError, match="not planted"):
+        m.ScriptedAdapter("m", {}).complete(m.AdapterRequest("r", b"unknown", 0))
