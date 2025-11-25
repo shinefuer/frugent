@@ -55,3 +55,20 @@ class ScriptedAdapter:
             len(request.prompt.split()),
             len(content.split()),
         )
+
+
+class ReplayAdapter:
+    """Consume exact request-response pairs in recorded order."""
+
+    def __init__(self, records: tuple[tuple[AdapterRequest, AdapterResponse], ...]) -> None:
+        self.records = records
+        self.cursor = 0
+
+    def complete(self, request: AdapterRequest) -> AdapterResponse:
+        if self.cursor >= len(self.records):
+            raise AdapterError("replay adapter: session exhausted")
+        expected, response = self.records[self.cursor]
+        if request != expected or response.request_id != request.request_id:
+            raise AdapterError("replay adapter: request mismatch")
+        self.cursor += 1
+        return response

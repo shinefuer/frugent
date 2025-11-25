@@ -35,3 +35,12 @@ def test_scripted_adapter_detects_one_byte_prompt_drift() -> None:
     adapter = m.ScriptedAdapter("m", {b"prompt": b"result"})
     with pytest.raises(m.AdapterError, match="not planted"):
         adapter.complete(m.AdapterRequest("r", b"prompT", 0))
+
+
+def test_replay_adapter_requires_recorded_order() -> None:
+    request = m.AdapterRequest("r", b"p", 0)
+    response = m.AdapterResponse("r", b"c", "replay", 1, 1)
+    adapter = m.ReplayAdapter(((request, response),))
+    assert adapter.complete(request) == response
+    with pytest.raises(m.AdapterError, match="exhausted"):
+        adapter.complete(request)
