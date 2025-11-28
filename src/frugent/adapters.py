@@ -150,3 +150,20 @@ def complete_loopback(url: str, request: AdapterRequest, timeout_s: float = 2.0)
     if result.request_id != request.request_id:
         raise AdapterError("loopback adapter: response id mismatch")
     return result
+
+
+def session_fingerprint(records: tuple[tuple[AdapterRequest, AdapterResponse], ...]) -> str:
+    from frugent.codec import payload_digest
+
+    logical = [
+        {
+            "request": {
+                "id": request.request_id,
+                "prompt": request.prompt.hex(),
+                "seed": request.seed,
+            },
+            "response": response_record(response),
+        }
+        for request, response in records
+    ]
+    return payload_digest(logical)

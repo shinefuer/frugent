@@ -87,3 +87,10 @@ def test_loopback_adapter_rejects_local_https() -> None:
 def test_same_request_has_identical_loopback_payload() -> None:
     request = m.AdapterRequest("r", b"payload", 7)
     assert m.loopback_request_record(request) == m.loopback_request_record(request)
+
+
+def test_session_fingerprint_is_order_and_content_sensitive() -> None:
+    first = (m.AdapterRequest("1", b"a", 0), m.AdapterResponse("1", b"x", "m", 1, 1))
+    second = (m.AdapterRequest("2", b"b", 0), m.AdapterResponse("2", b"y", "m", 1, 1))
+    assert m.session_fingerprint((first, second)) == m.session_fingerprint((first, second))
+    assert m.session_fingerprint((first, second)) != m.session_fingerprint((second, first))
