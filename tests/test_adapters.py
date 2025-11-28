@@ -49,3 +49,11 @@ def test_replay_adapter_requires_recorded_order() -> None:
 def test_adapter_response_record_roundtrip() -> None:
     response = m.AdapterResponse("r", b"\x00\xff", "scripted", 7, 3)
     assert m.response_from_record(m.response_record(response)) == response
+
+
+def test_recording_adapter_does_not_change_observable_response() -> None:
+    inner = m.ScriptedAdapter("m", {b"p": b"r"})
+    adapter = m.RecordingAdapter(inner)
+    request = m.AdapterRequest("id", b"p", 0)
+    assert adapter.complete(request) == inner.complete(request)
+    assert adapter.records[0][0] == request

@@ -95,3 +95,16 @@ def response_from_record(record: dict[str, object]) -> AdapterResponse:
         )
     except (KeyError, ValueError) as error:
         raise AdapterError(f"adapter response record: {error}") from error
+
+
+class RecordingAdapter:
+    """Wrap an adapter and retain exact request-response pairs."""
+
+    def __init__(self, inner: Adapter) -> None:
+        self.inner = inner
+        self.records: list[tuple[AdapterRequest, AdapterResponse]] = []
+
+    def complete(self, request: AdapterRequest) -> AdapterResponse:
+        response = self.inner.complete(request)
+        self.records.append((request, response))
+        return response
