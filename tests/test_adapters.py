@@ -82,3 +82,8 @@ def test_loopback_adapter_rejects_nonlocal_url() -> None:
 def test_loopback_adapter_rejects_local_https() -> None:
     with pytest.raises(m.AdapterError, match="only local"):
         m.complete_loopback("https://127.0.0.1/api", m.AdapterRequest("r", b"p", 0))
+
+
+def test_same_request_has_identical_loopback_payload() -> None:
+    request = m.AdapterRequest("r", b"payload", 7)
+    assert m.loopback_request_record(request) == m.loopback_request_record(request)
