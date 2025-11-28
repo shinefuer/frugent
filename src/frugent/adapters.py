@@ -126,3 +126,27 @@ def loopback_response(data: bytes) -> AdapterResponse:
     if not isinstance(decoded, dict):
         raise AdapterError("loopback response: expected object")
     return response_from_record(decoded)
+
+
+def complete_loopback(url: str, request: AdapterRequest, timeout_s: float = 2.0) -> AdapterResponse:
+    """POST to an explicitly supplied local HTTP mock URL."""
+    from urllib.parse import urlparse
+    from urllib.request import Request, urlopen
+
+    parsed = urlparse(url)
+    if parsed.hostname not in {"127.0.0.1", "localhost", "::1"} or parsed.scheme != "http":
+        raise AdapterError("loopback adapter: only local HTTP mock URLs are allowed")
+    message = Request(
+        url,
+        data=loopback_request_record(request),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urlopen(message, timeout=timeout_s) as response:
+            result = loopback_response(response.read())
+    except OSError as error:
+        raise AdapterError(f"loopback adapter: local request failed: {error}") from error
+    if result.request_id != request.request_id:
+        raise AdapterError("loopback adapter: response id mismatch")
+    return result
