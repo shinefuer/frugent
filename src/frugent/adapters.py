@@ -72,3 +72,26 @@ class ReplayAdapter:
             raise AdapterError("replay adapter: request mismatch")
         self.cursor += 1
         return response
+
+
+def response_record(response: AdapterResponse) -> dict[str, object]:
+    return {
+        "request_id": response.request_id,
+        "content_hex": response.content.hex(),
+        "model": response.model,
+        "prompt_tokens": response.prompt_tokens,
+        "completion_tokens": response.completion_tokens,
+    }
+
+
+def response_from_record(record: dict[str, object]) -> AdapterResponse:
+    try:
+        return AdapterResponse(
+            str(record["request_id"]),
+            bytes.fromhex(str(record["content_hex"])),
+            str(record["model"]),
+            int(record["prompt_tokens"]),
+            int(record["completion_tokens"]),
+        )
+    except (KeyError, ValueError) as error:
+        raise AdapterError(f"adapter response record: {error}") from error

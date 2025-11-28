@@ -44,3 +44,8 @@ def test_replay_adapter_requires_recorded_order() -> None:
     assert adapter.complete(request) == response
     with pytest.raises(m.AdapterError, match="exhausted"):
         adapter.complete(request)
+
+
+def test_adapter_response_record_roundtrip() -> None:
+    response = m.AdapterResponse("r", b"\x00\xff", "scripted", 7, 3)
+    assert m.response_from_record(m.response_record(response)) == response
