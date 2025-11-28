@@ -108,3 +108,21 @@ class RecordingAdapter:
         response = self.inner.complete(request)
         self.records.append((request, response))
         return response
+
+
+def loopback_request_record(request: AdapterRequest) -> bytes:
+    """Encode the local HTTP adapter request without credentials or endpoints."""
+    from frugent.codec import canonical_json
+
+    return canonical_json(
+        {"request_id": request.request_id, "prompt_hex": request.prompt.hex(), "seed": request.seed}
+    )
+
+
+def loopback_response(data: bytes) -> AdapterResponse:
+    from frugent.codec import decode_json
+
+    decoded = decode_json(data)
+    if not isinstance(decoded, dict):
+        raise AdapterError("loopback response: expected object")
+    return response_from_record(decoded)

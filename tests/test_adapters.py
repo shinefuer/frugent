@@ -65,3 +65,10 @@ def test_recording_wrapper_preserves_binary_response(payload: bytes) -> None:
     response = adapter.complete(m.AdapterRequest("r", b"p", 0))
     assert response.content == payload
     assert adapter.records[0][1].content == payload
+
+
+def test_loopback_payload_codec_is_credential_free() -> None:
+    request = m.AdapterRequest("r", b"prompt", 9)
+    encoded = m.loopback_request_record(request)
+    assert encoded == b'{"prompt_hex":"70726f6d7074","request_id":"r","seed":9}'
+    assert b"api_key" not in encoded and b"endpoint" not in encoded
