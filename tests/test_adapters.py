@@ -57,3 +57,11 @@ def test_recording_adapter_does_not_change_observable_response() -> None:
     request = m.AdapterRequest("id", b"p", 0)
     assert adapter.complete(request) == inner.complete(request)
     assert adapter.records[0][0] == request
+
+
+@pytest.mark.parametrize("payload", [b"", b"text", b"\x00\xff", bytes(range(16))])
+def test_recording_wrapper_preserves_binary_response(payload: bytes) -> None:
+    adapter = m.RecordingAdapter(m.ScriptedAdapter("m", {b"p": payload}))
+    response = adapter.complete(m.AdapterRequest("r", b"p", 0))
+    assert response.content == payload
+    assert adapter.records[0][1].content == payload
