@@ -15,3 +15,8 @@ def test_retry_policy_accepts_zero_retries_and_jitter() -> None:
 def test_retry_policy_rejects_invalid_bounds(values: tuple[int, ...]) -> None:
     with pytest.raises(m.RetryError, match="retry policy"):
         m.RetryPolicy(*values)
+
+
+@pytest.mark.parametrize(("index", "expected"), [(0, 100), (1, 200), (2, 400), (3, 500)])
+def test_base_delay_doubles_then_caps(index: int, expected: int) -> None:
+    assert m.base_delay(m.RetryPolicy(4, 100, 500, 0), index) == expected

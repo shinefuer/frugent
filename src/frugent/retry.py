@@ -24,3 +24,10 @@ class RetryPolicy:
             raise RetryError("retry policy: values must be non-negative integers")
         if self.max_delay_ms < self.base_delay_ms or self.jitter_ppm > 1_000_000:
             raise RetryError("retry policy: invalid cap or jitter")
+
+
+def base_delay(policy: RetryPolicy, retry_index: int) -> int:
+    """Return capped exponential delay before a zero-based retry."""
+    if retry_index < 0 or retry_index >= policy.max_retries:
+        raise RetryError("retry delay: index outside retry budget")
+    return min(policy.max_delay_ms, policy.base_delay_ms * (2**retry_index))
