@@ -1,0 +1,17 @@
+"""Behavior and invariant tests."""
+
+from __future__ import annotations
+
+import pytest
+
+import frugent.retry as m
+
+
+def test_retry_policy_accepts_zero_retries_and_jitter() -> None:
+    assert m.RetryPolicy(0, 0, 0, 0).max_retries == 0
+
+
+@pytest.mark.parametrize("values", [(-1, 1, 1, 0), (1, 2, 1, 0), (1, 1, 1, 1_000_001)])
+def test_retry_policy_rejects_invalid_bounds(values: tuple[int, ...]) -> None:
+    with pytest.raises(m.RetryError, match="retry policy"):
+        m.RetryPolicy(*values)
