@@ -26,3 +26,10 @@ def test_delay_rejects_index_at_retry_budget() -> None:
     policy = m.RetryPolicy(2)
     with pytest.raises(m.RetryError, match="outside retry budget"):
         m.base_delay(policy, 2)
+
+
+def test_jittered_delay_is_seeded_and_bounded() -> None:
+    policy = m.RetryPolicy(4, 100, 1000, 250_000)
+    first = tuple(m.jittered_delay(policy, index, 7) for index in range(4))
+    assert first == tuple(m.jittered_delay(policy, index, 7) for index in range(4))
+    assert all(0 <= delay <= policy.max_delay_ms for delay in first)

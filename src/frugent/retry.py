@@ -31,3 +31,15 @@ def base_delay(policy: RetryPolicy, retry_index: int) -> int:
     if retry_index < 0 or retry_index >= policy.max_retries:
         raise RetryError("retry delay: index outside retry budget")
     return min(policy.max_delay_ms, policy.base_delay_ms * (2**retry_index))
+
+
+def jittered_delay(policy: RetryPolicy, retry_index: int, seed: int) -> int:
+    """Apply deterministic symmetric integer jitter without exceeding the cap."""
+    import random
+
+    if seed < 0:
+        raise RetryError("retry jitter: seed must be non-negative")
+    delay = base_delay(policy, retry_index)
+    radius = delay * policy.jitter_ppm // 1_000_000
+    offset = random.Random((seed << 16) + retry_index).randint(-radius, radius)
+    return max(0, min(policy.max_delay_ms, delay + offset))
