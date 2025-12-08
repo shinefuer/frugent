@@ -69,3 +69,8 @@ def test_attempt_records_stop_on_success() -> None:
 def test_total_delay_sums_executed_retries_only() -> None:
     records = m.attempt_records((500, 500, 0), m.RetryPolicy(3, 10, 100, 0), 1)
     assert m.total_delay(records) == 30
+
+
+@pytest.mark.parametrize("code", sorted(m.RETRYABLE_EXIT_CODES))
+def test_cancelled_failures_never_retry(code: int) -> None:
+    assert not m.should_retry(code, 0, m.RetryPolicy(), cancelled=True)
