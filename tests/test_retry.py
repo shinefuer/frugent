@@ -64,3 +64,8 @@ def test_attempt_records_stop_on_success() -> None:
     records = m.attempt_records((500, 503, 0, 500), m.RetryPolicy(3, 10, 100, 0), 1)
     assert tuple(record.exit_code for record in records) == (500, 503, 0)
     assert tuple(record.delay_before_ms for record in records) == (0, 10, 20)
+
+
+def test_total_delay_sums_executed_retries_only() -> None:
+    records = m.attempt_records((500, 500, 0), m.RetryPolicy(3, 10, 100, 0), 1)
+    assert m.total_delay(records) == 30

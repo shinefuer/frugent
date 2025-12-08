@@ -78,3 +78,10 @@ def attempt_records(
         if exit_code == 0 or not should_retry(exit_code, index, policy):
             break
     return tuple(records)
+
+
+def total_delay(records: tuple[Attempt, ...]) -> int:
+    """Sum only delays actually incurred by recorded attempts."""
+    if any(record.delay_before_ms < 0 for record in records):
+        raise RetryError("retry records: delay must be non-negative")
+    return sum(record.delay_before_ms for record in records)
