@@ -43,3 +43,8 @@ def jittered_delay(policy: RetryPolicy, retry_index: int, seed: int) -> int:
     radius = delay * policy.jitter_ppm // 1_000_000
     offset = random.Random((seed << 16) + retry_index).randint(-radius, radius)
     return max(0, min(policy.max_delay_ms, delay + offset))
+
+
+def retry_schedule(policy: RetryPolicy, seed: int) -> tuple[int, ...]:
+    """Return every delay permitted by the capped retry budget."""
+    return tuple(jittered_delay(policy, index, seed) for index in range(policy.max_retries))

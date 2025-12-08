@@ -33,3 +33,9 @@ def test_jittered_delay_is_seeded_and_bounded() -> None:
     first = tuple(m.jittered_delay(policy, index, 7) for index in range(4))
     assert first == tuple(m.jittered_delay(policy, index, 7) for index in range(4))
     assert all(0 <= delay <= policy.max_delay_ms for delay in first)
+
+
+def test_retry_schedule_length_equals_budget() -> None:
+    for retries in range(6):
+        policy = m.RetryPolicy(retries, 10, 100, 0)
+        assert len(m.retry_schedule(policy, 1)) == retries
