@@ -74,3 +74,15 @@ def test_total_delay_sums_executed_retries_only() -> None:
 @pytest.mark.parametrize("code", sorted(m.RETRYABLE_EXIT_CODES))
 def test_cancelled_failures_never_retry(code: int) -> None:
     assert not m.should_retry(code, 0, m.RetryPolicy(), cancelled=True)
+
+
+def test_attempt_record_golden_shape() -> None:
+    records = (m.Attempt(0, 500, 0), m.Attempt(1, 0, 10))
+    assert m.attempts_record(records) == {
+        "schema_version": 1,
+        "attempts": [
+            {"index": 0, "exit_code": 500, "delay_before_ms": 0},
+            {"index": 1, "exit_code": 0, "delay_before_ms": 10},
+        ],
+        "total_delay_ms": 10,
+    }

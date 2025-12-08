@@ -85,3 +85,18 @@ def total_delay(records: tuple[Attempt, ...]) -> int:
     if any(record.delay_before_ms < 0 for record in records):
         raise RetryError("retry records: delay must be non-negative")
     return sum(record.delay_before_ms for record in records)
+
+
+def attempts_record(records: tuple[Attempt, ...]) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "attempts": [
+            {
+                "index": record.index,
+                "exit_code": record.exit_code,
+                "delay_before_ms": record.delay_before_ms,
+            }
+            for record in records
+        ],
+        "total_delay_ms": total_delay(records),
+    }
