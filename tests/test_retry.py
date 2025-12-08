@@ -58,3 +58,9 @@ def test_jitter_stays_inside_configured_radius(seed: int) -> None:
         base = m.base_delay(policy, index)
         actual = m.jittered_delay(policy, index, seed)
         assert base - base // 10 <= actual <= base + base // 10
+
+
+def test_attempt_records_stop_on_success() -> None:
+    records = m.attempt_records((500, 503, 0, 500), m.RetryPolicy(3, 10, 100, 0), 1)
+    assert tuple(record.exit_code for record in records) == (500, 503, 0)
+    assert tuple(record.delay_before_ms for record in records) == (0, 10, 20)

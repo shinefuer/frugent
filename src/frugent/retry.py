@@ -58,3 +58,23 @@ def should_retry(
 ) -> bool:
     """Retry only declared transient failures within budget and not cancellation."""
     return not cancelled and retry_index < policy.max_retries and exit_code in RETRYABLE_EXIT_CODES
+
+
+@dataclass(frozen=True, slots=True)
+class Attempt:
+    index: int
+    exit_code: int
+    delay_before_ms: int
+
+
+def attempt_records(
+    exit_codes: tuple[int, ...], policy: RetryPolicy, seed: int
+) -> tuple[Attempt, ...]:
+    """Stop after success, terminal failure, or retry budget exhaustion."""
+    records: list[Attempt] = []
+    for index, exit_code in enumerate(exit_codes):
+        delay = 0 if index == 0 else jittered_delay(policy, index - 1, seed)
+        records.append(Attempt(index, exit_code, delay))
+        if exit_code == 0 or not should_retry(exit_code, index, policy):
+            break
+    return tuple(records)
