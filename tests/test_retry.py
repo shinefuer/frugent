@@ -39,3 +39,13 @@ def test_retry_schedule_length_equals_budget() -> None:
     for retries in range(6):
         policy = m.RetryPolicy(retries, 10, 100, 0)
         assert len(m.retry_schedule(policy, 1)) == retries
+
+
+@pytest.mark.parametrize("code", [75, 124, 429, 500, 502, 503, 504])
+def test_transient_codes_retry_inside_budget(code: int) -> None:
+    assert m.should_retry(code, 0, m.RetryPolicy())
+
+
+@pytest.mark.parametrize("code", [0, 1, 2, 126, 127, 130, 400, 401, 403])
+def test_terminal_codes_do_not_retry(code: int) -> None:
+    assert not m.should_retry(code, 0, m.RetryPolicy())

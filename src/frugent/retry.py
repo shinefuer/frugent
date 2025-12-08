@@ -48,3 +48,13 @@ def jittered_delay(policy: RetryPolicy, retry_index: int, seed: int) -> int:
 def retry_schedule(policy: RetryPolicy, seed: int) -> tuple[int, ...]:
     """Return every delay permitted by the capped retry budget."""
     return tuple(jittered_delay(policy, index, seed) for index in range(policy.max_retries))
+
+
+RETRYABLE_EXIT_CODES = frozenset({75, 124, 429, 500, 502, 503, 504})
+
+
+def should_retry(
+    exit_code: int, retry_index: int, policy: RetryPolicy, cancelled: bool = False
+) -> bool:
+    """Retry only declared transient failures within budget and not cancellation."""
+    return not cancelled and retry_index < policy.max_retries and exit_code in RETRYABLE_EXIT_CODES
