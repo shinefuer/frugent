@@ -49,3 +49,12 @@ def test_transient_codes_retry_inside_budget(code: int) -> None:
 @pytest.mark.parametrize("code", [0, 1, 2, 126, 127, 130, 400, 401, 403])
 def test_terminal_codes_do_not_retry(code: int) -> None:
     assert not m.should_retry(code, 0, m.RetryPolicy())
+
+
+@pytest.mark.parametrize("seed", range(20))
+def test_jitter_stays_inside_configured_radius(seed: int) -> None:
+    policy = m.RetryPolicy(3, 100, 1000, 100_000)
+    for index in range(3):
+        base = m.base_delay(policy, index)
+        actual = m.jittered_delay(policy, index, seed)
+        assert base - base // 10 <= actual <= base + base // 10
