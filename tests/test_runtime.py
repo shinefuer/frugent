@@ -34,3 +34,16 @@ def test_loop_runs_plan_act_observe_to_answer() -> None:
     events = m.run_loop(planner, lambda payload: b"obs:" + payload, 3)
     assert tuple(event.phase for event in events) == ("act", "observe", "act", "answer")
     assert bytes.fromhex(events[1].payload_hex) == b"obs:read"
+
+
+def test_cancel_action_stops_before_tool_execution() -> None:
+    called = False
+
+    def tool(_: bytes) -> bytes:
+        nonlocal called
+        called = True
+        return b"x"
+
+    events = m.run_loop(m.ScriptedPlanner((m.Action("cancel", b"user"),)), tool, 2)
+    assert m.cancelled(events)
+    assert not called

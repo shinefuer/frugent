@@ -64,3 +64,8 @@ def run_loop(planner: ScriptedPlanner, tool: object, max_steps: int) -> tuple[Lo
         observations.append(result)
         events.append(LoopEvent(len(events), "observe", result.hex()))
     raise RuntimeError("agent loop: step budget exhausted")
+
+
+def cancelled(events: tuple[LoopEvent, ...]) -> bool:
+    """Return whether the terminal event is cancellation."""
+    return bool(events) and events[-1].phase == "cancel"
