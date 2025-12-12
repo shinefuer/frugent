@@ -21,3 +21,9 @@ def test_scripted_planner_yields_planted_order() -> None:
     planner = m.ScriptedPlanner((m.Action("tool", b"read"), m.Action("answer", b"done")))
     assert planner.plan(()) == m.Action("tool", b"read")
     assert planner.plan((b"observation",)) == m.Action("answer", b"done")
+
+
+def test_scripted_planner_exhaustion_is_explicit() -> None:
+    planner = m.ScriptedPlanner(())
+    with pytest.raises(m.RuntimeError, match="no action remains"):
+        planner.plan(())
