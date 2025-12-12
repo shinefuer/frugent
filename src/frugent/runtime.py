@@ -39,3 +39,28 @@ class ScriptedPlanner:
         action = self.actions[self.cursor]
         self.cursor += 1
         return action
+
+
+def run_loop(planner: ScriptedPlanner, tool: object, max_steps: int) -> tuple[LoopEvent, ...]:
+    """Execute planted actions until answer, cancel, or hard step budget."""
+    if max_steps <= 0 or not callable(tool):
+        raise RuntimeError("agent loop: positive steps and callable tool required")
+    events: list[LoopEvent] = []
+    observations: list[bytes] = []
+    for _ in range(max_steps):
+        action = planner.plan(tuple(observations))
+        events.append(
+            LoopEvent(len(events), "act", action.kind.encode().hex() + ":" + action.payload.hex())
+        )
+        if action.kind == "answer":
+            events.append(LoopEvent(len(events), "answer", action.payload.hex()))
+            return tuple(events)
+        if action.kind == "cancel":
+            events.append(LoopEvent(len(events), "cancel", action.payload.hex()))
+            return tuple(events)
+        result = tool(action.payload)
+        if not isinstance(result, bytes):
+            raise RuntimeError("agent loop: tool must return bytes")
+        observations.append(result)
+        events.append(LoopEvent(len(events), "observe", result.hex()))
+    raise RuntimeError("agent loop: step budget exhausted")

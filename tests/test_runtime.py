@@ -27,3 +27,10 @@ def test_scripted_planner_exhaustion_is_explicit() -> None:
     planner = m.ScriptedPlanner(())
     with pytest.raises(m.RuntimeError, match="no action remains"):
         planner.plan(())
+
+
+def test_loop_runs_plan_act_observe_to_answer() -> None:
+    planner = m.ScriptedPlanner((m.Action("tool", b"read"), m.Action("answer", b"done")))
+    events = m.run_loop(planner, lambda payload: b"obs:" + payload, 3)
+    assert tuple(event.phase for event in events) == ("act", "observe", "act", "answer")
+    assert bytes.fromhex(events[1].payload_hex) == b"obs:read"
