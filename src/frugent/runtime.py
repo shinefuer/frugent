@@ -89,3 +89,9 @@ def event_records(events: tuple[LoopEvent, ...]) -> tuple[dict[str, object], ...
         }
         for event in events
     )
+
+
+def trace_fingerprint(events: tuple[LoopEvent, ...]) -> str:
+    from frugent.codec import payload_digest
+
+    return payload_digest(list(event_records(events)))

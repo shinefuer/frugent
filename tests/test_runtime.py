@@ -75,3 +75,11 @@ def test_loop_event_records_have_contiguous_sequence() -> None:
     records = m.event_records(events)
     assert tuple(record["sequence"] for record in records) == tuple(range(len(records)))
     assert records[-1]["payload_hex"] == "6f6b"
+
+
+def test_loop_trace_fingerprint_is_byte_deterministic() -> None:
+    actions = (m.Action("tool", b"x"), m.Action("answer", b"done"))
+    first = m.run_loop(m.ScriptedPlanner(actions), lambda _: b"obs", 3)
+    second = m.run_loop(m.ScriptedPlanner(actions), lambda _: b"obs", 3)
+    assert first == second
+    assert m.trace_fingerprint(first) == m.trace_fingerprint(second)
