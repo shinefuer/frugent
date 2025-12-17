@@ -59,3 +59,12 @@ def test_step_count_ignores_observations_and_terminal_event() -> None:
 def test_loop_raises_when_step_budget_exhausts() -> None:
     with pytest.raises(m.RuntimeError, match="step budget exhausted"):
         m.run_loop(m.ScriptedPlanner((m.Action("tool", b"x"),)), lambda _: b"o", 1)
+
+
+@pytest.mark.parametrize("payload", [b"", b"text", b"\x00\xff", bytes(range(32))])
+def test_loop_observation_roundtrips_binary_bytes(payload: bytes) -> None:
+    events = m.run_loop(
+        m.ScriptedPlanner((m.Action("tool", b"x"), m.Action("answer", b"ok"))), lambda _: payload, 2
+    )
+    observation = next(event for event in events if event.phase == "observe")
+    assert bytes.fromhex(observation.payload_hex) == payload
