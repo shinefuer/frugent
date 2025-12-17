@@ -69,3 +69,8 @@ def run_loop(planner: ScriptedPlanner, tool: object, max_steps: int) -> tuple[Lo
 def cancelled(events: tuple[LoopEvent, ...]) -> bool:
     """Return whether the terminal event is cancellation."""
     return bool(events) and events[-1].phase == "cancel"
+
+
+def step_count(events: tuple[LoopEvent, ...]) -> int:
+    """Count actions, not observations or terminal annotations."""
+    return sum(event.phase == "act" for event in events)

@@ -47,3 +47,15 @@ def test_cancel_action_stops_before_tool_execution() -> None:
     events = m.run_loop(m.ScriptedPlanner((m.Action("cancel", b"user"),)), tool, 2)
     assert m.cancelled(events)
     assert not called
+
+
+def test_step_count_ignores_observations_and_terminal_event() -> None:
+    events = m.run_loop(
+        m.ScriptedPlanner((m.Action("tool", b"x"), m.Action("answer", b"y"))), lambda _: b"o", 2
+    )
+    assert m.step_count(events) == 2
+
+
+def test_loop_raises_when_step_budget_exhausts() -> None:
+    with pytest.raises(m.RuntimeError, match="step budget exhausted"):
+        m.run_loop(m.ScriptedPlanner((m.Action("tool", b"x"),)), lambda _: b"o", 1)
