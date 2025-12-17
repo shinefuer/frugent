@@ -68,3 +68,10 @@ def test_loop_observation_roundtrips_binary_bytes(payload: bytes) -> None:
     )
     observation = next(event for event in events if event.phase == "observe")
     assert bytes.fromhex(observation.payload_hex) == payload
+
+
+def test_loop_event_records_have_contiguous_sequence() -> None:
+    events = m.run_loop(m.ScriptedPlanner((m.Action("answer", b"ok"),)), lambda _: b"", 1)
+    records = m.event_records(events)
+    assert tuple(record["sequence"] for record in records) == tuple(range(len(records)))
+    assert records[-1]["payload_hex"] == "6f6b"

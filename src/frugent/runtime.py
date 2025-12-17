@@ -74,3 +74,18 @@ def cancelled(events: tuple[LoopEvent, ...]) -> bool:
 def step_count(events: tuple[LoopEvent, ...]) -> int:
     """Count actions, not observations or terminal annotations."""
     return sum(event.phase == "act" for event in events)
+
+
+def event_records(events: tuple[LoopEvent, ...]) -> tuple[dict[str, object], ...]:
+    """Return schema-stable sequence records."""
+    if tuple(event.sequence for event in events) != tuple(range(len(events))):
+        raise RuntimeError("loop events: sequence is not contiguous")
+    return tuple(
+        {
+            "schema_version": 1,
+            "sequence": event.sequence,
+            "phase": event.phase,
+            "payload_hex": event.payload_hex,
+        }
+        for event in events
+    )
