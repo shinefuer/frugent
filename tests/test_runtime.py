@@ -92,3 +92,13 @@ def test_same_seed_derived_actions_produce_identical_trace(seed: int) -> None:
     first = m.run_loop(m.ScriptedPlanner(actions), lambda value: value + b"!", 2)
     second = m.run_loop(m.ScriptedPlanner(actions), lambda value: value + b"!", 2)
     assert m.event_records(first) == m.event_records(second)
+
+
+def test_terminal_outcome_decodes_answer_bytes() -> None:
+    events = m.run_loop(m.ScriptedPlanner((m.Action("answer", b"\x00ok"),)), lambda _: b"", 1)
+    assert m.terminal_outcome(events) == ("answer", b"\x00ok")
+
+
+def test_terminal_outcome_rejects_incomplete_trace() -> None:
+    with pytest.raises(m.RuntimeError, match="incomplete"):
+        m.terminal_outcome((m.LoopEvent(0, "act", "00"),))

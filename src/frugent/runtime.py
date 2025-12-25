@@ -95,3 +95,10 @@ def trace_fingerprint(events: tuple[LoopEvent, ...]) -> str:
     from frugent.codec import payload_digest
 
     return payload_digest(list(event_records(events)))
+
+
+def terminal_outcome(events: tuple[LoopEvent, ...]) -> tuple[str, bytes]:
+    """Return answer/cancel phase and decoded terminal bytes."""
+    if not events or events[-1].phase not in {"answer", "cancel"}:
+        raise RuntimeError("loop terminal: trace is incomplete")
+    return events[-1].phase, bytes.fromhex(events[-1].payload_hex)
