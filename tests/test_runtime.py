@@ -83,3 +83,12 @@ def test_loop_trace_fingerprint_is_byte_deterministic() -> None:
     second = m.run_loop(m.ScriptedPlanner(actions), lambda _: b"obs", 3)
     assert first == second
     assert m.trace_fingerprint(first) == m.trace_fingerprint(second)
+
+
+@pytest.mark.parametrize("seed", range(12))
+def test_same_seed_derived_actions_produce_identical_trace(seed: int) -> None:
+    payload = seed.to_bytes(2, "big")
+    actions = (m.Action("tool", payload), m.Action("answer", payload[::-1]))
+    first = m.run_loop(m.ScriptedPlanner(actions), lambda value: value + b"!", 2)
+    second = m.run_loop(m.ScriptedPlanner(actions), lambda value: value + b"!", 2)
+    assert m.event_records(first) == m.event_records(second)
