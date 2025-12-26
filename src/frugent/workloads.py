@@ -62,3 +62,15 @@ def generate_corpus(seed: int, size: int) -> tuple[SyntheticTask, ...]:
             )
         )
     return tuple(tasks)
+
+
+def affinity_sessions(tasks: tuple[SyntheticTask, ...]) -> tuple[tuple[str, ...], ...]:
+    """Group rendered prompts by shared synthetic repository prefix."""
+    if not tasks:
+        raise WorkloadError("sessions: expected generated tasks")
+    grouped: dict[str, list[str]] = {}
+    for task in tasks:
+        grouped.setdefault(task.prefix_group, []).append(
+            f"workspace:{task.prefix_group}\npolicy:offline\nrequest:{task.prompt}"
+        )
+    return tuple(tuple(grouped[key]) for key in sorted(grouped))

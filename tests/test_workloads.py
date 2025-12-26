@@ -30,3 +30,10 @@ def test_generate_corpus_rejects_invalid_shape(seed: int, size: int) -> None:
 def test_generated_task_identities_are_unique() -> None:
     tasks = m.generate_corpus(0, 100)
     assert len({task.task_id for task in tasks}) == len(tasks)
+
+
+def test_affinity_sessions_preserve_every_request_once() -> None:
+    tasks = m.generate_corpus(7, 17)
+    sessions = m.affinity_sessions(tasks)
+    assert sum(map(len, sessions)) == len(tasks)
+    assert all(len({prompt.splitlines()[0] for prompt in session}) == 1 for session in sessions)
