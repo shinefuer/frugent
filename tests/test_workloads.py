@@ -44,3 +44,9 @@ def test_manifest_explicitly_labels_synthetic_data() -> None:
     assert record["schema_version"] == 1
     assert record["synthetic"] is True
     assert len(record["tasks"]) == 2
+
+
+def test_manifest_fingerprint_changes_with_content() -> None:
+    tasks = m.generate_corpus(3, 4)
+    assert m.manifest_fingerprint(3, tasks) == m.manifest_fingerprint(3, tasks)
+    assert m.manifest_fingerprint(3, tasks) != m.manifest_fingerprint(3, tasks[:-1])

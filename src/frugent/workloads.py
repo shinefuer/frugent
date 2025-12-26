@@ -97,3 +97,9 @@ def manifest_record(seed: int, tasks: tuple[SyntheticTask, ...]) -> dict[str, ob
         "synthetic": True,
         "tasks": [task_record(task) for task in tasks],
     }
+
+
+def manifest_fingerprint(seed: int, tasks: tuple[SyntheticTask, ...]) -> str:
+    from frugent.codec import payload_digest
+
+    return payload_digest(manifest_record(seed, tasks))
