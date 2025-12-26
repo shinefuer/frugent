@@ -25,3 +25,8 @@ def test_generate_corpus_is_seeded_and_varied() -> None:
 def test_generate_corpus_rejects_invalid_shape(seed: int, size: int) -> None:
     with pytest.raises(m.WorkloadError, match="corpus"):
         m.generate_corpus(seed, size)
+
+
+def test_generated_task_identities_are_unique() -> None:
+    tasks = m.generate_corpus(0, 100)
+    assert len({task.task_id for task in tasks}) == len(tasks)
