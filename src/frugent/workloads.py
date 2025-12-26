@@ -34,3 +34,31 @@ class SyntheticTask:
             raise WorkloadError("task: prompt and planted solution path are required")
         if self.optimal_cost_micros <= 0 or not self.prefix_group:
             raise WorkloadError("task: positive planted cost and prefix group are required")
+
+
+def generate_corpus(seed: int, size: int) -> tuple[SyntheticTask, ...]:
+    """Generate reproducible offline tasks with explicit planted optima."""
+    import random
+
+    if isinstance(seed, bool) or seed < 0 or size < 1:
+        raise WorkloadError("corpus: seed must be non-negative and size positive")
+    randomizer = random.Random(seed)
+    tasks: list[SyntheticTask] = []
+    for index in range(size):
+        kind = TASK_KINDS[randomizer.randrange(len(TASK_KINDS))]
+        difficulty = DIFFICULTIES[randomizer.randrange(len(DIFFICULTIES))]
+        depth = DIFFICULTIES.index(difficulty) + 2
+        path = ("inspect", *(f"apply-{kind}-{step}" for step in range(depth - 1)))
+        group = f"repo-{randomizer.randrange(max(1, min(size, 4)))}"
+        tasks.append(
+            SyntheticTask(
+                f"synthetic-{seed}-{index}",
+                kind,
+                difficulty,
+                f"[{group}] {kind.replace('_', ' ')} task {index}",
+                path,
+                (depth * 17 + TASK_KINDS.index(kind) * 3),
+                group,
+            )
+        )
+    return tuple(tasks)

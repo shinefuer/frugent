@@ -12,3 +12,16 @@ def test_synthetic_task_requires_planted_ground_truth() -> None:
     assert task.solution_path == ("inspect", "patch")
     with pytest.raises(m.WorkloadError, match="planted"):
         m.SyntheticTask("t2", "docs", "easy", "write", (), 4, "g0")
+
+
+def test_generate_corpus_is_seeded_and_varied() -> None:
+    first = m.generate_corpus(19, 12)
+    assert first == m.generate_corpus(19, 12)
+    assert first != m.generate_corpus(20, 12)
+    assert len({task.kind for task in first}) > 1
+
+
+@pytest.mark.parametrize(("seed", "size"), [(-1, 1), (0, 0), (True, 2)])
+def test_generate_corpus_rejects_invalid_shape(seed: int, size: int) -> None:
+    with pytest.raises(m.WorkloadError, match="corpus"):
+        m.generate_corpus(seed, size)
