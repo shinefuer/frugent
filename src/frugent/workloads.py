@@ -74,3 +74,26 @@ def affinity_sessions(tasks: tuple[SyntheticTask, ...]) -> tuple[tuple[str, ...]
             f"workspace:{task.prefix_group}\npolicy:offline\nrequest:{task.prompt}"
         )
     return tuple(tuple(grouped[key]) for key in sorted(grouped))
+
+
+def task_record(task: SyntheticTask) -> dict[str, object]:
+    return {
+        "task_id": task.task_id,
+        "kind": task.kind,
+        "difficulty": task.difficulty,
+        "prompt": task.prompt,
+        "solution_path": list(task.solution_path),
+        "optimal_cost_micros": task.optimal_cost_micros,
+        "prefix_group": task.prefix_group,
+    }
+
+
+def manifest_record(seed: int, tasks: tuple[SyntheticTask, ...]) -> dict[str, object]:
+    if not tasks:
+        raise WorkloadError("manifest: expected tasks")
+    return {
+        "schema_version": 1,
+        "seed": seed,
+        "synthetic": True,
+        "tasks": [task_record(task) for task in tasks],
+    }

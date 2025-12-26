@@ -37,3 +37,10 @@ def test_affinity_sessions_preserve_every_request_once() -> None:
     sessions = m.affinity_sessions(tasks)
     assert sum(map(len, sessions)) == len(tasks)
     assert all(len({prompt.splitlines()[0] for prompt in session}) == 1 for session in sessions)
+
+
+def test_manifest_explicitly_labels_synthetic_data() -> None:
+    record = m.manifest_record(4, m.generate_corpus(4, 2))
+    assert record["schema_version"] == 1
+    assert record["synthetic"] is True
+    assert len(record["tasks"]) == 2
