@@ -50,3 +50,12 @@ def test_manifest_fingerprint_changes_with_content() -> None:
     tasks = m.generate_corpus(3, 4)
     assert m.manifest_fingerprint(3, tasks) == m.manifest_fingerprint(3, tasks)
     assert m.manifest_fingerprint(3, tasks) != m.manifest_fingerprint(3, tasks[:-1])
+
+
+def test_small_manifest_has_stable_canonical_golden() -> None:
+    from frugent.codec import canonical_json
+
+    tasks = m.generate_corpus(5, 1)
+    encoded = canonical_json(m.manifest_record(5, tasks))
+    assert encoded.startswith(b'{"schema_version":1,"seed":5,"synthetic":true,"tasks":[')
+    assert b'"solution_path"' in encoded
