@@ -33,3 +33,18 @@ def metadata_record(metadata: RunMetadata) -> dict[str, object]:
         "config_hash": metadata.config_hash,
         "rate_card_fingerprint": metadata.rate_card_fingerprint,
     }
+
+
+@dataclass(frozen=True, slots=True)
+class MetricRow:
+    policy: str
+    completed: int
+    tokens: int
+    cost_micros: int
+    p50_ms: float
+    p95_ms: float
+
+    def __post_init__(self) -> None:
+        values = (self.completed, self.tokens, self.cost_micros, self.p50_ms, self.p95_ms)
+        if not self.policy or any(value < 0 for value in values) or self.p95_ms < self.p50_ms:
+            raise ReportError("metric row: invalid policy, counts, costs, or percentiles")
