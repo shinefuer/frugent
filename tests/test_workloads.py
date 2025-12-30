@@ -73,3 +73,10 @@ def test_manifest_rejects_unlabeled_external_records() -> None:
     record["synthetic"] = False
     with pytest.raises(m.WorkloadError, match="non-synthetic"):
         m.manifest_from_record(record)
+
+
+def test_optimal_profile_conserves_task_costs() -> None:
+    tasks = m.generate_corpus(11, 20)
+    profile = m.optimal_profile(tasks)
+    assert sum(profile[name] for name in m.DIFFICULTIES) == profile["total"]
+    assert profile["total"] == sum(task.optimal_cost_micros for task in tasks)

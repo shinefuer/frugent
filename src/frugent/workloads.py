@@ -131,3 +131,14 @@ def manifest_from_record(record: dict[str, object]) -> tuple[int, tuple[Syntheti
     if seed < 0 or not tasks:
         raise WorkloadError("manifest: invalid seed or empty tasks")
     return seed, tasks
+
+
+def optimal_profile(tasks: tuple[SyntheticTask, ...]) -> dict[str, int]:
+    """Aggregate known-optimal fictional costs by difficulty."""
+    if not tasks:
+        raise WorkloadError("optimal profile: expected tasks")
+    result = {difficulty: 0 for difficulty in DIFFICULTIES}
+    for task in tasks:
+        result[task.difficulty] += task.optimal_cost_micros
+    result["total"] = sum(task.optimal_cost_micros for task in tasks)
+    return result
