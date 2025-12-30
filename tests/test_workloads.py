@@ -59,3 +59,17 @@ def test_small_manifest_has_stable_canonical_golden() -> None:
     encoded = canonical_json(m.manifest_record(5, tasks))
     assert encoded.startswith(b'{"schema_version":1,"seed":5,"synthetic":true,"tasks":[')
     assert b'"solution_path"' in encoded
+
+
+def test_manifest_roundtrip_preserves_fingerprint() -> None:
+    tasks = m.generate_corpus(23, 8)
+    seed, restored = m.manifest_from_record(m.manifest_record(23, tasks))
+    assert (seed, restored) == (23, tasks)
+    assert m.manifest_fingerprint(seed, restored) == m.manifest_fingerprint(23, tasks)
+
+
+def test_manifest_rejects_unlabeled_external_records() -> None:
+    record = m.manifest_record(1, m.generate_corpus(1, 1))
+    record["synthetic"] = False
+    with pytest.raises(m.WorkloadError, match="non-synthetic"):
+        m.manifest_from_record(record)

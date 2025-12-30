@@ -103,3 +103,31 @@ def manifest_fingerprint(seed: int, tasks: tuple[SyntheticTask, ...]) -> str:
     from frugent.codec import payload_digest
 
     return payload_digest(manifest_record(seed, tasks))
+
+
+def manifest_from_record(record: dict[str, object]) -> tuple[int, tuple[SyntheticTask, ...]]:
+    expected = {"schema_version", "seed", "synthetic", "tasks"}
+    if set(record) != expected or record["schema_version"] != 1 or record["synthetic"] is not True:
+        raise WorkloadError("manifest: unsupported or non-synthetic record")
+    try:
+        seed = int(record["seed"])
+        raw_tasks = record["tasks"]
+        if not isinstance(raw_tasks, list):
+            raise TypeError("tasks must be a list")
+        tasks = tuple(
+            SyntheticTask(
+                str(item["task_id"]),
+                str(item["kind"]),
+                str(item["difficulty"]),
+                str(item["prompt"]),
+                tuple(item["solution_path"]),
+                int(item["optimal_cost_micros"]),
+                str(item["prefix_group"]),
+            )
+            for item in raw_tasks
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise WorkloadError(f"manifest: invalid record: {error}") from error
+    if seed < 0 or not tasks:
+        raise WorkloadError("manifest: invalid seed or empty tasks")
+    return seed, tasks
