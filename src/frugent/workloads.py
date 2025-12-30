@@ -142,3 +142,21 @@ def optimal_profile(tasks: tuple[SyntheticTask, ...]) -> dict[str, int]:
         result[task.difficulty] += task.optimal_cost_micros
     result["total"] = sum(task.optimal_cost_micros for task in tasks)
     return result
+
+
+def split_folds(
+    tasks: tuple[SyntheticTask, ...], folds: int
+) -> tuple[tuple[SyntheticTask, ...], ...]:
+    """Assign stable task IDs to non-empty evaluation folds."""
+    import hashlib
+
+    if folds < 2 or len(tasks) < folds:
+        raise WorkloadError("folds: need at least two non-empty folds")
+    buckets: list[list[SyntheticTask]] = [[] for _ in range(folds)]
+    for task in tasks:
+        index = int.from_bytes(hashlib.sha256(task.task_id.encode()).digest()[:8], "big") % folds
+        buckets[index].append(task)
+    if any(not bucket for bucket in buckets):
+        ordered = sorted(tasks, key=lambda task: task.task_id)
+        buckets = [list(ordered[index::folds]) for index in range(folds)]
+    return tuple(tuple(bucket) for bucket in buckets)

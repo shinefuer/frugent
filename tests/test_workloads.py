@@ -80,3 +80,19 @@ def test_optimal_profile_conserves_task_costs() -> None:
     profile = m.optimal_profile(tasks)
     assert sum(profile[name] for name in m.DIFFICULTIES) == profile["total"]
     assert profile["total"] == sum(task.optimal_cost_micros for task in tasks)
+
+
+def test_fold_profiles_conserve_global_optimum() -> None:
+    tasks = m.generate_corpus(31, 24)
+    folds = m.split_folds(tasks, 3)
+    assert (
+        sum(m.optimal_profile(fold)["total"] for fold in folds) == m.optimal_profile(tasks)["total"]
+    )
+
+
+def test_split_folds_is_disjoint_complete_and_stable() -> None:
+    tasks = m.generate_corpus(29, 30)
+    folds = m.split_folds(tasks, 4)
+    assert folds == m.split_folds(tasks, 4)
+    assert {task.task_id for fold in folds for task in fold} == {task.task_id for task in tasks}
+    assert sum(len(fold) for fold in folds) == len(tasks)
