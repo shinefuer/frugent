@@ -40,3 +40,10 @@ def test_svg_bars_is_deterministic_and_escapes_labels() -> None:
     assert first == m.svg_bars(rows, field="tokens", title="tokens & cost")
     assert "&lt;base&gt;" in first and "tokens &amp; cost" in first
     assert "<base>" not in first
+
+
+def test_markdown_table_has_explicit_fictional_cost_units() -> None:
+    text = m.markdown_table((m.MetricRow("a|b", 1, 2, 3, 4, 5),))
+    assert "fictional cost (micros)" in text
+    assert "a\\|b" in text
+    assert text.count("\n") == 2

@@ -71,3 +71,19 @@ def svg_bars(rows: tuple[MetricRow, ...], *, field: str, title: str) -> str:
         parts.append(f'<text x="{170 + width}" y="{y + 16}">{value}</text>')
     parts.append("</svg>")
     return "".join(parts)
+
+
+def markdown_table(rows: tuple[MetricRow, ...]) -> str:
+    if not rows:
+        raise ReportError("markdown table: expected rows")
+    lines = [
+        "| policy | completed | tokens | fictional cost (micros) | P50 ms | P95 ms |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for row in rows:
+        policy = row.policy.replace("|", "\\|").replace("\n", " ")
+        lines.append(
+            f"| {policy} | {row.completed} | {row.tokens} | {row.cost_micros} | "
+            f"{row.p50_ms:.3f} | {row.p95_ms:.3f} |"
+        )
+    return "\n".join(lines)
