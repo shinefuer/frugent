@@ -55,3 +55,10 @@ def test_markdown_report_discloses_synthetic_scope() -> None:
     assert "planted synthetic workload" in report
     assert "fictional rate card" in report
     assert "offline only" in report
+
+
+def test_rendering_does_not_mutate_metric_rows() -> None:
+    rows = (m.MetricRow("base", 2, 20, 30, 4, 9),)
+    before = rows
+    m.markdown_report(m.RunMetadata("v", 3, "c", "r"), rows, ("offline",))
+    assert rows == before
