@@ -87,3 +87,23 @@ def markdown_table(rows: tuple[MetricRow, ...]) -> str:
             f"{row.p50_ms:.3f} | {row.p95_ms:.3f} |"
         )
     return "\n".join(lines)
+
+
+def markdown_report(
+    metadata: RunMetadata, rows: tuple[MetricRow, ...], limitations: tuple[str, ...]
+) -> str:
+    if not limitations or any(not item for item in limitations):
+        raise ReportError("report: at least one limitation is required")
+    meta = metadata_record(metadata)
+    lines = [
+        "# Frugent synthetic cost report",
+        "",
+        "本报告仅使用 planted synthetic workload 与 fictional rate card。",
+        "",
+        "## Run metadata",
+        "",
+    ]
+    lines.extend(f"- {key}: `{value}`" for key, value in meta.items())
+    lines.extend(("", "## Measured comparison", "", markdown_table(rows), "", "## Limitations", ""))
+    lines.extend(f"- {item}" for item in limitations)
+    return "\n".join(lines) + "\n"

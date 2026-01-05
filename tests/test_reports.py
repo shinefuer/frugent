@@ -47,3 +47,11 @@ def test_markdown_table_has_explicit_fictional_cost_units() -> None:
     assert "fictional cost (micros)" in text
     assert "a\\|b" in text
     assert text.count("\n") == 2
+
+
+def test_markdown_report_discloses_synthetic_scope() -> None:
+    metadata = m.RunMetadata("v", 1, "cfg", "rate")
+    report = m.markdown_report(metadata, (m.MetricRow("x", 1, 2, 3, 4, 5),), ("offline only",))
+    assert "planted synthetic workload" in report
+    assert "fictional rate card" in report
+    assert "offline only" in report
