@@ -83,3 +83,14 @@ def test_small_html_report_has_stable_structure_digest() -> None:
     )
     assert len(m.report_fingerprint(report)) == 64
     assert report.count("<svg") == 1 and report.count("</html>") == 1
+
+
+def test_coverage_limitations_follow_execution_flags() -> None:
+    limits = m.coverage_limitations(
+        used_real_endpoint=False, used_external_data=False, model_evaluated=False
+    )
+    assert len(limits) == 3
+    assert all(sentence.endswith(".") for sentence in limits)
+    assert m.coverage_limitations(
+        used_real_endpoint=True, used_external_data=True, model_evaluated=True
+    ) == ("All declared coverage flags were enabled; inspect run metadata.",)

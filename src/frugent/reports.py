@@ -156,3 +156,19 @@ def report_fingerprint(content: str) -> str:
     if not content:
         raise ReportError("report fingerprint: content is empty")
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+
+def coverage_limitations(
+    *, used_real_endpoint: bool, used_external_data: bool, model_evaluated: bool
+) -> tuple[str, ...]:
+    """Describe absent coverage facts rather than claiming unexecuted evidence."""
+    limitations: list[str] = []
+    if not used_real_endpoint:
+        limitations.append("No real model endpoint was called.")
+    if not used_external_data:
+        limitations.append("No external dataset was evaluated.")
+    if not model_evaluated:
+        limitations.append("Mechanics were measured; model answer quality was not evaluated.")
+    return tuple(limitations) or (
+        "All declared coverage flags were enabled; inspect run metadata.",
+    )
