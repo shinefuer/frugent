@@ -18,3 +18,9 @@ def test_training_example_validates_binary_synthetic_labels() -> None:
 
 def test_torch_extra_is_available_for_model_suite() -> None:
     assert m.torch_available()
+
+
+def test_tensor_dataset_rejects_mixed_feature_widths() -> None:
+    examples = (m.TrainingExample((1,), 0), m.TrainingExample((1, 2), 1))
+    with pytest.raises(m.TorchPolicyError, match="feature width"):
+        m.tensor_dataset(examples)
