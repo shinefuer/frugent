@@ -148,3 +148,11 @@ def html_report(
         f"<dl>{metadata_html}</dl>{chart}<table><tbody>{cells}</tbody></table>"
         f"<h2>Limitations</h2><ul>{limits}</ul></body></html>"
     )
+
+
+def report_fingerprint(content: str) -> str:
+    import hashlib
+
+    if not content:
+        raise ReportError("report fingerprint: content is empty")
+    return hashlib.sha256(content.encode("utf-8")).hexdigest()

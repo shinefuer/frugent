@@ -70,3 +70,8 @@ def test_html_report_escapes_hostile_run_text() -> None:
     assert "<script>" not in html and "&lt;script&gt;" in html
     assert "&lt;v&gt;" in html and "a &lt; b" in html
     assert html.startswith("<!doctype html>")
+
+
+def test_report_fingerprint_is_byte_sensitive() -> None:
+    assert m.report_fingerprint("a\n") == m.report_fingerprint("a\n")
+    assert m.report_fingerprint("a\n") != m.report_fingerprint("a")
