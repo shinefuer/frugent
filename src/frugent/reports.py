@@ -107,3 +107,44 @@ def markdown_report(
     lines.extend(("", "## Measured comparison", "", markdown_table(rows), "", "## Limitations", ""))
     lines.extend(f"- {item}" for item in limitations)
     return "\n".join(lines) + "\n"
+
+
+def html_report(
+    metadata: RunMetadata, rows: tuple[MetricRow, ...], limitations: tuple[str, ...]
+) -> str:
+    import html
+
+    if not limitations:
+        raise ReportError("html report: limitations are required")
+    cells = "".join(
+        "<tr>"
+        + "".join(
+            f"<td>{html.escape(str(value))}</td>"
+            for value in (
+                row.policy,
+                row.completed,
+                row.tokens,
+                row.cost_micros,
+                row.p50_ms,
+                row.p95_ms,
+            )
+        )
+        + "</tr>"
+        for row in rows
+    )
+    limits = "".join(f"<li>{html.escape(item)}</li>" for item in limitations)
+    metadata_html = "".join(
+        f"<dt>{html.escape(key)}</dt><dd>{html.escape(str(value))}</dd>"
+        for key, value in metadata_record(metadata).items()
+    )
+    chart = svg_bars(rows, field="cost_micros", title="Fictional cost by policy")
+    return (
+        '<!doctype html><html><head><meta charset="utf-8">'
+        "<title>Frugent synthetic report</title>"
+        "<style>body{font-family:sans-serif;max-width:900px;margin:auto}"
+        "td,th{padding:.4rem}</style></head><body>"
+        "<h1>Frugent synthetic cost report</h1>"
+        "<p>Offline synthetic measurements; fictional rate card.</p>"
+        f"<dl>{metadata_html}</dl>{chart}<table><tbody>{cells}</tbody></table>"
+        f"<h2>Limitations</h2><ul>{limits}</ul></body></html>"
+    )

@@ -62,3 +62,11 @@ def test_rendering_does_not_mutate_metric_rows() -> None:
     before = rows
     m.markdown_report(m.RunMetadata("v", 3, "c", "r"), rows, ("offline",))
     assert rows == before
+
+
+def test_html_report_escapes_hostile_run_text() -> None:
+    metadata = m.RunMetadata("<v>", 1, "cfg&x", "rate")
+    html = m.html_report(metadata, (m.MetricRow("<script>x</script>", 1, 2, 3, 4, 5),), ("a < b",))
+    assert "<script>" not in html and "&lt;script&gt;" in html
+    assert "&lt;v&gt;" in html and "a &lt; b" in html
+    assert html.startswith("<!doctype html>")
