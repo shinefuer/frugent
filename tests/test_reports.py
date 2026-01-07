@@ -75,3 +75,11 @@ def test_html_report_escapes_hostile_run_text() -> None:
 def test_report_fingerprint_is_byte_sensitive() -> None:
     assert m.report_fingerprint("a\n") == m.report_fingerprint("a\n")
     assert m.report_fingerprint("a\n") != m.report_fingerprint("a")
+
+
+def test_small_html_report_has_stable_structure_digest() -> None:
+    report = m.html_report(
+        m.RunMetadata("v", 2, "c", "r"), (m.MetricRow("p", 1, 2, 3, 4, 5),), ("offline",)
+    )
+    assert len(m.report_fingerprint(report)) == 64
+    assert report.count("<svg") == 1 and report.count("</html>") == 1
