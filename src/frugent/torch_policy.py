@@ -37,3 +37,12 @@ def tensor_dataset(examples: tuple[TrainingExample, ...]) -> tuple[object, objec
     features = torch.tensor([example.features for example in examples], dtype=torch.float32)
     labels = torch.tensor([[example.label] for example in examples], dtype=torch.float32)
     return features, labels
+
+
+def build_confidence_head(width: int, *, seed: int) -> object:
+    import torch
+
+    if width < 1 or seed < 0:
+        raise TorchPolicyError("confidence head: positive width and seed required")
+    torch.manual_seed(seed)
+    return torch.nn.Sequential(torch.nn.Linear(width, 1), torch.nn.Sigmoid())

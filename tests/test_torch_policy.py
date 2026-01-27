@@ -32,3 +32,11 @@ def test_tensor_dataset_preserves_example_order_and_shape() -> None:
     )
     assert tuple(features.shape) == (2, 2)
     assert labels.tolist() == [[0.0], [1.0]]
+
+
+def test_confidence_head_initialization_is_seeded() -> None:
+    left = m.build_confidence_head(2, seed=8)
+    right = m.build_confidence_head(2, seed=8)
+    assert all(
+        torch.equal(a, b) for a, b in zip(left.parameters(), right.parameters(), strict=True)
+    )
