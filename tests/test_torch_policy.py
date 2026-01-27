@@ -40,3 +40,11 @@ def test_confidence_head_initialization_is_seeded() -> None:
     assert all(
         torch.equal(a, b) for a, b in zip(left.parameters(), right.parameters(), strict=True)
     )
+
+
+@pytest.mark.slow
+def test_confidence_training_reduces_real_loss_on_synthetic_data() -> None:
+    examples = tuple(m.TrainingExample((float(x),), float(x > 0)) for x in (-2, -1, 1, 2))
+    model = m.build_confidence_head(1, seed=4)
+    losses = m.train_head(model, examples, epochs=80, learning_rate=0.2)
+    assert losses[-1] < losses[0] * 0.55

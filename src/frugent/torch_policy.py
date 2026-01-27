@@ -46,3 +46,25 @@ def build_confidence_head(width: int, *, seed: int) -> object:
         raise TorchPolicyError("confidence head: positive width and seed required")
     torch.manual_seed(seed)
     return torch.nn.Sequential(torch.nn.Linear(width, 1), torch.nn.Sigmoid())
+
+
+def train_head(
+    model: object, examples: tuple[TrainingExample, ...], *, epochs: int, learning_rate: float
+) -> tuple[float, ...]:
+    import torch
+
+    if epochs < 1 or not 0 < learning_rate <= 1:
+        raise TorchPolicyError("training: invalid epochs or learning rate")
+    if not isinstance(model, torch.nn.Module):
+        raise TorchPolicyError("training: expected torch module")
+    features, labels = tensor_dataset(examples)
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+    loss_function = torch.nn.BCELoss()
+    losses: list[float] = []
+    for _ in range(epochs):
+        optimizer.zero_grad()
+        loss = loss_function(model(features), labels)
+        loss.backward()
+        optimizer.step()
+        losses.append(round(float(loss.detach()), 6))
+    return tuple(losses)
