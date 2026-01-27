@@ -27,3 +27,13 @@ def torch_available() -> bool:
     import importlib.util
 
     return importlib.util.find_spec("torch") is not None
+
+
+def tensor_dataset(examples: tuple[TrainingExample, ...]) -> tuple[object, object]:
+    import torch
+
+    if not examples or len({len(example.features) for example in examples}) != 1:
+        raise TorchPolicyError("tensor dataset: examples need one feature width")
+    features = torch.tensor([example.features for example in examples], dtype=torch.float32)
+    labels = torch.tensor([[example.label] for example in examples], dtype=torch.float32)
+    return features, labels
