@@ -68,3 +68,16 @@ def test_admission_examples_use_declared_planted_threshold() -> None:
     examples = m.admission_examples((0, 2, 4), (100, 30, 20))
     assert tuple(example.label for example in examples) == (0.0, 0.0, 1.0)
     assert examples[1].features == (2.0, 0.3)
+
+
+@pytest.mark.parametrize(("reuse", "tokens", "threshold"), [(-1, 2, 0.5), (1, 0, 0.5), (1, 2, 1.1)])
+def test_admission_decision_rejects_invalid_boundaries(
+    reuse: int, tokens: int, threshold: float
+) -> None:
+    with pytest.raises(m.TorchPolicyError, match="admission decision"):
+        m.admission_decision(
+            m.build_confidence_head(2, seed=0),
+            reuse_count=reuse,
+            token_size=tokens,
+            threshold=threshold,
+        )
