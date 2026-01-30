@@ -48,3 +48,10 @@ def test_confidence_training_reduces_real_loss_on_synthetic_data() -> None:
     model = m.build_confidence_head(1, seed=4)
     losses = m.train_head(model, examples, epochs=80, learning_rate=0.2)
     assert losses[-1] < losses[0] * 0.55
+
+
+def test_prediction_does_not_change_model_parameters() -> None:
+    model = m.build_confidence_head(1, seed=9)
+    before = tuple(parameter.detach().clone() for parameter in model.parameters())
+    m.predict_confidence(model, (1.0,))
+    assert all(torch.equal(a, b) for a, b in zip(before, model.parameters(), strict=True))
