@@ -94,3 +94,11 @@ def admission_examples(
         TrainingExample((float(reuse), float(tokens) / 100.0), float(reuse * tokens >= 80))
         for reuse, tokens in zip(reuse_counts, token_sizes, strict=True)
     )
+
+
+def admission_decision(
+    model: object, *, reuse_count: int, token_size: int, threshold: float
+) -> bool:
+    if reuse_count < 0 or token_size <= 0 or not 0 <= threshold <= 1:
+        raise TorchPolicyError("admission decision: invalid feature or threshold")
+    return predict_confidence(model, (float(reuse_count), float(token_size) / 100.0)) >= threshold

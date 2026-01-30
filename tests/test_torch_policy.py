@@ -81,3 +81,13 @@ def test_admission_decision_rejects_invalid_boundaries(
             token_size=tokens,
             threshold=threshold,
         )
+
+
+def test_admission_decision_matches_exposed_confidence() -> None:
+    model = m.build_confidence_head(2, seed=12)
+    confidence = m.predict_confidence(model, (3.0, 0.5))
+    assert m.admission_decision(model, reuse_count=3, token_size=50, threshold=confidence)
+    if confidence < 1:
+        assert not m.admission_decision(
+            model, reuse_count=3, token_size=50, threshold=confidence + 1e-6
+        )
