@@ -62,3 +62,9 @@ def test_confidence_prediction_is_bounded_and_quantized() -> None:
     value = m.predict_confidence(model, (0.25, -0.5))
     assert 0 <= value <= 1
     assert value == round(value, 6)
+
+
+def test_admission_examples_use_declared_planted_threshold() -> None:
+    examples = m.admission_examples((0, 2, 4), (100, 30, 20))
+    assert tuple(example.label for example in examples) == (0.0, 0.0, 1.0)
+    assert examples[1].features == (2.0, 0.3)

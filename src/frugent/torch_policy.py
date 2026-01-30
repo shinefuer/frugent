@@ -79,3 +79,18 @@ def predict_confidence(model: object, features: tuple[float, ...]) -> float:
     with torch.no_grad():
         output = model(torch.tensor([features], dtype=torch.float32))
     return round(float(output[0, 0]), 6)
+
+
+def admission_examples(
+    reuse_counts: tuple[int, ...], token_sizes: tuple[int, ...]
+) -> tuple[TrainingExample, ...]:
+    if len(reuse_counts) != len(token_sizes) or not reuse_counts:
+        raise TorchPolicyError("admission examples: paired non-empty inputs required")
+    if any(
+        reuse < 0 or tokens <= 0 for reuse, tokens in zip(reuse_counts, token_sizes, strict=True)
+    ):
+        raise TorchPolicyError("admission examples: invalid reuse or token count")
+    return tuple(
+        TrainingExample((float(reuse), float(tokens) / 100.0), float(reuse * tokens >= 80))
+        for reuse, tokens in zip(reuse_counts, token_sizes, strict=True)
+    )
