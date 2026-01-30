@@ -55,3 +55,10 @@ def test_prediction_does_not_change_model_parameters() -> None:
     before = tuple(parameter.detach().clone() for parameter in model.parameters())
     m.predict_confidence(model, (1.0,))
     assert all(torch.equal(a, b) for a, b in zip(before, model.parameters(), strict=True))
+
+
+def test_confidence_prediction_is_bounded_and_quantized() -> None:
+    model = m.build_confidence_head(2, seed=2)
+    value = m.predict_confidence(model, (0.25, -0.5))
+    assert 0 <= value <= 1
+    assert value == round(value, 6)

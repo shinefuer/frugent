@@ -68,3 +68,14 @@ def train_head(
         optimizer.step()
         losses.append(round(float(loss.detach()), 6))
     return tuple(losses)
+
+
+def predict_confidence(model: object, features: tuple[float, ...]) -> float:
+    import torch
+
+    if not isinstance(model, torch.nn.Module) or not features:
+        raise TorchPolicyError("prediction: model and features are required")
+    model.eval()
+    with torch.no_grad():
+        output = model(torch.tensor([features], dtype=torch.float32))
+    return round(float(output[0, 0]), 6)
