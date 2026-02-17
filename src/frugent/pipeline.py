@@ -22,3 +22,20 @@ class PipelineConfig:
             raise PipelineError("pipeline config: integer fields required")
         if self.seed < 0 or self.tasks < 1 or self.token_budget < 1 or self.cost_budget_micros < 1:
             raise PipelineError("pipeline config: positive limits and non-negative seed required")
+
+
+@dataclass(frozen=True, slots=True)
+class PolicyRun:
+    policy: str
+    completed: int
+    prompt_tokens: int
+    cached_tokens: int
+    cost_micros: int
+    latencies_ms: tuple[int, ...]
+
+    def __post_init__(self) -> None:
+        counts = (self.completed, self.prompt_tokens, self.cached_tokens, self.cost_micros)
+        if not self.policy or any(value < 0 for value in counts):
+            raise PipelineError("policy run: non-negative measured counts required")
+        if self.cached_tokens > self.prompt_tokens or any(value < 0 for value in self.latencies_ms):
+            raise PipelineError("policy run: cache and latency measurements are inconsistent")
