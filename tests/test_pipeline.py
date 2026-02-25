@@ -16,3 +16,8 @@ def test_pipeline_config_enforces_offline_run_limits() -> None:
 def test_policy_run_rejects_impossible_cache_measurements() -> None:
     with pytest.raises(m.PipelineError, match="inconsistent"):
         m.PolicyRun("x", 1, 4, 5, 2, (1,))
+
+
+def test_policy_run_accepts_empty_latency_only_for_empty_completion() -> None:
+    empty = m.PolicyRun("empty", 0, 0, 0, 0, ())
+    assert empty.completed == 0
