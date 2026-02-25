@@ -21,3 +21,10 @@ def test_policy_run_rejects_impossible_cache_measurements() -> None:
 def test_policy_run_accepts_empty_latency_only_for_empty_completion() -> None:
     empty = m.PolicyRun("empty", 0, 0, 0, 0, ())
     assert empty.completed == 0
+
+
+def test_baseline_measures_every_generated_task() -> None:
+    run = m.baseline_run(m.PipelineConfig(seed=4, tasks=7))
+    assert run.completed == 7
+    assert run.prompt_tokens > 0 and run.cached_tokens == 0
+    assert len(run.latencies_ms) == 7
