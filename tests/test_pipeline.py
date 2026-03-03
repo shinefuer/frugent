@@ -41,3 +41,9 @@ def test_comparison_uses_identical_completion_denominator() -> None:
     assert comparison.baseline.completed == comparison.stack.completed == 16
     assert 0 < comparison.token_savings < 1
     assert comparison.cost_savings_micros > 0
+
+
+def test_stack_never_exceeds_generated_task_count() -> None:
+    for seed in range(12):
+        config = m.PipelineConfig(seed=seed, tasks=5)
+        assert m.stack_run(config).completed <= config.tasks
