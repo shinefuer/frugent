@@ -94,3 +94,23 @@ def stack_run(config: PipelineConfig) -> PolicyRun:
     )
     completed = len(tasks) if sum(costs) <= config.cost_budget_micros else 0
     return PolicyRun("frugent-stack", completed, sum(prompts), sum(cached), sum(costs), latencies)
+
+
+@dataclass(frozen=True, slots=True)
+class Comparison:
+    baseline: PolicyRun
+    stack: PolicyRun
+
+    @property
+    def token_savings(self) -> float:
+        if self.baseline.prompt_tokens == 0:
+            return 0.0
+        return round(self.stack.cached_tokens / self.baseline.prompt_tokens, 6)
+
+    @property
+    def cost_savings_micros(self) -> int:
+        return self.baseline.cost_micros - self.stack.cost_micros
+
+
+def compare(config: PipelineConfig) -> Comparison:
+    return Comparison(baseline_run(config), stack_run(config))

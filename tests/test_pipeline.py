@@ -34,3 +34,10 @@ def test_stack_accounts_only_observed_cache_hits() -> None:
     run = m.stack_run(m.PipelineConfig(seed=8, tasks=20))
     assert 0 < run.cached_tokens < run.prompt_tokens
     assert run.completed == 20
+
+
+def test_comparison_uses_identical_completion_denominator() -> None:
+    comparison = m.compare(m.PipelineConfig(seed=14, tasks=16))
+    assert comparison.baseline.completed == comparison.stack.completed == 16
+    assert 0 < comparison.token_savings < 1
+    assert comparison.cost_savings_micros > 0
