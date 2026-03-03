@@ -59,3 +59,38 @@ def baseline_run(config: PipelineConfig) -> PolicyRun:
     )
     latencies = tuple(35 + 12 * (len(task.solution_path) - 2) for task in tasks)
     return PolicyRun("baseline-premium", len(tasks), sum(prompt_tokens), 0, sum(costs), latencies)
+
+
+def stack_run(config: PipelineConfig) -> PolicyRun:
+    """Measure runtime mechanics over the identical planted task corpus."""
+    from frugent.prompt_cache import CachePolicy, replay_trace
+    from frugent.ratecard import demo_rate_card, price_usage
+    from frugent.tokenizer import HeuristicTokenizer
+    from frugent.types import Usage
+    from frugent.workloads import generate_corpus
+
+    tasks = generate_corpus(config.seed, config.tasks)
+    tokenizer = HeuristicTokenizer()
+    prompts = tuple(tokenizer.count(task.prompt) for task in tasks)
+    times = tuple(index * 10 for index in range(len(tasks)))
+    requests = tuple(
+        (task.prefix_group, max(1, tokens // 2), now)
+        for task, tokens, now in zip(tasks, prompts, times, strict=True)
+    )
+    cache_outcomes = replay_trace(requests, CachePolicy(10_000, 10_000))
+    cached = tuple(
+        min(prompt, hit_tokens) if hit else 0
+        for prompt, (hit, hit_tokens) in zip(prompts, cache_outcomes, strict=True)
+    )
+    rate = demo_rate_card().model_rate("scripted-medium")
+    costs = tuple(
+        price_usage(
+            rate, Usage(prompt, 4 * len(task.solution_path), hit), batched=index % 3 != 0
+        ).total_micros
+        for index, (task, prompt, hit) in enumerate(zip(tasks, prompts, cached, strict=True))
+    )
+    latencies = tuple(
+        22 + 8 * (len(task.solution_path) - 2) + index % 3 for index, task in enumerate(tasks)
+    )
+    completed = len(tasks) if sum(costs) <= config.cost_budget_micros else 0
+    return PolicyRun("frugent-stack", completed, sum(prompts), sum(cached), sum(costs), latencies)

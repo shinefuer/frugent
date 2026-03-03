@@ -28,3 +28,9 @@ def test_baseline_measures_every_generated_task() -> None:
     assert run.completed == 7
     assert run.prompt_tokens > 0 and run.cached_tokens == 0
     assert len(run.latencies_ms) == 7
+
+
+def test_stack_accounts_only_observed_cache_hits() -> None:
+    run = m.stack_run(m.PipelineConfig(seed=8, tasks=20))
+    assert 0 < run.cached_tokens < run.prompt_tokens
+    assert run.completed == 20
