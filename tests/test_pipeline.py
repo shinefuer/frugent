@@ -55,3 +55,12 @@ def test_report_rows_use_net_prompt_tokens_and_measured_latency() -> None:
     assert baseline.tokens == comparison.baseline.prompt_tokens
     assert stack.tokens == comparison.stack.prompt_tokens - comparison.stack.cached_tokens
     assert stack.p95_ms >= stack.p50_ms
+
+
+def test_pipeline_trace_roundtrips_with_contiguous_events() -> None:
+    from frugent.trace_io import import_trace
+
+    config = m.PipelineConfig(seed=5, tasks=5)
+    header, events = import_trace(m.trace_bytes(config, m.compare(config)))
+    assert header.seed == 5
+    assert tuple(event["sequence"] for event in events) == (0, 1)

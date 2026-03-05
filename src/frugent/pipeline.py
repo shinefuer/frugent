@@ -132,3 +132,32 @@ def report_rows(comparison: Comparison) -> tuple[object, ...]:
         )
 
     return row(comparison.baseline), row(comparison.stack)
+
+
+def trace_bytes(config: PipelineConfig, comparison: Comparison) -> bytes:
+    from frugent.config import RuntimeConfig
+    from frugent.ratecard import demo_rate_card, rate_card_fingerprint
+    from frugent.trace_io import TraceHeader, export_trace
+
+    runtime_config = RuntimeConfig(
+        seed=config.seed,
+        token_budget=config.token_budget,
+        cost_budget_micros=config.cost_budget_micros,
+    )
+    header = TraceHeader(
+        f"synthetic-{config.seed}",
+        config.seed,
+        runtime_config.fingerprint,
+        rate_card_fingerprint(demo_rate_card()),
+    )
+    events = tuple(
+        {
+            "policy": run.policy,
+            "completed": run.completed,
+            "prompt_tokens": run.prompt_tokens,
+            "cached_tokens": run.cached_tokens,
+            "cost_micros": run.cost_micros,
+        }
+        for run in (comparison.baseline, comparison.stack)
+    )
+    return export_trace(header, events)
