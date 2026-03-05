@@ -161,3 +161,46 @@ def trace_bytes(config: PipelineConfig, comparison: Comparison) -> bytes:
         for run in (comparison.baseline, comparison.stack)
     )
     return export_trace(header, events)
+
+
+@dataclass(frozen=True, slots=True)
+class PipelineArtifacts:
+    comparison: Comparison
+    trace: bytes
+    markdown: str
+    html: str
+
+
+def run_pipeline(config: PipelineConfig) -> PipelineArtifacts:
+    from frugent import __version__
+    from frugent.config import RuntimeConfig
+    from frugent.ratecard import demo_rate_card, rate_card_fingerprint
+    from frugent.reports import (
+        RunMetadata,
+        coverage_limitations,
+        html_report,
+        markdown_report,
+    )
+
+    comparison = compare(config)
+    runtime_config = RuntimeConfig(
+        seed=config.seed,
+        token_budget=config.token_budget,
+        cost_budget_micros=config.cost_budget_micros,
+    )
+    metadata = RunMetadata(
+        __version__,
+        config.seed,
+        runtime_config.fingerprint,
+        rate_card_fingerprint(demo_rate_card()),
+    )
+    limitations = coverage_limitations(
+        used_real_endpoint=False, used_external_data=False, model_evaluated=False
+    )
+    rows = report_rows(comparison)
+    return PipelineArtifacts(
+        comparison,
+        trace_bytes(config, comparison),
+        markdown_report(metadata, rows, limitations),
+        html_report(metadata, rows, limitations),
+    )

@@ -64,3 +64,16 @@ def test_pipeline_trace_roundtrips_with_contiguous_events() -> None:
     header, events = import_trace(m.trace_bytes(config, m.compare(config)))
     assert header.seed == 5
     assert tuple(event["sequence"] for event in events) == (0, 1)
+
+
+def test_pipeline_artifacts_are_byte_deterministic() -> None:
+    config = m.PipelineConfig(seed=21, tasks=11)
+    first, second = m.run_pipeline(config), m.run_pipeline(config)
+    assert first == second
+
+
+def test_pipeline_artifacts_derive_from_one_comparison() -> None:
+    artifacts = m.run_pipeline(m.PipelineConfig(seed=9, tasks=6))
+    assert str(artifacts.comparison.stack.cost_micros) in artifacts.markdown
+    assert "Offline synthetic measurements" in artifacts.html
+    assert artifacts.trace.endswith(b"\n")
