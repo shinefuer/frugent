@@ -114,3 +114,21 @@ class Comparison:
 
 def compare(config: PipelineConfig) -> Comparison:
     return Comparison(baseline_run(config), stack_run(config))
+
+
+def report_rows(comparison: Comparison) -> tuple[object, ...]:
+    from frugent.reports import MetricRow
+    from frugent.statistics import quantile
+
+    def row(run: PolicyRun) -> MetricRow:
+        values = tuple(float(value) for value in run.latencies_ms)
+        return MetricRow(
+            run.policy,
+            run.completed,
+            run.prompt_tokens - run.cached_tokens,
+            run.cost_micros,
+            quantile(values, 0.5),
+            quantile(values, 0.95),
+        )
+
+    return row(comparison.baseline), row(comparison.stack)

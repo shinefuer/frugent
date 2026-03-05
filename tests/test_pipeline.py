@@ -47,3 +47,11 @@ def test_stack_never_exceeds_generated_task_count() -> None:
     for seed in range(12):
         config = m.PipelineConfig(seed=seed, tasks=5)
         assert m.stack_run(config).completed <= config.tasks
+
+
+def test_report_rows_use_net_prompt_tokens_and_measured_latency() -> None:
+    comparison = m.compare(m.PipelineConfig(seed=2, tasks=9))
+    baseline, stack = m.report_rows(comparison)
+    assert baseline.tokens == comparison.baseline.prompt_tokens
+    assert stack.tokens == comparison.stack.prompt_tokens - comparison.stack.cached_tokens
+    assert stack.p95_ms >= stack.p50_ms
