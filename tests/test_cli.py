@@ -26,3 +26,9 @@ def test_cache_command_replays_hits_in_request_order(capsys: object) -> None:
     output = json.loads(capsys.readouterr().out)
     assert output["requests"] == 3 and output["hits"] == 1
     assert output["cached_tokens"] == 8
+
+
+def test_initial_command_help_names_measured_operations() -> None:
+    help_text = m.build_parser().format_help()
+    assert "cache" in help_text and "route" in help_text
+    assert "offline" not in help_text.casefold() or "离线" in help_text
