@@ -19,3 +19,10 @@ def test_route_command_reports_planted_prefix_hits(capsys: object) -> None:
     assert m.main(["route"]) == 0
     output = json.loads(capsys.readouterr().out)
     assert output == {"assignments": ["left", "right"], "cached_tokens": 4, "synthetic": True}
+
+
+def test_cache_command_replays_hits_in_request_order(capsys: object) -> None:
+    assert m.main(["cache"]) == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["requests"] == 3 and output["hits"] == 1
+    assert output["cached_tokens"] == 8

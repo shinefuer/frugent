@@ -89,3 +89,19 @@ def route_command(arguments: argparse.Namespace) -> CommandOutput:
             "cached_tokens": routed_hit_tokens(instances, assignments, requests),
         }
     )
+
+
+@register("cache", "replay exact prompt-cache lifecycle events")
+def cache_command(arguments: argparse.Namespace) -> CommandOutput:
+    from frugent.prompt_cache import CachePolicy, metrics, replay_trace
+
+    outcomes = replay_trace((("a", 8, 0), ("b", 4, 1), ("a", 8, 2)), CachePolicy(16, 100))
+    measured = metrics(outcomes)
+    return CommandOutput(
+        {
+            "requests": measured.requests,
+            "hits": measured.hits,
+            "cached_tokens": measured.cached_tokens,
+            "hit_rate": measured.hit_rate,
+        }
+    )
