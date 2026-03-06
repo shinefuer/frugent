@@ -69,3 +69,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"frugent: {error}", file=sys.stderr)
         return 2
     return 0
+
+
+@register("route", "measure prefix-aware routing on a planted affinity trace")
+def route_command(arguments: argparse.Namespace) -> CommandOutput:
+    from frugent.prefix import PrefixTrie
+    from frugent.prompt_router import Instance, greedy_fixed_assignment, routed_hit_tokens
+
+    left, right = PrefixTrie(), PrefixTrie()
+    left.insert(("repo:a", "policy:offline"))
+    right.insert(("repo:b", "policy:offline"))
+    instances = (Instance("left", left), Instance("right", right))
+    requests = (("repo:a", "policy:offline", "edit"), ("repo:b", "policy:offline", "test"))
+    assignments = greedy_fixed_assignment(instances, requests)
+    return CommandOutput(
+        {
+            "synthetic": True,
+            "assignments": list(assignments),
+            "cached_tokens": routed_hit_tokens(instances, assignments, requests),
+        }
+    )
