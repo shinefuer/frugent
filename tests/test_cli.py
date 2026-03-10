@@ -32,3 +32,10 @@ def test_initial_command_help_names_measured_operations() -> None:
     help_text = m.build_parser().format_help()
     assert "cache" in help_text and "route" in help_text
     assert "offline" not in help_text.casefold() or "离线" in help_text
+
+
+def test_compress_command_emits_monotone_recall(capsys: object) -> None:
+    assert m.main(["compress", "--token-budget", "4096"]) == 0
+    curve = json.loads(capsys.readouterr().out)["curve"]
+    assert [point[0] for point in curve] == sorted(point[0] for point in curve)
+    assert [point[1] for point in curve] == sorted(point[1] for point in curve)

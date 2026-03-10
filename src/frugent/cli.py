@@ -105,3 +105,22 @@ def cache_command(arguments: argparse.Namespace) -> CommandOutput:
             "hit_rate": measured.hit_rate,
         }
     )
+
+
+@register("compress", "measure planted-needle recall under token budgets")
+def compress_command(arguments: argparse.Namespace) -> CommandOutput:
+    from frugent.compression import Block, recall_curve
+
+    blocks = tuple(
+        Block(
+            f"b{index}",
+            "needle" if index in {1, 3} else "context",
+            2,
+            index,
+            planted_relevance=10 if index in {1, 3} else 1,
+        )
+        for index in range(5)
+    )
+    budgets = tuple(sorted({0, max(0, arguments.token_budget // 1024), 6, 10}))
+    curve = recall_curve(blocks, frozenset({"b1", "b3"}), budgets)
+    return CommandOutput({"synthetic": True, "curve": [list(point) for point in curve]})
