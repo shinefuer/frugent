@@ -39,3 +39,9 @@ def test_compress_command_emits_monotone_recall(capsys: object) -> None:
     curve = json.loads(capsys.readouterr().out)["curve"]
     assert [point[0] for point in curve] == sorted(point[0] for point in curve)
     assert [point[1] for point in curve] == sorted(point[1] for point in curve)
+
+
+def test_batch_command_counts_single_flights(capsys: object) -> None:
+    assert m.main(["batch"]) == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output == {"batches": 2, "dedup_ratio": 0.333333, "executions": 2, "requests": 3}

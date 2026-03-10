@@ -124,3 +124,24 @@ def compress_command(arguments: argparse.Namespace) -> CommandOutput:
     budgets = tuple(sorted({0, max(0, arguments.token_budget // 1024), 6, 10}))
     curve = recall_curve(blocks, frozenset({"b1", "b3"}), budgets)
     return CommandOutput({"synthetic": True, "curve": [list(point) for point in curve]})
+
+
+@register("batch", "measure exact deduplication and synthetic micro-batches")
+def batch_command(arguments: argparse.Namespace) -> CommandOutput:
+    from frugent.batching import BatchRequest, batch_metrics, micro_batches
+
+    requests = (
+        BatchRequest("a", b"same", 0),
+        BatchRequest("b", b"same", 1),
+        BatchRequest("c", b"other", 7),
+    )
+    batches = micro_batches(requests, window_ms=3, max_size=4)
+    measured = batch_metrics(requests, batches)
+    return CommandOutput(
+        {
+            "requests": measured.requests,
+            "executions": measured.executions,
+            "batches": measured.batches,
+            "dedup_ratio": measured.dedup_ratio,
+        }
+    )
