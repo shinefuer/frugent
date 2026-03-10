@@ -45,3 +45,10 @@ def test_batch_command_counts_single_flights(capsys: object) -> None:
     assert m.main(["batch"]) == 0
     output = json.loads(capsys.readouterr().out)
     assert output == {"batches": 2, "dedup_ratio": 0.333333, "executions": 2, "requests": 3}
+
+
+def test_budget_command_never_allocates_beyond_limits(capsys: object) -> None:
+    assert m.main(["budget", "--tasks", "5", "--token-budget", "33", "--cost-budget", "47"]) == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["allocated_tokens"] == 33
+    assert output["allocated_cost_micros"] == 47

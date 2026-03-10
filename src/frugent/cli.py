@@ -145,3 +145,21 @@ def batch_command(arguments: argparse.Namespace) -> CommandOutput:
             "dedup_ratio": measured.dedup_ratio,
         }
     )
+
+
+@register("budget", "allocate hard token and fictional micro-cost budgets")
+def budget_command(arguments: argparse.Namespace) -> CommandOutput:
+    from frugent.scheduling import Task, schedule, schedule_totals
+
+    tasks = tuple(
+        Task(f"t{index}", index % 3, 20 + index, 30 + index * 2) for index in range(arguments.tasks)
+    )
+    decisions = schedule(tasks, arguments.token_budget, arguments.cost_budget)
+    tokens, cost = schedule_totals(decisions)
+    return CommandOutput(
+        {
+            "decisions": [list(item) for item in decisions],
+            "allocated_tokens": tokens,
+            "allocated_cost_micros": cost,
+        }
+    )
