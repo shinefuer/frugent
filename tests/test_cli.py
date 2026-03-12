@@ -65,3 +65,10 @@ def test_trace_command_reports_verified_stream_metadata(capsys: object) -> None:
     output = json.loads(capsys.readouterr().out)
     assert output["run_id"] == "synthetic-6" and output["events"] == 2
     assert output["fingerprint"].startswith("sha256:")
+
+
+def test_bench_command_labels_measured_scope(capsys: object) -> None:
+    assert m.main(["bench", "--seed", "1", "--tasks", "8"]) == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["synthetic"] is True and output["fictional_rate_card"] is True
+    assert output["completed"] == 8 and output["cost_savings_micros"] > 0

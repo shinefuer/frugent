@@ -181,3 +181,23 @@ def trace_command(arguments: argparse.Namespace) -> CommandOutput:
         {"run_id": header.run_id, "events": len(events), "fingerprint": trace_fingerprint(trace)},
         trace if arguments.format != "json" else None,
     )
+
+
+@register("bench", "compare baseline and stack on identical synthetic tasks")
+def bench_command(arguments: argparse.Namespace) -> CommandOutput:
+    from frugent.pipeline import PipelineConfig, compare
+
+    comparison = compare(
+        PipelineConfig(
+            arguments.seed, arguments.tasks, arguments.token_budget, arguments.cost_budget
+        )
+    )
+    return CommandOutput(
+        {
+            "synthetic": True,
+            "fictional_rate_card": True,
+            "completed": comparison.stack.completed,
+            "token_savings": comparison.token_savings,
+            "cost_savings_micros": comparison.cost_savings_micros,
+        }
+    )
