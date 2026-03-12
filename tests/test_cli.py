@@ -52,3 +52,9 @@ def test_budget_command_never_allocates_beyond_limits(capsys: object) -> None:
     output = json.loads(capsys.readouterr().out)
     assert output["allocated_tokens"] == 33
     assert output["allocated_cost_micros"] == 47
+
+
+def test_commands_return_useful_error_codes_for_invalid_limits(capsys: object) -> None:
+    assert m.main(["budget", "--tasks", "-1"]) == 2
+    assert "frugent:" in capsys.readouterr().err
+    assert m.main(["compress", "--token-budget", "-1"]) == 2

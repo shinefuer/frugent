@@ -111,6 +111,8 @@ def cache_command(arguments: argparse.Namespace) -> CommandOutput:
 def compress_command(arguments: argparse.Namespace) -> CommandOutput:
     from frugent.compression import Block, recall_curve
 
+    if arguments.token_budget < 0:
+        raise ValueError("compress: token budget must be non-negative")
     blocks = tuple(
         Block(
             f"b{index}",
