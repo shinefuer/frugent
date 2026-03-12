@@ -165,3 +165,19 @@ def budget_command(arguments: argparse.Namespace) -> CommandOutput:
             "allocated_cost_micros": cost,
         }
     )
+
+
+@register("trace", "export a checksummed offline pipeline trace")
+def trace_command(arguments: argparse.Namespace) -> CommandOutput:
+    from frugent.pipeline import PipelineConfig, compare, trace_bytes
+    from frugent.trace_io import import_trace, trace_fingerprint
+
+    config = PipelineConfig(
+        arguments.seed, arguments.tasks, arguments.token_budget, arguments.cost_budget
+    )
+    trace = trace_bytes(config, compare(config))
+    header, events = import_trace(trace)
+    return CommandOutput(
+        {"run_id": header.run_id, "events": len(events), "fingerprint": trace_fingerprint(trace)},
+        trace if arguments.format != "json" else None,
+    )

@@ -58,3 +58,10 @@ def test_commands_return_useful_error_codes_for_invalid_limits(capsys: object) -
     assert m.main(["budget", "--tasks", "-1"]) == 2
     assert "frugent:" in capsys.readouterr().err
     assert m.main(["compress", "--token-budget", "-1"]) == 2
+
+
+def test_trace_command_reports_verified_stream_metadata(capsys: object) -> None:
+    assert m.main(["trace", "--seed", "6", "--tasks", "3"]) == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["run_id"] == "synthetic-6" and output["events"] == 2
+    assert output["fingerprint"].startswith("sha256:")
