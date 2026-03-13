@@ -72,3 +72,12 @@ def test_bench_command_labels_measured_scope(capsys: object) -> None:
     output = json.loads(capsys.readouterr().out)
     assert output["synthetic"] is True and output["fictional_rate_card"] is True
     assert output["completed"] == 8 and output["cost_savings_micros"] > 0
+
+
+def test_report_command_writes_requested_self_contained_artifact(tmp_path: object) -> None:
+    from pathlib import Path
+
+    destination = Path(tmp_path) / "report.html"
+    assert m.main(["report", "--format", "html", "--tasks", "4", "--output", str(destination)]) == 0
+    assert destination.read_text().startswith("<!doctype html>")
+    assert "fictional rate card" in destination.read_text()

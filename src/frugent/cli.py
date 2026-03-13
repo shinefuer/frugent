@@ -201,3 +201,18 @@ def bench_command(arguments: argparse.Namespace) -> CommandOutput:
             "cost_savings_micros": comparison.cost_savings_micros,
         }
     )
+
+
+@register("report", "render a measured synthetic cost report")
+def report_command(arguments: argparse.Namespace) -> CommandOutput:
+    from frugent.pipeline import PipelineConfig, run_pipeline
+
+    if arguments.format == "json":
+        raise ValueError("report: --format must be markdown or html")
+    artifacts = run_pipeline(
+        PipelineConfig(
+            arguments.seed, arguments.tasks, arguments.token_budget, arguments.cost_budget
+        )
+    )
+    content = artifacts.markdown if arguments.format == "markdown" else artifacts.html
+    return CommandOutput({"format": arguments.format}, content.encode())
