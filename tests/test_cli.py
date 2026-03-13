@@ -100,3 +100,18 @@ def test_demo_command_discloses_synthetic_fictional_scope(capsys: object) -> Non
     output = json.loads(capsys.readouterr().out)
     assert output["scope"] == "offline synthetic workload"
     assert output["rate_card"] == "fictional" and output["tasks_completed"] == 5
+
+
+def test_complete_subcommand_inventory_is_deliberate() -> None:
+    assert set(m.COMMANDS) == {
+        "run",
+        "route",
+        "cache",
+        "compress",
+        "batch",
+        "trace",
+        "budget",
+        "bench",
+        "report",
+        "demo",
+    }
