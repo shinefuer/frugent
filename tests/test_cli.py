@@ -81,3 +81,8 @@ def test_report_command_writes_requested_self_contained_artifact(tmp_path: objec
     assert m.main(["report", "--format", "html", "--tasks", "4", "--output", str(destination)]) == 0
     assert destination.read_text().startswith("<!doctype html>")
     assert "fictional rate card" in destination.read_text()
+
+
+def test_report_stdout_is_the_requested_artifact(capsys: object) -> None:
+    assert m.main(["report", "--format", "markdown", "--tasks", "3"]) == 0
+    assert capsys.readouterr().out.startswith("# Frugent synthetic cost report")
