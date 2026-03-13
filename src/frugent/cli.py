@@ -237,3 +237,24 @@ def run_command(arguments: argparse.Namespace) -> CommandOutput:
             "trace_fingerprint": trace_fingerprint(artifacts.trace),
         }
     )
+
+
+@register("demo", "run the complete offline demonstration with honest labels")
+def demo_command(arguments: argparse.Namespace) -> CommandOutput:
+    from frugent.pipeline import PipelineConfig, run_pipeline
+
+    artifacts = run_pipeline(
+        PipelineConfig(
+            arguments.seed, arguments.tasks, arguments.token_budget, arguments.cost_budget
+        )
+    )
+    comparison = artifacts.comparison
+    data = {
+        "scope": "offline synthetic workload",
+        "rate_card": "fictional",
+        "tasks_completed": comparison.stack.completed,
+        "measured_token_savings": comparison.token_savings,
+        "measured_cost_savings_micros": comparison.cost_savings_micros,
+    }
+    artifact = artifacts.html.encode() if arguments.format == "html" else None
+    return CommandOutput(data, artifact)

@@ -93,3 +93,10 @@ def test_run_command_connects_pipeline_artifacts(capsys: object) -> None:
     output = json.loads(capsys.readouterr().out)
     assert output["completed"] == 6
     assert output["trace_fingerprint"].startswith("sha256:")
+
+
+def test_demo_command_discloses_synthetic_fictional_scope(capsys: object) -> None:
+    assert m.main(["demo", "--tasks", "5"]) == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["scope"] == "offline synthetic workload"
+    assert output["rate_card"] == "fictional" and output["tasks_completed"] == 5
