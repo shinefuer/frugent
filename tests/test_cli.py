@@ -86,3 +86,10 @@ def test_report_command_writes_requested_self_contained_artifact(tmp_path: objec
 def test_report_stdout_is_the_requested_artifact(capsys: object) -> None:
     assert m.main(["report", "--format", "markdown", "--tasks", "3"]) == 0
     assert capsys.readouterr().out.startswith("# Frugent synthetic cost report")
+
+
+def test_run_command_connects_pipeline_artifacts(capsys: object) -> None:
+    assert m.main(["run", "--seed", "10", "--tasks", "6"]) == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["completed"] == 6
+    assert output["trace_fingerprint"].startswith("sha256:")

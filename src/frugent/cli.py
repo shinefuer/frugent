@@ -216,3 +216,24 @@ def report_command(arguments: argparse.Namespace) -> CommandOutput:
     )
     content = artifacts.markdown if arguments.format == "markdown" else artifacts.html
     return CommandOutput({"format": arguments.format}, content.encode())
+
+
+@register("run", "execute synthesis, accounting, tracing, and reporting")
+def run_command(arguments: argparse.Namespace) -> CommandOutput:
+    from frugent.pipeline import PipelineConfig, run_pipeline
+    from frugent.trace_io import trace_fingerprint
+
+    artifacts = run_pipeline(
+        PipelineConfig(
+            arguments.seed, arguments.tasks, arguments.token_budget, arguments.cost_budget
+        )
+    )
+    comparison = artifacts.comparison
+    return CommandOutput(
+        {
+            "completed": comparison.stack.completed,
+            "token_savings": comparison.token_savings,
+            "cost_savings_micros": comparison.cost_savings_micros,
+            "trace_fingerprint": trace_fingerprint(artifacts.trace),
+        }
+    )
