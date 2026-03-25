@@ -22,3 +22,19 @@ def test_routing_svg_contains_both_measured_policies(tmp_path: Path) -> None:
     svg = destination.read_text()
     assert svg.startswith("<svg") and svg.endswith("</svg>")
     assert "no-cache" in svg and "prefix-route" in svg
+
+
+def test_script_entry_point_writes_artifact(tmp_path: Path) -> None:
+    import subprocess
+    import sys
+
+    destination = tmp_path / EXPECTED_ARTIFACT
+    result = subprocess.run(
+        [sys.executable, str(EXAMPLE_PATH), str(destination)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert destination.exists() and destination.stat().st_size > 40
+    assert "synthetic" in result.stdout.casefold()
