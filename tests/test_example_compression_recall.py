@@ -22,3 +22,19 @@ def test_compression_svg_has_one_point_per_budget(tmp_path: Path) -> None:
     points = svg.split('points="', 1)[1].split('"', 1)[0].split()
     assert len(points) == len(result["curve"])
     assert "planted-needle recall" in svg
+
+
+def test_script_entry_point_writes_artifact(tmp_path: Path) -> None:
+    import subprocess
+    import sys
+
+    destination = tmp_path / EXPECTED_ARTIFACT
+    result = subprocess.run(
+        [sys.executable, str(EXAMPLE_PATH), str(destination)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert destination.exists() and destination.stat().st_size > 40
+    assert "synthetic" in result.stdout.casefold()
