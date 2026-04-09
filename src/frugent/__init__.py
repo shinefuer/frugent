@@ -11,14 +11,22 @@ from frugent.ratecard import (
     price_usage,
     rate_card_fingerprint,
 )
+from frugent.types import Decision, Event, Message, RecordError, Request, Response, Usage
 
 __all__ = [
     "ConfigError",
     "CostBreakdown",
+    "Decision",
+    "Event",
+    "Message",
     "ModelRate",
     "RateCard",
     "RateCardError",
+    "RecordError",
+    "Request",
+    "Response",
     "RuntimeConfig",
+    "Usage",
     "__version__",
     "demo_rate_card",
     "dump_config",

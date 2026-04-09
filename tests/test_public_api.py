@@ -15,3 +15,10 @@ def test_rate_card_facade_is_explicitly_fictional() -> None:
     card = frugent.demo_rate_card()
     assert "fictional" in card.label
     assert frugent.rate_card_fingerprint(card).startswith("sha256:")
+
+
+def test_record_types_are_available_from_one_namespace() -> None:
+    message = frugent.Message("user", "hello")
+    request = frugent.Request("r", (message,), 2)
+    assert request.messages == (message,)
+    assert frugent.Usage(2, 1).total_tokens == 3
