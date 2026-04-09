@@ -28,3 +28,8 @@ def test_context_facade_preserves_append_only_diffs() -> None:
     base = frugent.MessageStore()
     target = base.append(frugent.Message("user", "x"))
     assert frugent.apply_diff(base, frugent.diff(base, target)) == target
+
+
+def test_prompt_cache_facade_replays_exact_hits() -> None:
+    outcomes = frugent.replay_trace((("x", 2, 0), ("x", 2, 1)), frugent.CachePolicy(4, 10))
+    assert outcomes == ((False, 0), (True, 2))

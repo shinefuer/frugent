@@ -11,6 +11,7 @@ from frugent.context import (
     snapshot,
     store_fingerprint,
 )
+from frugent.prompt_cache import CacheEntry, CacheMetrics, CachePolicy, replay_trace
 from frugent.ratecard import (
     CostBreakdown,
     ModelRate,
@@ -23,6 +24,9 @@ from frugent.ratecard import (
 from frugent.types import Decision, Event, Message, RecordError, Request, Response, Usage
 
 __all__ = [
+    "CacheEntry",
+    "CacheMetrics",
+    "CachePolicy",
     "ConfigError",
     "ContextDiff",
     "CostBreakdown",
@@ -48,6 +52,7 @@ __all__ = [
     "migrate_config",
     "price_usage",
     "rate_card_fingerprint",
+    "replay_trace",
     "snapshot",
     "store_fingerprint",
 ]
