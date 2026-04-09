@@ -22,3 +22,9 @@ def test_record_types_are_available_from_one_namespace() -> None:
     request = frugent.Request("r", (message,), 2)
     assert request.messages == (message,)
     assert frugent.Usage(2, 1).total_tokens == 3
+
+
+def test_context_facade_preserves_append_only_diffs() -> None:
+    base = frugent.MessageStore()
+    target = base.append(frugent.Message("user", "x"))
+    assert frugent.apply_diff(base, frugent.diff(base, target)) == target
