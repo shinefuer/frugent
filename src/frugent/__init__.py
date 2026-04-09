@@ -2,12 +2,28 @@
 
 from frugent._version import __version__
 from frugent.config import ConfigError, RuntimeConfig, dump_config, load_config, migrate_config
+from frugent.ratecard import (
+    CostBreakdown,
+    ModelRate,
+    RateCard,
+    RateCardError,
+    demo_rate_card,
+    price_usage,
+    rate_card_fingerprint,
+)
 
 __all__ = [
     "ConfigError",
+    "CostBreakdown",
+    "ModelRate",
+    "RateCard",
+    "RateCardError",
     "RuntimeConfig",
     "__version__",
+    "demo_rate_card",
     "dump_config",
     "load_config",
     "migrate_config",
+    "price_usage",
+    "rate_card_fingerprint",
 ]
