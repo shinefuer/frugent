@@ -2,6 +2,7 @@
 
 from frugent._version import __version__
 from frugent.batching import BatchRequest, execute_single_flights, micro_batches
+from frugent.budget import Budget, BudgetError, can_admit, reserve
 from frugent.cascade import ModelProfile, cheapest_profile_at_floor
 from frugent.cascade_dp import DifficultyMixture, Policy, optimal_policy, optimum_gap
 from frugent.compression import Block, exact_budget_select, recall_curve, sliding_window
@@ -25,6 +26,8 @@ from frugent.ratecard import (
     price_usage,
     rate_card_fingerprint,
 )
+from frugent.scheduling import Task as ScheduledTask
+from frugent.scheduling import schedule
 from frugent.semantic_cache import (
     SemanticEntry,
     SemanticMetrics,
@@ -37,6 +40,8 @@ from frugent.types import Decision, Event, Message, RecordError, Request, Respon
 __all__ = [
     "BatchRequest",
     "Block",
+    "Budget",
+    "BudgetError",
     "CacheEntry",
     "CacheMetrics",
     "CachePolicy",
@@ -57,12 +62,14 @@ __all__ = [
     "Request",
     "Response",
     "RuntimeConfig",
+    "ScheduledTask",
     "SemanticEntry",
     "SemanticMetrics",
     "Snapshot",
     "Usage",
     "__version__",
     "apply_diff",
+    "can_admit",
     "cheapest_profile_at_floor",
     "demo_rate_card",
     "diff",
@@ -81,6 +88,8 @@ __all__ = [
     "rate_card_fingerprint",
     "recall_curve",
     "replay_trace",
+    "reserve",
+    "schedule",
     "sliding_window",
     "snapshot",
     "store_fingerprint",
