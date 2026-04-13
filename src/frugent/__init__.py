@@ -2,6 +2,8 @@
 
 from frugent._version import __version__
 from frugent.batching import BatchRequest, execute_single_flights, micro_batches
+from frugent.cascade import ModelProfile, cheapest_profile_at_floor
+from frugent.cascade_dp import DifficultyMixture, Policy, optimal_policy, optimum_gap
 from frugent.compression import Block, exact_budget_select, recall_curve, sliding_window
 from frugent.config import ConfigError, RuntimeConfig, dump_config, load_config, migrate_config
 from frugent.context import (
@@ -42,10 +44,13 @@ __all__ = [
     "ContextDiff",
     "CostBreakdown",
     "Decision",
+    "DifficultyMixture",
     "Event",
     "Message",
     "MessageStore",
+    "ModelProfile",
     "ModelRate",
+    "Policy",
     "RateCard",
     "RateCardError",
     "RecordError",
@@ -58,6 +63,7 @@ __all__ = [
     "Usage",
     "__version__",
     "apply_diff",
+    "cheapest_profile_at_floor",
     "demo_rate_card",
     "diff",
     "dump_config",
@@ -69,6 +75,8 @@ __all__ = [
     "load_config",
     "micro_batches",
     "migrate_config",
+    "optimal_policy",
+    "optimum_gap",
     "price_usage",
     "rate_card_fingerprint",
     "recall_curve",

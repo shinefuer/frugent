@@ -48,3 +48,8 @@ def test_mechanics_facade_preserves_response_bytes() -> None:
         "a": b"x!",
         "b": b"x!",
     }
+
+
+def test_cascade_facade_exposes_quality_floor_selection() -> None:
+    profiles = (frugent.ModelProfile("a", 1, 1, (0.5,)), frugent.ModelProfile("b", 2, 1, (0.9,)))
+    assert frugent.cheapest_profile_at_floor(profiles, (1.0,), 0.8).name == "b"
