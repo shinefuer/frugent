@@ -26,6 +26,9 @@ from frugent.ratecard import (
     price_usage,
     rate_card_fingerprint,
 )
+from frugent.sandbox import Decision as SandboxDecision
+from frugent.sandbox import Policy as SandboxPolicy
+from frugent.sandbox import decide
 from frugent.scheduling import Task as ScheduledTask
 from frugent.scheduling import schedule
 from frugent.semantic_cache import (
@@ -35,6 +38,7 @@ from frugent.semantic_cache import (
     exact_lookup,
     fuzzy_candidates,
 )
+from frugent.tools import ScriptedTools, ToolCall, ToolResult, dry_run, execute
 from frugent.trace_io import TraceHeader, event_diff, export_trace, import_trace, trace_fingerprint
 from frugent.tracing import Span, span_diff
 from frugent.types import Decision, Event, Message, RecordError, Request, Response, Usage
@@ -64,24 +68,32 @@ __all__ = [
     "Request",
     "Response",
     "RuntimeConfig",
+    "SandboxDecision",
+    "SandboxPolicy",
     "ScheduledTask",
+    "ScriptedTools",
     "SemanticEntry",
     "SemanticMetrics",
     "Snapshot",
     "Span",
+    "ToolCall",
+    "ToolResult",
     "TraceHeader",
     "Usage",
     "__version__",
     "apply_diff",
     "can_admit",
     "cheapest_profile_at_floor",
+    "decide",
     "demo_rate_card",
     "diff",
+    "dry_run",
     "dump_config",
     "event_diff",
     "exact_budget_select",
     "exact_key",
     "exact_lookup",
+    "execute",
     "execute_single_flights",
     "export_trace",
     "fuzzy_candidates",

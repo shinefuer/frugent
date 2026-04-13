@@ -66,3 +66,9 @@ def test_trace_facade_roundtrips_checksummed_bytes() -> None:
     encoded = frugent.export_trace(header, ({"kind": "x"},))
     assert frugent.import_trace(encoded)[0] == header
     assert frugent.trace_fingerprint(encoded).startswith("sha256:")
+
+
+def test_sandbox_facade_returns_precise_denials() -> None:
+    policy = frugent.SandboxPolicy((("ok",),), (), frozenset())
+    decision = frugent.decide(policy, ("no",))
+    assert not decision.allowed and "allowlisted" in decision.reason
