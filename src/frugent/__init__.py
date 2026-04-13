@@ -21,6 +21,13 @@ from frugent.ratecard import (
     price_usage,
     rate_card_fingerprint,
 )
+from frugent.semantic_cache import (
+    SemanticEntry,
+    SemanticMetrics,
+    exact_key,
+    exact_lookup,
+    fuzzy_candidates,
+)
 from frugent.types import Decision, Event, Message, RecordError, Request, Response, Usage
 
 __all__ = [
@@ -41,6 +48,8 @@ __all__ = [
     "Request",
     "Response",
     "RuntimeConfig",
+    "SemanticEntry",
+    "SemanticMetrics",
     "Snapshot",
     "Usage",
     "__version__",
@@ -48,6 +57,9 @@ __all__ = [
     "demo_rate_card",
     "diff",
     "dump_config",
+    "exact_key",
+    "exact_lookup",
+    "fuzzy_candidates",
     "load_config",
     "migrate_config",
     "price_usage",

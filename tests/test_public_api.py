@@ -33,3 +33,10 @@ def test_context_facade_preserves_append_only_diffs() -> None:
 def test_prompt_cache_facade_replays_exact_hits() -> None:
     outcomes = frugent.replay_trace((("x", 2, 0), ("x", 2, 1)), frugent.CachePolicy(4, 10))
     assert outcomes == ((False, 0), (True, 2))
+
+
+def test_semantic_facade_keeps_fuzzy_discovery_separate() -> None:
+    key = frugent.exact_key(" Hello ", "Tool", {"x": 1})
+    entry = frugent.SemanticEntry(key, b"ok", 0)
+    assert frugent.exact_lookup((entry,), key, 1, 10) == b"ok"
+    assert frugent.exact_lookup((entry,), key + "x", 1, 10) is None
