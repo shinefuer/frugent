@@ -59,3 +59,10 @@ def test_budget_facade_keeps_reservations_bounded() -> None:
     budget = frugent.Budget(10, 20)
     assert frugent.can_admit(budget, 10, 20)
     assert frugent.reserve(budget, 10, 20).remaining_tokens == 0
+
+
+def test_trace_facade_roundtrips_checksummed_bytes() -> None:
+    header = frugent.TraceHeader("r", 1, "c", "rate")
+    encoded = frugent.export_trace(header, ({"kind": "x"},))
+    assert frugent.import_trace(encoded)[0] == header
+    assert frugent.trace_fingerprint(encoded).startswith("sha256:")

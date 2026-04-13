@@ -35,6 +35,8 @@ from frugent.semantic_cache import (
     exact_lookup,
     fuzzy_candidates,
 )
+from frugent.trace_io import TraceHeader, event_diff, export_trace, import_trace, trace_fingerprint
+from frugent.tracing import Span, span_diff
 from frugent.types import Decision, Event, Message, RecordError, Request, Response, Usage
 
 __all__ = [
@@ -66,6 +68,8 @@ __all__ = [
     "SemanticEntry",
     "SemanticMetrics",
     "Snapshot",
+    "Span",
+    "TraceHeader",
     "Usage",
     "__version__",
     "apply_diff",
@@ -74,11 +78,14 @@ __all__ = [
     "demo_rate_card",
     "diff",
     "dump_config",
+    "event_diff",
     "exact_budget_select",
     "exact_key",
     "exact_lookup",
     "execute_single_flights",
+    "export_trace",
     "fuzzy_candidates",
+    "import_trace",
     "load_config",
     "micro_batches",
     "migrate_config",
@@ -92,5 +99,7 @@ __all__ = [
     "schedule",
     "sliding_window",
     "snapshot",
+    "span_diff",
     "store_fingerprint",
+    "trace_fingerprint",
 ]
