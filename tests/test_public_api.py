@@ -40,3 +40,11 @@ def test_semantic_facade_keeps_fuzzy_discovery_separate() -> None:
     entry = frugent.SemanticEntry(key, b"ok", 0)
     assert frugent.exact_lookup((entry,), key, 1, 10) == b"ok"
     assert frugent.exact_lookup((entry,), key + "x", 1, 10) is None
+
+
+def test_mechanics_facade_preserves_response_bytes() -> None:
+    requests = (frugent.BatchRequest("a", b"x", 0), frugent.BatchRequest("b", b"x", 1))
+    assert frugent.execute_single_flights(requests, lambda payload: payload + b"!") == {
+        "a": b"x!",
+        "b": b"x!",
+    }

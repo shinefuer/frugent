@@ -1,6 +1,8 @@
 """Public facade for deterministic cost-efficient runtime mechanics."""
 
 from frugent._version import __version__
+from frugent.batching import BatchRequest, execute_single_flights, micro_batches
+from frugent.compression import Block, exact_budget_select, recall_curve, sliding_window
 from frugent.config import ConfigError, RuntimeConfig, dump_config, load_config, migrate_config
 from frugent.context import (
     ContextDiff,
@@ -31,6 +33,8 @@ from frugent.semantic_cache import (
 from frugent.types import Decision, Event, Message, RecordError, Request, Response, Usage
 
 __all__ = [
+    "BatchRequest",
+    "Block",
     "CacheEntry",
     "CacheMetrics",
     "CachePolicy",
@@ -57,14 +61,19 @@ __all__ = [
     "demo_rate_card",
     "diff",
     "dump_config",
+    "exact_budget_select",
     "exact_key",
     "exact_lookup",
+    "execute_single_flights",
     "fuzzy_candidates",
     "load_config",
+    "micro_batches",
     "migrate_config",
     "price_usage",
     "rate_card_fingerprint",
+    "recall_curve",
     "replay_trace",
+    "sliding_window",
     "snapshot",
     "store_fingerprint",
 ]
