@@ -34,6 +34,7 @@ from frugent.ratecard import (
     price_usage,
     rate_card_fingerprint,
 )
+from frugent.reports import MetricRow, RunMetadata, html_report, markdown_report, svg_bars
 from frugent.runtime import Action, LoopEvent, ScriptedPlanner, run_loop
 from frugent.sandbox import Decision as SandboxDecision
 from frugent.sandbox import Policy as SandboxPolicy
@@ -74,6 +75,7 @@ __all__ = [
     "LoopEvent",
     "Message",
     "MessageStore",
+    "MetricRow",
     "ModelProfile",
     "ModelRate",
     "PipelineArtifacts",
@@ -85,6 +87,7 @@ __all__ = [
     "ReplayAdapter",
     "Request",
     "Response",
+    "RunMetadata",
     "RuntimeConfig",
     "SandboxDecision",
     "SandboxPolicy",
@@ -120,9 +123,11 @@ __all__ = [
     "export_trace",
     "fuzzy_candidates",
     "generate_corpus",
+    "html_report",
     "import_trace",
     "load_config",
     "manifest_fingerprint",
+    "markdown_report",
     "micro_batches",
     "migrate_config",
     "optimal_policy",
@@ -139,5 +144,6 @@ __all__ = [
     "snapshot",
     "span_diff",
     "store_fingerprint",
+    "svg_bars",
     "trace_fingerprint",
 ]

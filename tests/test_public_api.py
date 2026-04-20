@@ -86,3 +86,9 @@ def test_pipeline_facade_runs_without_external_dependencies() -> None:
     artifacts = frugent.run_pipeline(frugent.PipelineConfig(seed=2, tasks=3))
     assert artifacts.comparison.stack.completed == 3
     assert "fictional rate card" in artifacts.html
+
+
+def test_public_symbol_inventory_is_sorted_unique_and_real() -> None:
+    assert frugent.__all__ == sorted(set(frugent.__all__))
+    assert len(frugent.__all__) >= 75
+    assert all(hasattr(frugent, name) for name in frugent.__all__)
