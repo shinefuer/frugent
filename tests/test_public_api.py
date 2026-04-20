@@ -80,3 +80,9 @@ def test_runtime_facade_executes_scripted_plan_observe() -> None:
     )
     events = frugent.run_loop(planner, lambda payload: payload.upper(), 2)
     assert events[-1].phase == "answer"
+
+
+def test_pipeline_facade_runs_without_external_dependencies() -> None:
+    artifacts = frugent.run_pipeline(frugent.PipelineConfig(seed=2, tasks=3))
+    assert artifacts.comparison.stack.completed == 3
+    assert "fictional rate card" in artifacts.html

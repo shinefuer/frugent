@@ -23,6 +23,7 @@ from frugent.context import (
     snapshot,
     store_fingerprint,
 )
+from frugent.pipeline import PipelineArtifacts, PipelineConfig, compare, run_pipeline
 from frugent.prompt_cache import CacheEntry, CacheMetrics, CachePolicy, replay_trace
 from frugent.ratecard import (
     CostBreakdown,
@@ -50,6 +51,7 @@ from frugent.tools import ScriptedTools, ToolCall, ToolResult, dry_run, execute
 from frugent.trace_io import TraceHeader, event_diff, export_trace, import_trace, trace_fingerprint
 from frugent.tracing import Span, span_diff
 from frugent.types import Decision, Event, Message, RecordError, Request, Response, Usage
+from frugent.workloads import SyntheticTask, generate_corpus, manifest_fingerprint
 
 __all__ = [
     "Action",
@@ -74,6 +76,8 @@ __all__ = [
     "MessageStore",
     "ModelProfile",
     "ModelRate",
+    "PipelineArtifacts",
+    "PipelineConfig",
     "Policy",
     "RateCard",
     "RateCardError",
@@ -92,6 +96,7 @@ __all__ = [
     "SemanticMetrics",
     "Snapshot",
     "Span",
+    "SyntheticTask",
     "ToolCall",
     "ToolResult",
     "TraceHeader",
@@ -100,6 +105,7 @@ __all__ = [
     "apply_diff",
     "can_admit",
     "cheapest_profile_at_floor",
+    "compare",
     "decide",
     "demo_rate_card",
     "diff",
@@ -113,8 +119,10 @@ __all__ = [
     "execute_single_flights",
     "export_trace",
     "fuzzy_candidates",
+    "generate_corpus",
     "import_trace",
     "load_config",
+    "manifest_fingerprint",
     "micro_batches",
     "migrate_config",
     "optimal_policy",
@@ -125,6 +133,7 @@ __all__ = [
     "replay_trace",
     "reserve",
     "run_loop",
+    "run_pipeline",
     "schedule",
     "sliding_window",
     "snapshot",
