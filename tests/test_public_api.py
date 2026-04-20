@@ -72,3 +72,11 @@ def test_sandbox_facade_returns_precise_denials() -> None:
     policy = frugent.SandboxPolicy((("ok",),), (), frozenset())
     decision = frugent.decide(policy, ("no",))
     assert not decision.allowed and "allowlisted" in decision.reason
+
+
+def test_runtime_facade_executes_scripted_plan_observe() -> None:
+    planner = frugent.ScriptedPlanner(
+        (frugent.Action("tool", b"x"), frugent.Action("answer", b"ok"))
+    )
+    events = frugent.run_loop(planner, lambda payload: payload.upper(), 2)
+    assert events[-1].phase == "answer"

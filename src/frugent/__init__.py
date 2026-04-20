@@ -1,6 +1,13 @@
 """Public facade for deterministic cost-efficient runtime mechanics."""
 
 from frugent._version import __version__
+from frugent.adapters import (
+    Adapter,
+    AdapterRequest,
+    AdapterResponse,
+    ReplayAdapter,
+    ScriptedAdapter,
+)
 from frugent.batching import BatchRequest, execute_single_flights, micro_batches
 from frugent.budget import Budget, BudgetError, can_admit, reserve
 from frugent.cascade import ModelProfile, cheapest_profile_at_floor
@@ -26,6 +33,7 @@ from frugent.ratecard import (
     price_usage,
     rate_card_fingerprint,
 )
+from frugent.runtime import Action, LoopEvent, ScriptedPlanner, run_loop
 from frugent.sandbox import Decision as SandboxDecision
 from frugent.sandbox import Policy as SandboxPolicy
 from frugent.sandbox import decide
@@ -44,6 +52,10 @@ from frugent.tracing import Span, span_diff
 from frugent.types import Decision, Event, Message, RecordError, Request, Response, Usage
 
 __all__ = [
+    "Action",
+    "Adapter",
+    "AdapterRequest",
+    "AdapterResponse",
     "BatchRequest",
     "Block",
     "Budget",
@@ -57,6 +69,7 @@ __all__ = [
     "Decision",
     "DifficultyMixture",
     "Event",
+    "LoopEvent",
     "Message",
     "MessageStore",
     "ModelProfile",
@@ -65,12 +78,15 @@ __all__ = [
     "RateCard",
     "RateCardError",
     "RecordError",
+    "ReplayAdapter",
     "Request",
     "Response",
     "RuntimeConfig",
     "SandboxDecision",
     "SandboxPolicy",
     "ScheduledTask",
+    "ScriptedAdapter",
+    "ScriptedPlanner",
     "ScriptedTools",
     "SemanticEntry",
     "SemanticMetrics",
@@ -108,6 +124,7 @@ __all__ = [
     "recall_curve",
     "replay_trace",
     "reserve",
+    "run_loop",
     "schedule",
     "sliding_window",
     "snapshot",
