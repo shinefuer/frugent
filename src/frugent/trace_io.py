@@ -79,10 +79,7 @@ def import_trace(data: bytes | str) -> tuple[TraceHeader, tuple[dict[str, object
         raise TraceIOError(f"trace header: {error}") from error
     if version != 2 or not isinstance(header_record, dict):
         raise TraceIOError("trace header: unsupported schema")
-    try:
-        header = TraceHeader(**header_record)
-    except TypeError as error:
-        raise TraceIOError(f"trace header: invalid shape: {error}") from error
+    header = _header_from_record(header_record)
     events = tuple(decode_event(line) for line in lines[1:])
     if tuple(event["sequence"] for event in events) != tuple(range(len(events))):
         raise TraceIOError("trace stream: event sequence is not contiguous")
@@ -98,16 +95,32 @@ def verify_trace(data: bytes | str) -> bool:
     return True
 
 
+def _header_from_record(record: dict[str, object]) -> TraceHeader:
+    expected = {"run_id", "seed", "config_hash", "rate_card_hash", "schema_version"}
+    if set(record) != expected:
+        raise TraceIOError("trace header record: unexpected fields")
+    run_id, seed = record["run_id"], record["seed"]
+    config_hash, rate_hash = record["config_hash"], record["rate_card_hash"]
+    if not isinstance(run_id, str) or not isinstance(seed, int) or isinstance(seed, bool):
+        raise TraceIOError("trace header record: invalid run id or seed")
+    if not isinstance(config_hash, str) or not isinstance(rate_hash, str):
+        raise TraceIOError("trace header record: invalid fingerprints")
+    return TraceHeader(run_id, seed, config_hash, rate_hash)
+
+
 def migrate_header(record: dict[str, object]) -> dict[str, object]:
     """Migrate v1 run/config/rate fields to explicit v2 names."""
     version = record.get("schema_version")
     if version == 2:
-        return TraceHeader(**record).to_record()
+        return _header_from_record(record).to_record()
     expected = {"schema_version", "run", "seed", "config", "rate"}
     if version != 1 or set(record) != expected:
         raise TraceIOError("trace migration: unsupported legacy header")
+    seed = record["seed"]
+    if not isinstance(seed, int) or isinstance(seed, bool):
+        raise TraceIOError("trace migration: seed must be an integer")
     return TraceHeader(
-        str(record["run"]), int(record["seed"]), str(record["config"]), str(record["rate"])
+        str(record["run"]), seed, str(record["config"]), str(record["rate"])
     ).to_record()
 
 

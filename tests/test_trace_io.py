@@ -105,3 +105,9 @@ def test_event_diff_reports_change_and_addition() -> None:
     changes = m.event_diff(left, right)
     assert tuple(change["sequence"] for change in changes) == (0, 1)
     assert changes[1]["before"] is None
+
+
+def test_trace_migration_rejects_boolean_seed() -> None:
+    record = {"schema_version": 1, "run": "r", "seed": True, "config": "c", "rate": "x"}
+    with pytest.raises(m.TraceIOError, match="seed"):
+        m.migrate_header(record)
