@@ -30,7 +30,7 @@ def base_delay(policy: RetryPolicy, retry_index: int) -> int:
     """Return capped exponential delay before a zero-based retry."""
     if retry_index < 0 or retry_index >= policy.max_retries:
         raise RetryError("retry delay: index outside retry budget")
-    return min(policy.max_delay_ms, policy.base_delay_ms * (2**retry_index))
+    return min(policy.max_delay_ms, policy.base_delay_ms * (1 << retry_index))
 
 
 def jittered_delay(policy: RetryPolicy, retry_index: int, seed: int) -> int:

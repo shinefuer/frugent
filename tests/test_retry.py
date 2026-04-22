@@ -86,3 +86,9 @@ def test_attempt_record_golden_shape() -> None:
         ],
         "total_delay_ms": 10,
     }
+
+
+def test_backoff_shift_saturates_at_declared_integer_cap() -> None:
+    policy = m.RetryPolicy(max_retries=20, base_delay_ms=3, max_delay_ms=100)
+    assert m.base_delay(policy, 0) == 3
+    assert m.base_delay(policy, 19) == 100
