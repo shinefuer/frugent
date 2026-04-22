@@ -86,12 +86,21 @@ def response_record(response: AdapterResponse) -> dict[str, object]:
 
 def response_from_record(record: dict[str, object]) -> AdapterResponse:
     try:
+        request_id, model = record["request_id"], record["model"]
+        prompt_tokens, completion_tokens = record["prompt_tokens"], record["completion_tokens"]
+        if not isinstance(request_id, str) or not isinstance(model, str):
+            raise AdapterError("adapter response record: identity fields must be strings")
+        if not all(
+            isinstance(value, int) and not isinstance(value, bool)
+            for value in (prompt_tokens, completion_tokens)
+        ):
+            raise AdapterError("adapter response record: token counts must be integers")
         return AdapterResponse(
-            str(record["request_id"]),
+            request_id,
             bytes.fromhex(str(record["content_hex"])),
-            str(record["model"]),
-            int(record["prompt_tokens"]),
-            int(record["completion_tokens"]),
+            model,
+            prompt_tokens,
+            completion_tokens,
         )
     except (KeyError, ValueError) as error:
         raise AdapterError(f"adapter response record: {error}") from error

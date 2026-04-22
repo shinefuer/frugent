@@ -94,3 +94,11 @@ def test_session_fingerprint_is_order_and_content_sensitive() -> None:
     second = (m.AdapterRequest("2", b"b", 0), m.AdapterResponse("2", b"y", "m", 1, 1))
     assert m.session_fingerprint((first, second)) == m.session_fingerprint((first, second))
     assert m.session_fingerprint((first, second)) != m.session_fingerprint((second, first))
+
+
+def test_adapter_record_rejects_boolean_token_counts() -> None:
+    response = m.AdapterResponse("r", b"ok", "scripted", 1, 1)
+    record = m.response_record(response)
+    record["prompt_tokens"] = True
+    with pytest.raises(m.AdapterError, match="token counts"):
+        m.response_from_record(record)
