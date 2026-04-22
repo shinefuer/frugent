@@ -118,3 +118,10 @@ def test_tool_result_record_roundtrip_handles_binary() -> None:
     record = m.result_record(result)
     assert record["stdout_hex"] == "00ff"
     assert m.result_from_record(record) == result
+
+
+def test_tool_result_record_does_not_coerce_boolean_strings() -> None:
+    record = m.result_record(m.ToolResult("x", 0, b"", b""))
+    record["timed_out"] = "false"
+    with pytest.raises(m.ToolError, match="booleans"):
+        m.result_from_record(record)

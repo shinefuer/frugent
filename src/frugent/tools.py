@@ -137,13 +137,23 @@ def result_from_record(record: dict[str, object]) -> ToolResult:
     try:
         if record["schema_version"] != 1:
             raise ToolError("tool result record: unsupported schema")
+        call_id, exit_code = record["call_id"], record["exit_code"]
+        timed_out, cancelled = record["timed_out"], record["cancelled"]
+        if (
+            not isinstance(call_id, str)
+            or not isinstance(exit_code, int)
+            or isinstance(exit_code, bool)
+        ):
+            raise ToolError("tool result record: invalid identity or exit code")
+        if not isinstance(timed_out, bool) or not isinstance(cancelled, bool):
+            raise ToolError("tool result record: terminal flags must be booleans")
         return ToolResult(
-            str(record["call_id"]),
-            int(record["exit_code"]),
+            call_id,
+            exit_code,
             bytes.fromhex(str(record["stdout_hex"])),
             bytes.fromhex(str(record["stderr_hex"])),
-            bool(record["timed_out"]),
-            bool(record["cancelled"]),
+            timed_out,
+            cancelled,
         )
     except (KeyError, ValueError) as error:
         raise ToolError(f"tool result record: invalid shape: {error}") from error
