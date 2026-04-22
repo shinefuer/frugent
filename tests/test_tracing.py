@@ -112,3 +112,10 @@ def test_span_diff_separates_added_removed_and_changed() -> None:
         "removed": ("old",),
         "changed": ("change",),
     }
+
+
+def test_span_record_rejects_boolean_timing_values() -> None:
+    record = m.span_record(m.Span("s", "work", 0, 1))
+    record["start_us"] = False
+    with pytest.raises(m.TraceError, match="timing fields"):
+        m.span_from_record(record)

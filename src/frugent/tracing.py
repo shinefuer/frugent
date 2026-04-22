@@ -120,21 +120,21 @@ def span_from_record(record: dict[str, object]) -> Span:
     if set(record) != expected or not isinstance(record["attributes"], dict):
         raise TraceError("span record: unexpected shape")
     attributes = record["attributes"]
+    span_id_value, name = record["span_id"], record["name"]
+    start_us, end_us, parent_id = record["start_us"], record["end_us"], record["parent_id"]
+    if not all(isinstance(value, str) for value in (span_id_value, name)):
+        raise TraceError("span record: identity fields must be strings")
+    if not all(
+        isinstance(value, int) and not isinstance(value, bool) for value in (start_us, end_us)
+    ):
+        raise TraceError("span record: timing fields must be integers")
+    if parent_id is not None and not isinstance(parent_id, str):
+        raise TraceError("span record: parent id must be a string or null")
     if not all(
         isinstance(key, str) and isinstance(value, str) for key, value in attributes.items()
     ):
         raise TraceError("span record: attributes must be strings")
-    try:
-        return Span(
-            record["span_id"],
-            record["name"],
-            record["start_us"],
-            record["end_us"],
-            record["parent_id"],
-            tuple(sorted(attributes.items())),
-        )
-    except TypeError as error:
-        raise TraceError(f"span record: invalid scalar type: {error}") from error
+    return Span(span_id_value, name, start_us, end_us, parent_id, tuple(sorted(attributes.items())))
 
 
 def span_diff(left: tuple[Span, ...], right: tuple[Span, ...]) -> dict[str, tuple[str, ...]]:
