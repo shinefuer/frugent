@@ -110,7 +110,10 @@ def manifest_from_record(record: dict[str, object]) -> tuple[int, tuple[Syntheti
     if set(record) != expected or record["schema_version"] != 1 or record["synthetic"] is not True:
         raise WorkloadError("manifest: unsupported or non-synthetic record")
     try:
-        seed = int(record["seed"])
+        seed_value = record["seed"]
+        if not isinstance(seed_value, int) or isinstance(seed_value, bool):
+            raise TypeError("seed must be an integer")
+        seed = seed_value
         raw_tasks = record["tasks"]
         if not isinstance(raw_tasks, list):
             raise TypeError("tasks must be a list")

@@ -96,3 +96,10 @@ def test_split_folds_is_disjoint_complete_and_stable() -> None:
     assert folds == m.split_folds(tasks, 4)
     assert {task.task_id for fold in folds for task in fold} == {task.task_id for task in tasks}
     assert sum(len(fold) for fold in folds) == len(tasks)
+
+
+def test_manifest_rejects_boolean_seed_values() -> None:
+    record = m.manifest_record(1, m.generate_corpus(1, 1))
+    record["seed"] = True
+    with pytest.raises(m.WorkloadError, match="seed must be an integer"):
+        m.manifest_from_record(record)
