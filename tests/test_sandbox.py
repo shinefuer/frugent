@@ -117,3 +117,10 @@ def test_policy_record_golden_roundtrip() -> None:
         "allowed_env": ["LANG", "SAFE"],
     }
     assert m.policy_from_record(record) == policy
+
+
+def test_policy_record_rejects_scalar_container_spoofing() -> None:
+    record = m.policy_record(m.Policy((("python",),), ("src/*",), frozenset()))
+    record["path_globs"] = "src/*"
+    with pytest.raises(m.SandboxError, match="container shape"):
+        m.policy_from_record(record)

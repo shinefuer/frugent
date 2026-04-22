@@ -128,11 +128,19 @@ def policy_from_record(record: dict[str, object]) -> Policy:
     expected = {"schema_version", "command_prefixes", "path_globs", "allowed_env"}
     if set(record) != expected or record["schema_version"] != 1:
         raise SandboxError("sandbox policy record: unexpected schema")
-    try:
-        return Policy(
-            tuple(tuple(part for part in prefix) for prefix in record["command_prefixes"]),
-            tuple(record["path_globs"]),
-            frozenset(record["allowed_env"]),
+    prefixes = record["command_prefixes"]
+    globs = record["path_globs"]
+    environment = record["allowed_env"]
+    if (
+        not isinstance(prefixes, list)
+        or not all(
+            isinstance(prefix, list) and all(isinstance(part, str) for part in prefix)
+            for prefix in prefixes
         )
-    except (TypeError, ValueError) as error:
-        raise SandboxError(f"sandbox policy record: invalid shape: {error}") from error
+        or not isinstance(globs, list)
+        or not all(isinstance(pattern, str) for pattern in globs)
+        or not isinstance(environment, list)
+        or not all(isinstance(name, str) for name in environment)
+    ):
+        raise SandboxError("sandbox policy record: invalid container shape")
+    return Policy(tuple(tuple(prefix) for prefix in prefixes), tuple(globs), frozenset(environment))
