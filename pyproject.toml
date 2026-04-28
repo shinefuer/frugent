@@ -60,3 +60,8 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 strict = true
 files = ["src"]
 
+
+
+[[tool.mypy.overrides]]
+module = "torch"
+ignore_missing_imports = true
