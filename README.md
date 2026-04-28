@@ -2,7 +2,20 @@
 
 frugent 是一个 Python 3.11+ 工具包，用于在完全离线、可复现的合成编码工作负载上验证成本高效 agent 运行时机制。项目聚焦路由、缓存、压缩、批处理、预算、追踪和沙箱执行的工程行为，不评估任何真实大模型的质量。
 
-默认测试不访问网络、不需要 API key、GPU、预训练权重或外部数据集。后续报告中的成本使用明确标注的虚构 rate card；合成任务包含 planted solution path 与已知最优成本，用来验证机制而非代表生产负载。
+默认测试不访问网络、不需要 API key、GPU、预训练权重或外部数据集。报告中的成本使用明确标注的 fictional rate card；合成任务包含 planted solution path 与已知最优成本，用来验证机制而非代表生产负载。
+
+## 机制范围
+
+| 机制 | 可验证行为 |
+|---|---|
+| prefix / semantic cache | affinity routing、TTL、LRU/LFU、严格 exact retrieval |
+| context compression | sliding window、extractive scoring、knapsack、needle recall |
+| batching | single-flight、fan-out、micro-batch wait bound |
+| cascade / budget | quality floor、DP optimum、hard admission、degradation ladder |
+| tracing / sandbox | cost conservation、checksummed JSONL、allowlist、timeout/replay |
+| offline runtime | scripted/replay/local-loopback adapter、plan→act→observe |
+
+这些机制验证“如何运行与计量”，不验证真实 LLM 回答质量。
 
 ## 开发
 
