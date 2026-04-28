@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from frugent.reports import MetricRow
+
 
 class PipelineError(ValueError):
     """Raised for invalid offline pipeline requests."""
@@ -116,8 +118,7 @@ def compare(config: PipelineConfig) -> Comparison:
     return Comparison(baseline_run(config), stack_run(config))
 
 
-def report_rows(comparison: Comparison) -> tuple[object, ...]:
-    from frugent.reports import MetricRow
+def report_rows(comparison: Comparison) -> tuple[MetricRow, ...]:
     from frugent.statistics import quantile
 
     def row(run: PolicyRun) -> MetricRow:

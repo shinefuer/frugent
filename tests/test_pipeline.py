@@ -77,3 +77,10 @@ def test_pipeline_artifacts_derive_from_one_comparison() -> None:
     assert str(artifacts.comparison.stack.cost_micros) in artifacts.markdown
     assert "Offline synthetic measurements" in artifacts.html
     assert artifacts.trace.endswith(b"\n")
+
+
+def test_report_rows_are_concrete_public_metric_values() -> None:
+    from frugent.reports import MetricRow
+
+    rows = m.report_rows(m.compare(m.PipelineConfig(seed=1, tasks=2)))
+    assert all(isinstance(row, MetricRow) for row in rows)
