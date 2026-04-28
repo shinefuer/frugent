@@ -90,9 +90,11 @@ def response_from_record(record: dict[str, object]) -> AdapterResponse:
         prompt_tokens, completion_tokens = record["prompt_tokens"], record["completion_tokens"]
         if not isinstance(request_id, str) or not isinstance(model, str):
             raise AdapterError("adapter response record: identity fields must be strings")
-        if not all(
-            isinstance(value, int) and not isinstance(value, bool)
-            for value in (prompt_tokens, completion_tokens)
+        if (
+            not isinstance(prompt_tokens, int)
+            or isinstance(prompt_tokens, bool)
+            or not isinstance(completion_tokens, int)
+            or isinstance(completion_tokens, bool)
         ):
             raise AdapterError("adapter response record: token counts must be integers")
         return AdapterResponse(
