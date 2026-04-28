@@ -122,10 +122,13 @@ def span_from_record(record: dict[str, object]) -> Span:
     attributes = record["attributes"]
     span_id_value, name = record["span_id"], record["name"]
     start_us, end_us, parent_id = record["start_us"], record["end_us"], record["parent_id"]
-    if not all(isinstance(value, str) for value in (span_id_value, name)):
+    if not isinstance(span_id_value, str) or not isinstance(name, str):
         raise TraceError("span record: identity fields must be strings")
-    if not all(
-        isinstance(value, int) and not isinstance(value, bool) for value in (start_us, end_us)
+    if (
+        not isinstance(start_us, int)
+        or isinstance(start_us, bool)
+        or not isinstance(end_us, int)
+        or isinstance(end_us, bool)
     ):
         raise TraceError("span record: timing fields must be integers")
     if parent_id is not None and not isinstance(parent_id, str):
