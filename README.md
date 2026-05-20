@@ -25,6 +25,15 @@ uv pip install --python .venv/bin/python -e ".[dev]"
 make build test format-check
 ```
 
+可选 CPU PyTorch demo：
+
+```bash
+uv pip install --python .venv/bin/python --extra-index-url https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match -e ".[dev,torch]"
+make test-all typecheck
+```
+
+默认 NumPy 路径不加载 torch；`uv.lock` 固定开发解析结果。
+
 ## 时间线说明
 
 本项目于 2026 年 10 月创建和验证。Git 中 2025 年至 2026 年 10 月的日期是本次生成的演示时间线，不代表那些日期已经开展的工作。每次开发提交均执行构建、测试与格式检查；未使用空提交。项目未宣称论文成果、预训练模型或真实模型服务/生产负载成绩。
