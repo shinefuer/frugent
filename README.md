@@ -34,6 +34,18 @@ make test-all typecheck
 
 默认 NumPy 路径不加载 torch；`uv.lock` 固定开发解析结果。
 
+## 快速使用
+
+```bash
+frugent route
+frugent compress --token-budget 4096
+frugent bench --seed 7 --tasks 24
+frugent report --seed 7 --tasks 24 --format html --output report.html
+frugent demo --seed 7 --tasks 12
+```
+
+机制命令输出 canonical JSON；`report` 直接输出 Markdown/HTML。cost 是 fictional micro-cost，latency 是离散事件模拟值。
+
 ## 时间线说明
 
 本项目于 2026 年 10 月创建和验证。Git 中 2025 年至 2026 年 10 月的日期是本次生成的演示时间线，不代表那些日期已经开展的工作。每次开发提交均执行构建、测试与格式检查；未使用空提交。项目未宣称论文成果、预训练模型或真实模型服务/生产负载成绩。
