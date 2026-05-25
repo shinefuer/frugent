@@ -55,6 +55,15 @@ frugent demo --seed 7 --tasks 12
 
 四个示例均执行项目函数得到输出，不依赖预先写好的结果表。
 
+## 证据边界
+
+- token savings、cache hit、cost、latency、recall 只来自 seeded synthetic workload。
+- fictional rate card 不映射任何服务商价格；scripted success 不代表真实模型 accuracy。
+- local loopback HTTP 测试只连接测试进程；默认路径不发送网络请求。
+- optional training 只拟合 planted binary labels，并验证 deterministic loss decrease。
+
+完整口径见 [evaluation](docs/evaluation.md) 与 [limitations](docs/limitations.md)。
+
 ## 时间线说明
 
 本项目于 2026 年 10 月创建和验证。Git 中 2025 年至 2026 年 10 月的日期是本次生成的演示时间线，不代表那些日期已经开展的工作。每次开发提交均执行构建、测试与格式检查；未使用空提交。项目未宣称论文成果、预训练模型或真实模型服务/生产负载成绩。
