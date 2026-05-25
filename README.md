@@ -46,6 +46,15 @@ frugent demo --seed 7 --tasks 12
 
 机制命令输出 canonical JSON；`report` 直接输出 Markdown/HTML。cost 是 fictional micro-cost，latency 是离散事件模拟值。
 
+## 示例
+
+- [prompt-cache routing](examples/prompt_cache_routing/README.md)：planted affinity 与 SVG。
+- [cascade optimum](examples/cascade_optimum/README.md)：runtime policy 与 DP optimum。
+- [compression recall](examples/compression_recall/README.md)：token budget degradation curve。
+- [mini cost audit](examples/mini_cost_audit/README.md)：完整 HTML 成本报告。
+
+四个示例均执行项目函数得到输出，不依赖预先写好的结果表。
+
 ## 时间线说明
 
 本项目于 2026 年 10 月创建和验证。Git 中 2025 年至 2026 年 10 月的日期是本次生成的演示时间线，不代表那些日期已经开展的工作。每次开发提交均执行构建、测试与格式检查；未使用空提交。项目未宣称论文成果、预训练模型或真实模型服务/生产负载成绩。
