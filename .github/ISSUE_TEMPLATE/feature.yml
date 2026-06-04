@@ -1,0 +1,13 @@
+name: Mechanism proposal
+description: Propose a measurable runtime behavior.
+title: "feat: "
+body:
+  - type: textarea
+    attributes: {label: Runtime problem, description: Describe the decision or invariant not a claimed benchmark.}
+    validations: {required: true}
+  - type: textarea
+    attributes: {label: Synthetic oracle, description: Explain planted ground truth and boundary cases.}
+    validations: {required: true}
+  - type: textarea
+    attributes: {label: Artifact and API impact, description: List schemas CLI docs and migrations.}
+    validations: {required: true}
