@@ -1,0 +1,19 @@
+name: Bug report
+description: Report a reproducible mechanism or artifact failure.
+title: "bug: "
+body:
+  - type: textarea
+    attributes: {label: Observed behavior, description: Include the exact error and artifact schema.}
+    validations: {required: true}
+  - type: textarea
+    attributes: {label: Minimal offline reproduction, description: Include seed config command and synthetic fixture.}
+    validations: {required: true}
+  - type: input
+    attributes: {label: Version and Python, placeholder: "frugent 0.1.x; Python 3.11"}
+    validations: {required: true}
+  - type: checkboxes
+    attributes:
+      label: Scope
+      options:
+        - label: The reproduction requires no key real endpoint external dataset or model weight.
+          required: true
