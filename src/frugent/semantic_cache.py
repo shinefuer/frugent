@@ -143,3 +143,13 @@ def semantic_metrics(outcomes: tuple[str, ...]) -> SemanticMetrics:
     return SemanticMetrics(
         outcomes.count("hit"), outcomes.count("miss"), outcomes.count("eviction")
     )
+
+
+@dataclass(frozen=True, slots=True)
+class SemanticPolicy:
+    capacity: int
+    ttl_ms: int
+
+    def __post_init__(self) -> None:
+        if self.capacity < 0 or self.ttl_ms < 0:
+            raise SemanticCacheError("semantic policy: limits must be non-negative")

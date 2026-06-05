@@ -141,3 +141,9 @@ def test_semantic_metrics_separate_requests_and_evictions() -> None:
 def test_semantic_metrics_reject_unknown_outcome() -> None:
     with pytest.raises(m.SemanticCacheError, match="unknown outcome"):
         m.semantic_metrics(("collision",))
+
+
+def test_semantic_policy_accepts_empty_bounded_cache() -> None:
+    assert m.SemanticPolicy(0, 0).capacity == 0
+    with pytest.raises(m.SemanticCacheError, match="limits"):
+        m.SemanticPolicy(-1, 1)
