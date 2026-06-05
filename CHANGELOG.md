@@ -2,6 +2,11 @@
 
 版本遵循 patch-only 序列，记录可验证的 library/CLI/schema 变化。
 
+## 0.1.1 - 2026-10-30
+
+- 稳定 public facade、strict record parsing 与完整 CLI/examples。
+- 加入 CI matrix、wheel smoke test、security/contribution guides 与 reproducibility docs。
+
 ## 0.1.0 - 2026-10-30
 
 - 建立 deterministic runtime types、configuration、fictional rate card 与 canonical artifacts。
