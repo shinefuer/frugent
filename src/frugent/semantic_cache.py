@@ -192,3 +192,7 @@ def state_put(state: SemanticState, entry: SemanticEntry, policy: SemanticPolicy
         retained.remove(victim)
         outcomes = (*outcomes, "eviction")
     return SemanticState(tuple(retained), outcomes)
+
+
+def state_metrics(state: SemanticState) -> SemanticMetrics:
+    return semantic_metrics(state.outcomes)

@@ -176,3 +176,16 @@ def test_state_put_replaces_exact_key_without_duplicate() -> None:
     updated = m.state_put(state, m.SemanticEntry("k", b"two", 1), policy)
     assert updated.entries == (m.SemanticEntry("k", b"two", 1),)
     assert updated.outcomes == ()
+
+
+def test_state_eviction_is_oldest_then_lexical() -> None:
+    policy = m.SemanticPolicy(2, 100)
+    state = m.SemanticState()
+    for entry in (
+        m.SemanticEntry("b", b"b", 0),
+        m.SemanticEntry("a", b"a", 0),
+        m.SemanticEntry("c", b"c", 1),
+    ):
+        state = m.state_put(state, entry, policy)
+    assert tuple(entry.key for entry in state.entries) == ("b", "c")
+    assert m.state_metrics(state).evictions == 1
