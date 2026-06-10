@@ -155,3 +155,9 @@ def test_semantic_state_requires_unique_canonical_keys() -> None:
         m.SemanticState((entry, entry))
     with pytest.raises(m.SemanticCacheError, match="key order"):
         m.SemanticState((m.SemanticEntry("z", b"", 0), entry))
+
+
+def test_empty_semantic_state_has_zero_metrics() -> None:
+    state = m.SemanticState()
+    assert state.entries == ()
+    assert m.semantic_metrics(state.outcomes) == m.SemanticMetrics(0, 0, 0)
