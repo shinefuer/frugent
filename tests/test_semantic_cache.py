@@ -147,3 +147,11 @@ def test_semantic_policy_accepts_empty_bounded_cache() -> None:
     assert m.SemanticPolicy(0, 0).capacity == 0
     with pytest.raises(m.SemanticCacheError, match="limits"):
         m.SemanticPolicy(-1, 1)
+
+
+def test_semantic_state_requires_unique_canonical_keys() -> None:
+    entry = m.SemanticEntry("k", b"x", 0)
+    with pytest.raises(m.SemanticCacheError, match="duplicate"):
+        m.SemanticState((entry, entry))
+    with pytest.raises(m.SemanticCacheError, match="key order"):
+        m.SemanticState((m.SemanticEntry("z", b"", 0), entry))

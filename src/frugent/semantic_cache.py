@@ -153,3 +153,17 @@ class SemanticPolicy:
     def __post_init__(self) -> None:
         if self.capacity < 0 or self.ttl_ms < 0:
             raise SemanticCacheError("semantic policy: limits must be non-negative")
+
+
+@dataclass(frozen=True, slots=True)
+class SemanticState:
+    entries: tuple[SemanticEntry, ...] = ()
+    outcomes: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if len({entry.key for entry in self.entries}) != len(self.entries):
+            raise SemanticCacheError("semantic state: duplicate exact key")
+        if tuple(sorted(self.entries, key=lambda entry: entry.key)) != self.entries:
+            raise SemanticCacheError("semantic state: entries must use key order")
+        if any(outcome not in {"hit", "miss", "eviction"} for outcome in self.outcomes):
+            raise SemanticCacheError("semantic state: unknown outcome")
