@@ -179,3 +179,16 @@ def state_lookup(
     response = exact_lookup(live, key, now_ms, policy.ttl_ms)
     outcome = "hit" if response is not None else "miss"
     return response, SemanticState(live, (*state.outcomes, outcome))
+
+
+def state_put(state: SemanticState, entry: SemanticEntry, policy: SemanticPolicy) -> SemanticState:
+    """Replace the same exact key, then evict oldest/key order to capacity."""
+    retained = [item for item in state.entries if item.key != entry.key]
+    retained.append(entry)
+    retained.sort(key=lambda item: item.key)
+    outcomes = state.outcomes
+    while len(retained) > policy.capacity:
+        victim = min(retained, key=lambda item: (item.created_at_ms, item.key))
+        retained.remove(victim)
+        outcomes = (*outcomes, "eviction")
+    return SemanticState(tuple(retained), outcomes)

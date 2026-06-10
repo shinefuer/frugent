@@ -168,3 +168,11 @@ def test_state_lookup_purges_expired_entries_before_exact_match() -> None:
     response, updated = m.state_lookup(state, "k", 10, m.SemanticPolicy(2, 10))
     assert response is None and updated.entries == ()
     assert updated.outcomes == ("miss",)
+
+
+def test_state_put_replaces_exact_key_without_duplicate() -> None:
+    policy = m.SemanticPolicy(2, 100)
+    state = m.state_put(m.SemanticState(), m.SemanticEntry("k", b"one", 0), policy)
+    updated = m.state_put(state, m.SemanticEntry("k", b"two", 1), policy)
+    assert updated.entries == (m.SemanticEntry("k", b"two", 1),)
+    assert updated.outcomes == ()
