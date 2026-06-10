@@ -161,3 +161,10 @@ def test_empty_semantic_state_has_zero_metrics() -> None:
     state = m.SemanticState()
     assert state.entries == ()
     assert m.semantic_metrics(state.outcomes) == m.SemanticMetrics(0, 0, 0)
+
+
+def test_state_lookup_purges_expired_entries_before_exact_match() -> None:
+    state = m.SemanticState((m.SemanticEntry("k", b"old", 0),))
+    response, updated = m.state_lookup(state, "k", 10, m.SemanticPolicy(2, 10))
+    assert response is None and updated.entries == ()
+    assert updated.outcomes == ("miss",)

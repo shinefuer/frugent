@@ -167,3 +167,15 @@ class SemanticState:
             raise SemanticCacheError("semantic state: entries must use key order")
         if any(outcome not in {"hit", "miss", "eviction"} for outcome in self.outcomes):
             raise SemanticCacheError("semantic state: unknown outcome")
+
+
+def state_lookup(
+    state: SemanticState, key: str, now_ms: int, policy: SemanticPolicy
+) -> tuple[bytes | None, SemanticState]:
+    """Purge expired entries and return only an exact unexpired hit."""
+    if now_ms < 0:
+        raise SemanticCacheError("semantic state lookup: time must be non-negative")
+    live = tuple(entry for entry in state.entries if now_ms - entry.created_at_ms < policy.ttl_ms)
+    response = exact_lookup(live, key, now_ms, policy.ttl_ms)
+    outcome = "hit" if response is not None else "miss"
+    return response, SemanticState(live, (*state.outcomes, outcome))
