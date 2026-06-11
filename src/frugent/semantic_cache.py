@@ -211,3 +211,31 @@ def state_record(state: SemanticState) -> dict[str, object]:
         ],
         "outcomes": list(state.outcomes),
     }
+
+
+def state_from_record(record: dict[str, object]) -> SemanticState:
+    if set(record) != {"schema_version", "entries", "outcomes"} or record["schema_version"] != 1:
+        raise SemanticCacheError("semantic state record: unexpected schema")
+    entries, outcomes = record["entries"], record["outcomes"]
+    if (
+        not isinstance(entries, list)
+        or not isinstance(outcomes, list)
+        or not all(isinstance(value, str) for value in outcomes)
+    ):
+        raise SemanticCacheError("semantic state record: invalid containers")
+    try:
+        parsed = tuple(
+            SemanticEntry(
+                str(item["key"]), bytes.fromhex(str(item["response_hex"])), item["created_at_ms"]
+            )
+            for item in entries
+            if isinstance(item, dict)
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise SemanticCacheError(f"semantic state record: invalid entry: {error}") from error
+    if len(parsed) != len(entries) or any(
+        not isinstance(entry.created_at_ms, int) or isinstance(entry.created_at_ms, bool)
+        for entry in parsed
+    ):
+        raise SemanticCacheError("semantic state record: invalid entry type")
+    return SemanticState(parsed, tuple(outcomes))

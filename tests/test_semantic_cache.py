@@ -207,3 +207,15 @@ def test_state_record_preserves_arbitrary_response_bytes() -> None:
     record = m.state_record(state)
     assert record["schema_version"] == 1
     assert record["entries"][0]["response_hex"].endswith("ff")
+
+
+def test_semantic_state_record_roundtrips_exactly() -> None:
+    state = m.SemanticState((m.SemanticEntry("a", b"\x00\xff", 3),), ("miss", "hit"))
+    assert m.state_from_record(m.state_record(state)) == state
+
+
+def test_semantic_state_record_rejects_unknown_fields() -> None:
+    record = m.state_record(m.SemanticState())
+    record["extra"] = 1
+    with pytest.raises(m.SemanticCacheError, match="schema"):
+        m.state_from_record(record)
