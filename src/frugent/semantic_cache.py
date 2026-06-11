@@ -196,3 +196,18 @@ def state_put(state: SemanticState, entry: SemanticEntry, policy: SemanticPolicy
 
 def state_metrics(state: SemanticState) -> SemanticMetrics:
     return semantic_metrics(state.outcomes)
+
+
+def state_record(state: SemanticState) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "entries": [
+            {
+                "key": entry.key,
+                "response_hex": entry.response.hex(),
+                "created_at_ms": entry.created_at_ms,
+            }
+            for entry in state.entries
+        ],
+        "outcomes": list(state.outcomes),
+    }

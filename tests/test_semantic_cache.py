@@ -200,3 +200,10 @@ def test_state_metrics_count_only_lookups_as_requests() -> None:
     metrics = m.state_metrics(state)
     assert metrics.hits + metrics.misses == 2
     assert metrics.evictions == 1
+
+
+def test_state_record_preserves_arbitrary_response_bytes() -> None:
+    state = m.SemanticState((m.SemanticEntry("k", bytes(range(256)), 4),), ("hit",))
+    record = m.state_record(state)
+    assert record["schema_version"] == 1
+    assert record["entries"][0]["response_hex"].endswith("ff")
