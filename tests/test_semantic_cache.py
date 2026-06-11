@@ -189,3 +189,14 @@ def test_state_eviction_is_oldest_then_lexical() -> None:
         state = m.state_put(state, entry, policy)
     assert tuple(entry.key for entry in state.entries) == ("b", "c")
     assert m.state_metrics(state).evictions == 1
+
+
+def test_state_metrics_count_only_lookups_as_requests() -> None:
+    policy = m.SemanticPolicy(1, 100)
+    state = m.state_put(m.SemanticState(), m.SemanticEntry("a", b"x", 0), policy)
+    _, state = m.state_lookup(state, "a", 1, policy)
+    _, state = m.state_lookup(state, "b", 2, policy)
+    state = m.state_put(state, m.SemanticEntry("b", b"y", 2), policy)
+    metrics = m.state_metrics(state)
+    assert metrics.hits + metrics.misses == 2
+    assert metrics.evictions == 1
