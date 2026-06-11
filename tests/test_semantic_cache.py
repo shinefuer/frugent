@@ -219,3 +219,9 @@ def test_semantic_state_record_rejects_unknown_fields() -> None:
     record["extra"] = 1
     with pytest.raises(m.SemanticCacheError, match="schema"):
         m.state_from_record(record)
+
+
+def test_semantic_state_record_does_not_drop_malformed_entries() -> None:
+    record = {"schema_version": 1, "entries": ["not-an-object"], "outcomes": []}
+    with pytest.raises(m.SemanticCacheError, match="entry type"):
+        m.state_from_record(record)
