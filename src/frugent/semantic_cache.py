@@ -239,3 +239,9 @@ def state_from_record(record: dict[str, object]) -> SemanticState:
     ):
         raise SemanticCacheError("semantic state record: invalid entry type")
     return SemanticState(parsed, tuple(outcomes))
+
+
+def state_fingerprint(state: SemanticState) -> str:
+    from frugent.codec import payload_digest
+
+    return payload_digest(state_record(state))

@@ -225,3 +225,14 @@ def test_semantic_state_record_does_not_drop_malformed_entries() -> None:
     record = {"schema_version": 1, "entries": ["not-an-object"], "outcomes": []}
     with pytest.raises(m.SemanticCacheError, match="entry type"):
         m.state_from_record(record)
+
+
+def test_semantic_state_fingerprint_covers_metrics_and_bytes() -> None:
+    base = m.SemanticState((m.SemanticEntry("a", b"x", 0),))
+    assert m.state_fingerprint(base) == m.state_fingerprint(base)
+    assert m.state_fingerprint(base) != m.state_fingerprint(m.SemanticState(base.entries, ("hit",)))
+    assert m.state_fingerprint(base) != m.state_fingerprint(
+        m.SemanticState(
+            (m.SemanticEntry("a", b"y", 0),),
+        )
+    )
