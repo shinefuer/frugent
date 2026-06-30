@@ -143,3 +143,12 @@ def test_jsonl_rejects_blank_lines_to_keep_line_numbers_stable() -> None:
     encoded = c.encode_jsonl([{"x": 1}]) + b"\n"
     with pytest.raises(CodecError, match="blank line at 2"):
         c.decode_jsonl(encoded)
+
+
+def test_canonical_nested_maps_ignore_all_insertion_orders() -> None:
+    import itertools
+
+    items = (("z", [3, 2, 1]), ("a", {"β": True, "x": None}), ("m", "text"))
+    encodings = {c.canonical_json(dict(order)) for order in itertools.permutations(items)}
+    assert len(encodings) == 1
+    assert c.decode_json(encodings.pop()) == dict(items)
