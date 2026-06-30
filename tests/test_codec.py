@@ -152,3 +152,14 @@ def test_canonical_nested_maps_ignore_all_insertion_orders() -> None:
     encodings = {c.canonical_json(dict(order)) for order in itertools.permutations(items)}
     assert len(encodings) == 1
     assert c.decode_json(encodings.pop()) == dict(items)
+
+
+def test_envelope_detects_single_byte_payload_mutations() -> None:
+    encoded = c.encode_envelope("schema", 1, {"payload": "abcdefghij"})
+    marker = b"abcdefghij"
+    start = encoded.index(marker)
+    for index in range(len(marker)):
+        changed = bytearray(encoded)
+        changed[start + index] = ord("Z")
+        with pytest.raises(c.CodecError, match="checksum"):
+            c.decode_envelope(bytes(changed), "schema")
