@@ -152,3 +152,18 @@ def test_overrides_return_new_validated_config() -> None:
 def test_overrides_reject_undeclared_or_identity_fields(key: str) -> None:
     with pytest.raises(cfg.ConfigError, match="unknown fields"):
         cfg.with_overrides(cfg.RuntimeConfig(), {key: 1})
+
+
+def test_v1_migration_matches_direct_current_configuration() -> None:
+    for seed in range(20):
+        legacy = {
+            "schema_version": 1,
+            "seed": seed,
+            "steps": seed + 1,
+            "tokens": 100 + seed,
+            "cost_micros": 200 + seed,
+        }
+        migrated = cfg.RuntimeConfig.from_record(cfg.migrate_config(legacy))
+        direct = cfg.RuntimeConfig(seed, seed + 1, 100 + seed, 200 + seed, 0.8)
+        assert migrated == direct
+        assert cfg.load_config(cfg.dump_config(migrated)) == direct
