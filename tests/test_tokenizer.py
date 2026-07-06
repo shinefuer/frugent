@@ -166,3 +166,15 @@ def test_apply_bpe_reduces_piece_count_without_changing_text() -> None:
 
 def test_apply_bpe_with_no_merges_returns_characters() -> None:
     assert tok.apply_bpe("ab cd", ()) == ("a", "b", "c", "d")
+
+
+def test_truncation_never_splits_a_reported_token() -> None:
+    samples = ("alpha_1 + βeta!", "路径/to/file.py:12", "emoji🙂 plus 42", "line1\nline2")
+    for text in samples:
+        offsets = tok.token_offsets(text)
+        for limit in range(len(offsets) + 2):
+            truncated = tok.truncate_tokens(text, limit)
+            assert text.startswith(truncated)
+            assert tok.HeuristicTokenizer().count(truncated) <= limit
+            if 0 < limit < len(offsets):
+                assert len(truncated) == offsets[limit - 1][2]
