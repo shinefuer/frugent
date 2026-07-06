@@ -150,3 +150,29 @@ def test_best_candidate_matches_full_ranking(tokens: tuple[str, ...]) -> None:
 
 def test_best_candidate_handles_empty_pool() -> None:
     assert p.best_candidate({}, ("a",)) is None
+
+
+def test_trie_longest_prefix_matches_direct_oracle_on_seeded_sequences() -> None:
+    import random
+
+    generator = random.Random(91)
+    alphabet = ("a", "b", "c", "d")
+    stored = tuple(
+        tuple(generator.choice(alphabet) for _ in range(generator.randrange(1, 8)))
+        for _ in range(80)
+    )
+    trie = p.PrefixTrie()
+    for sequence in stored:
+        trie.insert(sequence)
+    for _ in range(200):
+        query = tuple(generator.choice(alphabet) for _ in range(generator.randrange(1, 10)))
+        expected = max(
+            (
+                length
+                for sequence in stored
+                for length in range(len(sequence) + 1)
+                if sequence[:length] == query[:length]
+            ),
+            default=0,
+        )
+        assert trie.longest_prefix(query) == expected
