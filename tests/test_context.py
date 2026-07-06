@@ -140,3 +140,13 @@ def test_store_roundtrip_closes_over_multiple_versions(size: int) -> None:
 def test_store_parser_rejects_non_list_messages() -> None:
     with pytest.raises(ctx.ContextError, match="messages must be a list"):
         ctx.store_from_record({"schema_version": 1, "version": 0, "messages": {}})
+
+
+def test_context_diff_composes_over_every_prefix() -> None:
+    messages = tuple(Message("user", f"message-{index}") for index in range(12))
+    stores = tuple(ctx.MessageStore(messages[:index]) for index in range(len(messages) + 1))
+    for left_index, left in enumerate(stores):
+        for right in stores[left_index:]:
+            change = ctx.diff(left, right)
+            assert ctx.apply_diff(left, change) == right
+            assert change.target_version == right.version
