@@ -98,3 +98,26 @@ def test_reduced_solver_preserves_exact_planted_value(capacity: int) -> None:
         m.selection_totals(m.reduced_exact_select(items, capacity))[1]
         == m.selection_totals(m.exact_select(items, capacity))[1]
     )
+
+
+def test_exact_selection_matches_exhaustive_small_instances() -> None:
+    import itertools
+    import random
+
+    generator = random.Random(71)
+    for size in range(1, 8):
+        for case in range(20):
+            items = tuple(
+                m.Item(f"{case}-{index}", generator.randrange(1, 8), generator.randrange(1, 15))
+                for index in range(size)
+            )
+            budget = generator.randrange(0, 18)
+            chosen = m.exact_select(items, budget)
+            feasible = tuple(
+                subset
+                for count in range(size + 1)
+                for subset in itertools.combinations(items, count)
+                if sum(item.tokens for item in subset) <= budget
+            )
+            optimum = max(sum(item.value for item in subset) for subset in feasible)
+            assert sum(item.value for item in chosen) == optimum
