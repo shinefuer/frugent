@@ -117,3 +117,14 @@ def test_rollup_charges_only_child_spend() -> None:
 def test_rollup_cannot_hide_parent_overspend() -> None:
     with pytest.raises(m.BudgetError, match="reservation"):
         m.rollup(m.Budget(4, 100), (m.Budget(10, 10, 5, 1),))
+
+
+def test_random_reservations_release_to_identical_budget() -> None:
+    import random
+
+    generator = random.Random(13)
+    for _ in range(500):
+        token_limit, cost_limit = generator.randrange(1000), generator.randrange(1000)
+        tokens, cost = generator.randrange(token_limit + 1), generator.randrange(cost_limit + 1)
+        initial = m.Budget(token_limit, cost_limit)
+        assert m.release(m.reserve(initial, tokens, cost), tokens, cost) == initial
