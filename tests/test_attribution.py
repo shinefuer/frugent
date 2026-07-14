@@ -102,3 +102,23 @@ def test_cost_record_golden_shape() -> None:
         "adjustment_micros": -1,
         "net_micros": 8,
     }
+
+
+def test_random_cost_rollups_equal_independent_component_sums() -> None:
+    import random
+
+    generator = random.Random(8)
+    for _ in range(100):
+        costs = tuple(
+            m.Cost(
+                generator.randrange(100),
+                generator.randrange(100),
+                generator.randrange(20),
+                generator.randrange(20),
+                generator.randrange(-5, 6),
+            )
+            for _ in range(generator.randrange(1, 10))
+        )
+        total = m.add_costs(costs)
+        assert total.net_micros == sum(cost.net_micros for cost in costs)
+        assert total.gross_micros == sum(cost.gross_micros for cost in costs)
