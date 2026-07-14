@@ -215,3 +215,20 @@ def test_demo_rate_card_is_explicitly_fictional_and_sorted() -> None:
         sorted(rate.model for rate in card.rates)
     )
     assert r.RateCard.from_record(card.to_record()) == card
+
+
+def test_randomized_savings_attribution_conserves_baseline_difference() -> None:
+    import random
+
+    generator = random.Random(27)
+    for _ in range(300):
+        prompt = generator.randrange(0, 5000)
+        cached = generator.randrange(prompt + 1)
+        usage = Usage(prompt, generator.randrange(0, 1000), cached)
+        for rate in r.demo_rate_card().rates:
+            savings = r.attribute_savings(rate, usage, batched=True)
+            assert (
+                savings.baseline_micros - savings.actual_micros
+                == savings.cache_saved_micros + savings.batch_saved_micros
+            )
+            assert savings.actual_micros == r.price_usage(rate, usage, batched=True).total_micros
