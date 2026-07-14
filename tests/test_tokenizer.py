@@ -178,3 +178,12 @@ def test_truncation_never_splits_a_reported_token() -> None:
             assert tok.HeuristicTokenizer().count(truncated) <= limit
             if 0 < limit < len(offsets):
                 assert len(truncated) == offsets[limit - 1][2]
+
+
+def test_bpe_training_reduces_pieces_without_losing_text() -> None:
+    samples = ("banana bandana", "banana banner")
+    merges = tok.train_bpe(samples, 8)
+    assert merges == tok.train_bpe(samples, 8)
+    pieces = tok.apply_bpe("banana bandana", merges)
+    assert "".join(pieces) == "bananabandana"
+    assert len(pieces) < len("bananabandana")
