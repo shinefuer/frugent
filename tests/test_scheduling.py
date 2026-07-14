@@ -103,3 +103,16 @@ def test_schedule_record_is_independent_of_input_order() -> None:
 def test_schedule_totals_reconcile_allocated_limits() -> None:
     decisions = m.schedule((m.Task("a", 1, 2, 3), m.Task("b", 0, 4, 5)), 11, 17)
     assert m.schedule_totals(decisions) == (11, 17)
+
+
+def test_fair_shares_conserve_total_with_subunit_rounding_error() -> None:
+    import random
+
+    generator = random.Random(44)
+    for _ in range(400):
+        total = generator.randrange(500)
+        weights = tuple(generator.randrange(1, 20) for _ in range(generator.randrange(1, 12)))
+        shares = m.fair_shares(total, weights)
+        assert sum(shares) == total
+        exact = tuple(total * weight / sum(weights) for weight in weights)
+        assert all(abs(share - target) < 1 for share, target in zip(shares, exact, strict=True))
