@@ -127,3 +127,15 @@ def test_random_cache_replay_reports_tokens_only_for_live_hits() -> None:
     measured = m.metrics(outcomes)
     assert measured.requests == len(requests)
     assert measured.cached_tokens == sum(tokens for _, tokens in outcomes)
+
+
+def test_eviction_policies_follow_their_declared_priority() -> None:
+    entries = (
+        m.CacheEntry("old-hot", 3, 0, 1, 9),
+        m.CacheEntry("new-cold", 3, 0, 5, 0),
+        m.CacheEntry("new-hot", 3, 0, 5, 8),
+    )
+    lru = m.fit_entries(entries, m.CachePolicy(6, 100, eviction="lru"))
+    lfu = m.fit_entries(entries, m.CachePolicy(6, 100, eviction="lfu"))
+    assert {entry.key for entry in lru} == {"new-cold", "new-hot"}
+    assert {entry.key for entry in lfu} == {"old-hot", "new-hot"}
