@@ -113,3 +113,11 @@ def test_curve_area_matches_trapezoid_geometry() -> None:
 def test_curve_area_requires_ordered_domain(points: tuple[tuple[float, float], ...]) -> None:
     with pytest.raises(m.StatisticsError, match="curve area"):
         m.curve_area(points)
+
+
+def test_bootstrap_interval_is_reproducible_across_repeated_runs() -> None:
+    values = tuple(float((index * 17) % 23) for index in range(31))
+    expected = m.bootstrap_mean_ci(values, seed=104, rounds=400, confidence=0.9)
+    for _ in range(10):
+        assert m.bootstrap_mean_ci(values, seed=104, rounds=400, confidence=0.9) == expected
+    assert expected[0] <= m.mean(values) <= expected[1]
