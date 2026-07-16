@@ -109,3 +109,18 @@ def test_comparison_row_contains_only_derived_measured_fields() -> None:
         candidate_hits=6,
         requests=10,
     ) == {"requests": 10, "token_savings": 0.25, "cache_hit_uplift": 0.5, "cost_savings_micros": 15}
+
+
+def test_fifo_latency_matches_explicit_completion_clock() -> None:
+    import random
+
+    generator = random.Random(6)
+    for _ in range(100):
+        arrivals = tuple(sorted(generator.randrange(100) for _ in range(20)))
+        services = tuple(generator.randrange(10) for _ in arrivals)
+        completion = 0
+        expected = []
+        for arrival, service in zip(arrivals, services, strict=True):
+            completion = max(completion, arrival) + service
+            expected.append(completion - arrival)
+        assert m.simulated_latency(arrivals, services) == tuple(expected)
