@@ -111,3 +111,19 @@ def test_cache_entry_record_is_stably_sorted() -> None:
     record = m.entries_to_record((m.CacheEntry("z", 1, 0, 0), m.CacheEntry("a", 2, 1, 2, 3)))
     assert record["schema_version"] == 1
     assert [entry["key"] for entry in record["entries"]] == ["a", "z"]  # type: ignore[index]
+
+
+def test_random_cache_replay_reports_tokens_only_for_live_hits() -> None:
+    import random
+
+    generator = random.Random(70)
+    requests = tuple(
+        (f"k{generator.randrange(8)}", generator.randrange(1, 20), index * 3)
+        for index in range(300)
+    )
+    outcomes = m.replay_trace(requests, m.CachePolicy(60, 25, eviction="lru"))
+    for (key, _, now), (hit, tokens) in zip(requests, outcomes, strict=True):
+        assert tokens >= 0 and (hit or tokens == 0), (key, now)
+    measured = m.metrics(outcomes)
+    assert measured.requests == len(requests)
+    assert measured.cached_tokens == sum(tokens for _, tokens in outcomes)
