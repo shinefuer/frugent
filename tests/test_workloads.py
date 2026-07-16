@@ -103,3 +103,12 @@ def test_manifest_rejects_boolean_seed_values() -> None:
     record["seed"] = True
     with pytest.raises(m.WorkloadError, match="seed must be an integer"):
         m.manifest_from_record(record)
+
+
+def test_manifest_roundtrip_holds_across_seed_and_size_ranges() -> None:
+    for seed in range(25):
+        for size in (1, 2, 7, 16):
+            tasks = m.generate_corpus(seed, size)
+            restored_seed, restored = m.manifest_from_record(m.manifest_record(seed, tasks))
+            assert (restored_seed, restored) == (seed, tasks)
+            assert m.manifest_fingerprint(seed, restored) == m.manifest_fingerprint(seed, tasks)
