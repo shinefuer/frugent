@@ -244,3 +244,16 @@ def test_equivalent_unicode_whitespace_and_case_variants_share_exact_key() -> No
     assert len(keys) == 1
     arguments = ({"line": 2, "path": "x.py"}, {"path": "x.py", "line": 2})
     assert len({m.exact_key("fix file", "edit", item) for item in arguments}) == 1
+
+
+def test_random_nonequivalent_payloads_never_retrieve_cached_bytes() -> None:
+    import random
+
+    generator = random.Random(92)
+    original = m.exact_key("fix target", "edit", {"path": "target.py", "line": 4})
+    state = (m.SemanticEntry(original, b"secret-result", 0),)
+    for index in range(500):
+        prompt = f"fix target {index}-{generator.randrange(1_000_000)}"
+        changed = m.exact_key(prompt, "edit", {"path": "target.py", "line": 4})
+        assert changed != original
+        assert m.exact_lookup(state, changed, 1, 100) is None
