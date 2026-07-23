@@ -132,3 +132,20 @@ def test_random_exact_recall_curves_never_decrease() -> None:
         curve = m.recall_curve(blocks, needles, tuple(range(0, 50, 5)))
         recalls = tuple(recall for _, recall in curve)
         assert recalls == tuple(sorted(recalls))
+
+
+def test_extractive_summary_returns_original_order_after_score_selection() -> None:
+    blocks = tuple(
+        m.Block(
+            chr(97 + index),
+            "needle" if index in {1, 4} else "context",
+            1,
+            index,
+            planted_relevance=index % 2,
+        )
+        for index in range(7)
+    )
+    selected = m.extractive_summary(blocks, 4)
+    positions = [blocks.index(block) for block in selected]
+    assert positions == sorted(positions)
+    assert len(selected) == 4 and blocks[4] in selected
