@@ -257,3 +257,22 @@ def test_random_nonequivalent_payloads_never_retrieve_cached_bytes() -> None:
         changed = m.exact_key(prompt, "edit", {"path": "target.py", "line": 4})
         assert changed != original
         assert m.exact_lookup(state, changed, 1, 100) is None
+
+
+def test_random_semantic_state_churn_preserves_capacity_and_key_order() -> None:
+    import random
+
+    generator = random.Random(5)
+    policy = m.SemanticPolicy(7, 30)
+    state = m.SemanticState()
+    for now in range(200):
+        key = f"k{generator.randrange(20)}"
+        if generator.randrange(3):
+            state = m.state_put(state, m.SemanticEntry(key, bytes([now % 256]), now), policy)
+        else:
+            _, state = m.state_lookup(state, key, now, policy)
+        assert len(state.entries) <= policy.capacity
+        assert tuple(entry.key for entry in state.entries) == tuple(
+            sorted(entry.key for entry in state.entries)
+        )
+        assert len({entry.key for entry in state.entries}) == len(state.entries)
