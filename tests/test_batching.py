@@ -129,3 +129,19 @@ def test_batch_completion_simulation_amortizes_service() -> None:
     requests = tuple(m.BatchRequest(str(index), b"x", index) for index in range(4))
     batches = m.micro_batches(requests, window_ms=2, max_size=3)
     assert m.simulated_completion_times(batches, 5) == {"0": 7, "1": 7, "2": 7, "3": 12}
+
+
+def test_coalescing_is_a_stable_complete_partition() -> None:
+    import random
+
+    generator = random.Random(18)
+    requests = tuple(
+        m.BatchRequest(f"r{index}", bytes([generator.randrange(10)]), index) for index in range(300)
+    )
+    groups = m.coalesce(requests)
+    assert tuple(request for group in groups for request in group) != requests
+    assert {request.request_id for group in groups for request in group} == {
+        request.request_id for request in requests
+    }
+    assert sum(len(group) for group in groups) == len(requests)
+    assert all(len({request.equivalence_key for request in group}) == 1 for group in groups)
