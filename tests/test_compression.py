@@ -111,3 +111,24 @@ def test_render_blocks_is_stable_and_single_line_per_block() -> None:
     blocks = (m.Block("a", "line1\nline2", 2, 0), m.Block("b", "done", 1, 1))
     assert m.render_blocks(blocks) == "[a] line1 line2\n[b] done"
     assert m.render_blocks(()) == ""
+
+
+def test_random_exact_recall_curves_never_decrease() -> None:
+    import random
+
+    generator = random.Random(31)
+    for case in range(80):
+        blocks = tuple(
+            m.Block(
+                f"{case}-{index}",
+                "needle" if index % 4 == 0 else "context",
+                generator.randrange(1, 8),
+                index,
+                planted_relevance=10 if index % 4 == 0 else 1,
+            )
+            for index in range(16)
+        )
+        needles = frozenset(block.key for block in blocks if block.planted_relevance == 10)
+        curve = m.recall_curve(blocks, needles, tuple(range(0, 50, 5)))
+        recalls = tuple(recall for _, recall in curve)
+        assert recalls == tuple(sorted(recalls))
