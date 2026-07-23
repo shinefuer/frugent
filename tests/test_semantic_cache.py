@@ -236,3 +236,11 @@ def test_semantic_state_fingerprint_covers_metrics_and_bytes() -> None:
             (m.SemanticEntry("a", b"y", 0),),
         )
     )
+
+
+def test_equivalent_unicode_whitespace_and_case_variants_share_exact_key() -> None:
+    prompts = (" Fix   FILE ", "fix file", "Ｆｉｘ file", "fix\nfile", "FIX\tFILE")  # noqa: RUF001
+    keys = {m.exact_key(prompt, "EDIT", {"path": "x.py", "line": 2}) for prompt in prompts}
+    assert len(keys) == 1
+    arguments = ({"line": 2, "path": "x.py"}, {"path": "x.py", "line": 2})
+    assert len({m.exact_key("fix file", "edit", item) for item in arguments}) == 1
