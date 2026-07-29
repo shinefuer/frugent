@@ -103,3 +103,18 @@ def test_greedy_fixed_router_matches_separable_optimum() -> None:
         instances, requests
     )
     assert m.optimum_ratio(instances, requests) == 1.0
+
+
+def test_greedy_fixed_routing_matches_exhaustive_independent_choices() -> None:
+    import itertools
+
+    placements = {"a": (("x", "a"), ("shared",)), "b": (("x", "b"),), "c": (("z",),)}
+    instances = m.seeded_instances(placements)
+    alphabet = ("x", "z", "shared")
+    requests = tuple((head, tail) for head, tail in itertools.product(alphabet, ("a", "b")))
+    greedy = m.greedy_fixed_assignment(instances, requests)
+    optimum = m.exhaustive_assignment(instances, requests)
+    assert m.routed_hit_tokens(instances, greedy, requests) == m.routed_hit_tokens(
+        instances, optimum, requests
+    )
+    assert m.optimum_ratio(instances, requests) == 1.0
