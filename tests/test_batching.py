@@ -145,3 +145,24 @@ def test_coalescing_is_a_stable_complete_partition() -> None:
     }
     assert sum(len(group) for group in groups) == len(requests)
     assert all(len({request.equivalence_key for request in group}) == 1 for group in groups)
+
+
+def test_single_flight_fanout_is_byte_identical_for_every_subscriber() -> None:
+    payloads = tuple(bytes(range(length)) for length in range(1, 40))
+    requests = tuple(
+        m.BatchRequest(f"{index}-{copy}", payload, index)
+        for index, payload in enumerate(payloads)
+        for copy in range(4)
+    )
+    calls: list[bytes] = []
+
+    def execute(payload: bytes) -> bytes:
+        calls.append(payload)
+        return b"\x00" + payload[::-1] + b"\xff"
+
+    responses = m.execute_single_flights(requests, execute)
+    assert len(calls) == len(payloads)
+    assert all(
+        responses[request.request_id] == b"\x00" + request.payload[::-1] + b"\xff"
+        for request in requests
+    )
