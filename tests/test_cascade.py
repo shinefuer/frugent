@@ -97,3 +97,25 @@ def test_cheapest_profile_never_degrades_below_floor() -> None:
     selected = m.cheapest_profile_at_floor(profiles, (1.0, 1.0), 0.75)
     assert selected.name == "l"
     assert m.expected_quality(selected, (1.0, 1.0)) >= 0.75
+
+
+def test_random_profile_selection_never_chooses_below_floor() -> None:
+    import random
+
+    generator = random.Random(22)
+    for _ in range(200):
+        low = generator.random() * 0.5
+        middle = low + generator.random() * (0.8 - low)
+        high = middle + generator.random() * (1 - middle)
+        profiles = (
+            m.ModelProfile("low", 1, 1, (low,)),
+            m.ModelProfile("mid", 2, 2, (middle,)),
+            m.ModelProfile("high", 3, 3, (high,)),
+        )
+        floor = generator.random() * high
+        chosen = m.cheapest_profile_at_floor(profiles, (1.0,), floor)
+        assert m.expected_quality(chosen, (1.0,)) >= floor
+        assert all(
+            profile.cost_micros >= chosen.cost_micros or m.expected_quality(profile, (1.0,)) < floor
+            for profile in profiles
+        )
