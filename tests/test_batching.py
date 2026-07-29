@@ -166,3 +166,17 @@ def test_single_flight_fanout_is_byte_identical_for_every_subscriber() -> None:
         responses[request.request_id] == b"\x00" + request.payload[::-1] + b"\xff"
         for request in requests
     )
+
+
+def test_random_micro_batches_respect_size_window_and_order() -> None:
+    import random
+
+    generator = random.Random(82)
+    arrivals = tuple(sorted(generator.randrange(1000) for _ in range(400)))
+    requests = tuple(
+        m.BatchRequest(str(index), b"x", arrival) for index, arrival in enumerate(arrivals)
+    )
+    batches = m.micro_batches(requests, window_ms=7, max_size=9)
+    assert tuple(request for batch in batches for request in batch) == requests
+    assert all(1 <= len(batch) <= 9 for batch in batches)
+    assert all(batch[-1].arrival_ms - batch[0].arrival_ms <= 7 for batch in batches)
