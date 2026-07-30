@@ -119,3 +119,19 @@ def test_span_record_rejects_boolean_timing_values() -> None:
     record["start_us"] = False
     with pytest.raises(m.TraceError, match="timing fields"):
         m.span_from_record(record)
+
+
+def test_generated_nested_span_forests_preserve_preorder() -> None:
+    for depth in range(1, 30):
+        spans = tuple(
+            m.Span(
+                f"s{index}",
+                f"level-{index}",
+                index,
+                depth * 2 - index,
+                None if index == 0 else f"s{index - 1}",
+            )
+            for index in range(depth)
+        )
+        m.validate_forest(spans)
+        assert m.preorder(tuple(reversed(spans))) == spans
