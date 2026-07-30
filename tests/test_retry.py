@@ -92,3 +92,15 @@ def test_backoff_shift_saturates_at_declared_integer_cap() -> None:
     policy = m.RetryPolicy(max_retries=20, base_delay_ms=3, max_delay_ms=100)
     assert m.base_delay(policy, 0) == 3
     assert m.base_delay(policy, 19) == 100
+
+
+def test_retry_schedules_are_seeded_bounded_and_budgeted() -> None:
+    policy = m.RetryPolicy(8, 7, 500, 250_000)
+    for seed in range(100):
+        first = m.retry_schedule(policy, seed)
+        assert first == m.retry_schedule(policy, seed)
+        assert len(first) == policy.max_retries
+        for index, delay in enumerate(first):
+            base = m.base_delay(policy, index)
+            radius = base * policy.jitter_ppm // 1_000_000
+            assert max(0, base - radius) <= delay <= min(policy.max_delay_ms, base + radius)
