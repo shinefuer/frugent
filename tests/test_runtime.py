@@ -102,3 +102,17 @@ def test_terminal_outcome_decodes_answer_bytes() -> None:
 def test_terminal_outcome_rejects_incomplete_trace() -> None:
     with pytest.raises(m.RuntimeError, match="incomplete"):
         m.terminal_outcome((m.LoopEvent(0, "act", "00"),))
+
+
+def test_loop_trace_bytes_repeat_for_many_seed_derived_payloads() -> None:
+    for seed in range(100):
+        payload = seed.to_bytes(2, "big")
+        actions = (
+            m.Action("tool", payload),
+            m.Action("tool", payload[::-1]),
+            m.Action("answer", b"done"),
+        )
+        left = m.run_loop(m.ScriptedPlanner(actions), lambda value: b"obs:" + value, 3)
+        right = m.run_loop(m.ScriptedPlanner(actions), lambda value: b"obs:" + value, 3)
+        assert m.event_records(left) == m.event_records(right)
+        assert m.trace_fingerprint(left) == m.trace_fingerprint(right)
