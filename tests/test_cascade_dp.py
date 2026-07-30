@@ -103,3 +103,30 @@ def test_policy_record_is_complete_and_deterministic() -> None:
         "expected_quality": 0.7,
         "mixture": [0.5, 0.5],
     }
+
+
+def test_optimal_policy_equals_manual_feasible_minimum() -> None:
+    import random
+
+    generator = random.Random(63)
+    for _ in range(100):
+        options = tuple(
+            tuple(
+                m.Action(
+                    f"m{difficulty}-{index}",
+                    1 + index * 4,
+                    min(1.0, generator.random() + index * 0.2),
+                )
+                for index in range(3)
+            )
+            for difficulty in range(3)
+        )
+        mixture = m.DifficultyMixture((1, 2, 3))
+        policies = m.enumerate_policies(options)
+        qualities = sorted(m.evaluate(policy, mixture)[1] for policy in policies)
+        floor = qualities[len(qualities) // 2]
+        expected = min(
+            (policy for policy in policies if m.evaluate(policy, mixture)[1] >= floor),
+            key=lambda policy: (m.evaluate(policy, mixture)[0], policy.models),
+        )
+        assert m.optimal_policy(options, mixture, floor) == expected
