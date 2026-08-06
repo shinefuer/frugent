@@ -135,3 +135,17 @@ def test_generated_nested_span_forests_preserve_preorder() -> None:
         )
         m.validate_forest(spans)
         assert m.preorder(tuple(reversed(spans))) == spans
+
+
+def test_nonoverlapping_children_conserve_parent_duration() -> None:
+    parent = m.Span("p", "parent", 0, 100)
+    children = (
+        m.Span("a", "a", 5, 20, "p"),
+        m.Span("b", "b", 30, 55, "p"),
+        m.Span("c", "c", 60, 90, "p"),
+    )
+    spans = (parent, *children)
+    assert (
+        m.exclusive_duration(parent, spans) + sum(child.duration_us for child in children)
+        == parent.duration_us
+    )
