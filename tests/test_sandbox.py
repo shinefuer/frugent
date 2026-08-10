@@ -124,3 +124,19 @@ def test_policy_record_rejects_scalar_container_spoofing() -> None:
     record["path_globs"] = "src/*"
     with pytest.raises(m.SandboxError, match="container shape"):
         m.policy_from_record(record)
+
+
+def test_shell_metacharacters_are_denied_in_any_argument_position() -> None:
+    policy = m.Policy((("tool",),), (), frozenset())
+    tokens = (";", "&&", "||", "|", "`", "$(id)", ">", "<", "line\nbreak", "nul\x00byte")
+    for position in range(4):
+        for token in tokens:
+            argv = ["tool", "safe", "value", "tail"]
+            argv[position] = token
+            decision = m.decide(policy, tuple(argv))
+            assert not decision.allowed
+            assert (
+                "shell" in decision.reason
+                or "control" in decision.reason
+                or "allowlisted" in decision.reason
+            )
