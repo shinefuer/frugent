@@ -130,3 +130,18 @@ def test_trace_stream_roundtrips_hostile_but_valid_event_text() -> None:
         )
         == events
     )
+
+
+def test_each_trace_line_is_independently_checksummed() -> None:
+    data = m.export_trace(
+        m.TraceHeader("r", 0, "c", "x"), tuple({"value": index} for index in range(8))
+    )
+    lines = data.splitlines()
+    for index in range(len(lines)):
+        mutated = list(lines)
+        marker = b'"checksum":"'
+        position = mutated[index].index(marker) + len(marker)
+        changed = bytearray(mutated[index])
+        changed[position] = ord("0") if changed[position] != ord("0") else ord("1")
+        mutated[index] = bytes(changed)
+        assert not m.verify_trace(b"\n".join(mutated) + b"\n")
