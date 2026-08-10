@@ -111,3 +111,22 @@ def test_trace_migration_rejects_boolean_seed() -> None:
     record = {"schema_version": 1, "run": "r", "seed": True, "config": "c", "rate": "x"}
     with pytest.raises(m.TraceIOError, match="seed"):
         m.migrate_header(record)
+
+
+def test_trace_stream_roundtrips_hostile_but_valid_event_text() -> None:
+    header = m.TraceHeader("run", 9, "cfg", "rate")
+    events = tuple(
+        {"kind": f"event-{index}", "text": text}
+        for index, text in enumerate(
+            ("<script>alert(1)</script>", "line1\nline2", "零成本", "quotes: \" ' ", "\u0000")
+        )
+    )
+    encoded = m.export_trace(header, events)
+    restored_header, restored = m.import_trace(encoded)
+    assert restored_header == header
+    assert (
+        tuple(
+            {key: value for key, value in event.items() if key != "sequence"} for event in restored
+        )
+        == events
+    )
