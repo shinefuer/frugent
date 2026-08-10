@@ -145,3 +145,12 @@ def test_each_trace_line_is_independently_checksummed() -> None:
         changed[position] = ord("0") if changed[position] != ord("0") else ord("1")
         mutated[index] = bytes(changed)
         assert not m.verify_trace(b"\n".join(mutated) + b"\n")
+
+
+def test_event_diff_is_empty_for_reencoding_and_precise_for_change() -> None:
+    header = m.TraceHeader("r", 1, "c", "x")
+    left = m.export_trace(header, ({"x": 1}, {"x": 2}, {"x": 3}))
+    same = m.export_trace(header, ({"x": 1}, {"x": 2}, {"x": 3}))
+    right = m.export_trace(header, ({"x": 1}, {"x": 9}, {"x": 3}, {"x": 4}))
+    assert m.event_diff(left, same) == ()
+    assert tuple(change["sequence"] for change in m.event_diff(left, right)) == (1, 3)
