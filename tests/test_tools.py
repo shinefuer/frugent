@@ -139,3 +139,14 @@ def test_dry_run_does_not_create_an_allowlisted_output_file(tmp_path: object) ->
     result = m.dry_run(call, Policy(((sys.executable, "-c"),), (), frozenset()))
     assert result.exit_code == 0 and not destination.exists()
     assert b'"mode":"dry_run"' in result.stdout
+
+
+def test_scripted_tool_replay_requires_exact_call_order() -> None:
+    first, second = m.ToolCall("a", ("one",)), m.ToolCall("b", ("two",))
+    replay = m.ScriptedTools(
+        ((first, m.ToolResult("a", 0, b"1", b"")), (second, m.ToolResult("b", 0, b"2", b"")))
+    )
+    with pytest.raises(m.ToolError, match="does not match"):
+        replay.execute(second)
+    assert replay.execute(first).stdout == b"1"
+    assert replay.execute(second).stdout == b"2" and replay.complete
