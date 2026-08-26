@@ -150,3 +150,11 @@ def test_path_policy_rejects_absolute_parent_and_empty_variants() -> None:
         assert not decision.allowed
     assert m.path_decision(policy, "src/frugent/core.py").allowed
     assert m.path_decision(policy, "tests/test_core.py").allowed
+
+
+def test_environment_decision_rejects_one_unknown_name_among_allowed_values() -> None:
+    policy = m.Policy((("tool",),), (), frozenset({"LANG", "MODE"}))
+    assert m.environment_decision(policy, {"LANG": "C", "MODE": "test"}).allowed
+    for unknown in ("PATH", "HOME", "TOKEN", "LD_PRELOAD"):
+        decision = m.environment_decision(policy, {"LANG": "C", unknown: "value"})
+        assert not decision.allowed and unknown in decision.reason
