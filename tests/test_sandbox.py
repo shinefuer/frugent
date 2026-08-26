@@ -140,3 +140,13 @@ def test_shell_metacharacters_are_denied_in_any_argument_position() -> None:
                 or "control" in decision.reason
                 or "allowlisted" in decision.reason
             )
+
+
+def test_path_policy_rejects_absolute_parent_and_empty_variants() -> None:
+    policy = m.Policy((("tool",),), ("src/**/*.py", "tests/*.py"), frozenset())
+    denied = ("", "/etc/passwd", "../secret", "src/../../secret", "src/x/../../../secret")
+    for path in denied:
+        decision = m.path_decision(policy, path)
+        assert not decision.allowed
+    assert m.path_decision(policy, "src/frugent/core.py").allowed
+    assert m.path_decision(policy, "tests/test_core.py").allowed
