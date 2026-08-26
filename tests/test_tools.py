@@ -125,3 +125,17 @@ def test_tool_result_record_does_not_coerce_boolean_strings() -> None:
     record["timed_out"] = "false"
     with pytest.raises(m.ToolError, match="booleans"):
         m.result_from_record(record)
+
+
+def test_dry_run_does_not_create_an_allowlisted_output_file(tmp_path: object) -> None:
+    import sys
+    from pathlib import Path
+
+    from frugent.sandbox import Policy
+
+    destination = Path(tmp_path) / "must-not-exist"
+    code = f"__import__('pathlib').Path({str(destination)!r}).write_text('bad')"
+    call = m.ToolCall("dry", (sys.executable, "-c", code))
+    result = m.dry_run(call, Policy(((sys.executable, "-c"),), (), frozenset()))
+    assert result.exit_code == 0 and not destination.exists()
+    assert b'"mode":"dry_run"' in result.stdout
