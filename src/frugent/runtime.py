@@ -15,8 +15,10 @@ class Action:
     payload: bytes
 
     def __post_init__(self) -> None:
-        if self.kind not in {"tool", "answer", "cancel"}:
+        if not isinstance(self.kind, str) or self.kind not in {"tool", "answer", "cancel"}:
             raise RuntimeError("runtime action: unsupported kind")
+        if not isinstance(self.payload, bytes):
+            raise RuntimeError("runtime action: payload must be bytes")
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,15 +27,40 @@ class LoopEvent:
     phase: str
     payload_hex: str
 
+    def __post_init__(self) -> None:
+        if (
+            isinstance(self.sequence, bool)
+            or not isinstance(self.sequence, int)
+            or self.sequence < 0
+            or not isinstance(self.phase, str)
+            or self.phase not in {"act", "observe", "answer", "cancel"}
+            or not isinstance(self.payload_hex, str)
+        ):
+            raise RuntimeError("loop event: invalid sequence, phase, or payload")
+        try:
+            decoded = bytes.fromhex(self.payload_hex)
+        except ValueError as error:
+            raise RuntimeError("loop event: payload is not canonical hex") from error
+        if decoded.hex() != self.payload_hex:
+            raise RuntimeError("loop event: payload is not canonical hex")
+
 
 class ScriptedPlanner:
     """Yield planted actions in order for offline mechanics tests."""
 
     def __init__(self, actions: tuple[Action, ...]) -> None:
+        if not isinstance(actions, tuple) or any(
+            not isinstance(action, Action) for action in actions
+        ):
+            raise RuntimeError("scripted planner: actions must be an action tuple")
         self.actions = actions
         self.cursor = 0
 
     def plan(self, observations: tuple[bytes, ...]) -> Action:
+        if not isinstance(observations, tuple) or any(
+            not isinstance(observation, bytes) for observation in observations
+        ):
+            raise RuntimeError("scripted planner: observations must be a byte tuple")
         if self.cursor >= len(self.actions):
             raise RuntimeError("scripted planner: no action remains")
         action = self.actions[self.cursor]
@@ -43,14 +70,19 @@ class ScriptedPlanner:
 
 def run_loop(planner: ScriptedPlanner, tool: object, max_steps: int) -> tuple[LoopEvent, ...]:
     """Execute planted actions until answer, cancel, or hard step budget."""
-    if max_steps <= 0 or not callable(tool):
+    if (
+        isinstance(max_steps, bool)
+        or not isinstance(max_steps, int)
+        or max_steps <= 0
+        or not callable(tool)
+    ):
         raise RuntimeError("agent loop: positive steps and callable tool required")
     events: list[LoopEvent] = []
     observations: list[bytes] = []
     for _ in range(max_steps):
         action = planner.plan(tuple(observations))
         events.append(
-            LoopEvent(len(events), "act", action.kind.encode().hex() + ":" + action.payload.hex())
+            LoopEvent(len(events), "act", (action.kind.encode() + b"\0" + action.payload).hex())
         )
         if action.kind == "answer":
             events.append(LoopEvent(len(events), "answer", action.payload.hex()))

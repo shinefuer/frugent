@@ -17,6 +17,15 @@ def test_action_rejects_unknown_kind() -> None:
         m.Action("think", b"x")
 
 
+def test_action_and_event_records_reject_ambiguous_runtime_values() -> None:
+    with pytest.raises(m.RuntimeError, match="payload must be bytes"):
+        m.Action("tool", "x")  # type: ignore[arg-type]
+    with pytest.raises(m.RuntimeError, match="loop event"):
+        m.LoopEvent(True, "act", "00")
+    with pytest.raises(m.RuntimeError, match="canonical hex"):
+        m.LoopEvent(0, "observe", "0A")
+
+
 def test_scripted_planner_yields_planted_order() -> None:
     planner = m.ScriptedPlanner((m.Action("tool", b"read"), m.Action("answer", b"done")))
     assert planner.plan(()) == m.Action("tool", b"read")
@@ -29,11 +38,27 @@ def test_scripted_planner_exhaustion_is_explicit() -> None:
         planner.plan(())
 
 
+def test_scripted_planner_validates_actions_and_observations() -> None:
+    with pytest.raises(m.RuntimeError, match="action tuple"):
+        m.ScriptedPlanner(("tool",))  # type: ignore[arg-type]
+    planner = m.ScriptedPlanner((m.Action("answer", b"ok"),))
+    with pytest.raises(m.RuntimeError, match="byte tuple"):
+        planner.plan(("observation",))  # type: ignore[arg-type]
+
+
 def test_loop_runs_plan_act_observe_to_answer() -> None:
     planner = m.ScriptedPlanner((m.Action("tool", b"read"), m.Action("answer", b"done")))
     events = m.run_loop(planner, lambda payload: b"obs:" + payload, 3)
     assert tuple(event.phase for event in events) == ("act", "observe", "act", "answer")
     assert bytes.fromhex(events[1].payload_hex) == b"obs:read"
+    assert all(bytes.fromhex(event.payload_hex).hex() == event.payload_hex for event in events)
+
+
+def test_loop_rejects_boolean_step_budget_before_planning() -> None:
+    planner = m.ScriptedPlanner((m.Action("answer", b"ok"),))
+    with pytest.raises(m.RuntimeError, match="positive steps"):
+        m.run_loop(planner, lambda _: b"", True)
+    assert planner.cursor == 0
 
 
 def test_cancel_action_stops_before_tool_execution() -> None:
