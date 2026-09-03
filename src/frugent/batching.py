@@ -18,7 +18,14 @@ class BatchRequest:
     arrival_ms: int
 
     def __post_init__(self) -> None:
-        if not self.request_id or self.arrival_ms < 0:
+        if (
+            not isinstance(self.request_id, str)
+            or not self.request_id
+            or not isinstance(self.payload, bytes)
+            or isinstance(self.arrival_ms, bool)
+            or not isinstance(self.arrival_ms, int)
+            or self.arrival_ms < 0
+        ):
             raise BatchingError("batch request: invalid identity or arrival")
 
     @property
@@ -28,6 +35,7 @@ class BatchRequest:
 
 def coalesce(requests: tuple[BatchRequest, ...]) -> tuple[tuple[BatchRequest, ...], ...]:
     """Group exact payload equivalents in first-arrival key order."""
+    _require_unique_ids(requests, "coalesce")
     groups: dict[str, list[BatchRequest]] = {}
     order: list[str] = []
     for request in requests:
@@ -37,6 +45,11 @@ def coalesce(requests: tuple[BatchRequest, ...]) -> tuple[tuple[BatchRequest, ..
             order.append(key)
         groups[key].append(request)
     return tuple(tuple(groups[key]) for key in order)
+
+
+def _require_unique_ids(requests: tuple[BatchRequest, ...], operation: str) -> None:
+    if len({request.request_id for request in requests}) != len(requests):
+        raise BatchingError(f"{operation}: duplicate request id")
 
 
 def fan_out(group: tuple[BatchRequest, ...], response: bytes) -> dict[str, bytes]:
@@ -54,6 +67,7 @@ def micro_batches(
     requests: tuple[BatchRequest, ...], *, window_ms: int, max_size: int
 ) -> tuple[tuple[BatchRequest, ...], ...]:
     """Batch ordered arrivals without exceeding size or first-item wait window."""
+    _require_unique_ids(requests, "micro batch")
     if (
         window_ms < 0
         or max_size <= 0
@@ -98,6 +112,9 @@ class BatchMetrics:
 def batch_metrics(
     requests: tuple[BatchRequest, ...], batches: tuple[tuple[BatchRequest, ...], ...]
 ) -> BatchMetrics:
+    flattened = tuple(request for batch in batches for request in batch)
+    if flattened != requests or any(not batch for batch in batches):
+        raise BatchingError("batch metrics: batches must exactly partition requests in order")
     executions = sum(len(coalesce(batch)) for batch in batches)
     return BatchMetrics(len(requests), executions, len(batches))
 

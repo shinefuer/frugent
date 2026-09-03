@@ -20,6 +20,13 @@ def test_batch_request_requires_identity() -> None:
         m.BatchRequest("", b"x", 0)
 
 
+def test_batch_request_rejects_ambiguous_payload_and_arrival_types() -> None:
+    with pytest.raises(m.BatchingError, match="batch request"):
+        m.BatchRequest("r", "x", 0)  # type: ignore[arg-type]
+    with pytest.raises(m.BatchingError, match="batch request"):
+        m.BatchRequest("r", b"x", True)
+
+
 def test_coalesce_groups_only_byte_equivalent_payloads() -> None:
     requests = (
         m.BatchRequest("1", b"a", 0),
@@ -101,6 +108,16 @@ def test_batch_metrics_separate_dedup_and_batching() -> None:
     assert result.mean_batch_size == 2.0
 
 
+def test_batch_metrics_require_a_complete_ordered_partition() -> None:
+    requests = (m.BatchRequest("1", b"x", 0), m.BatchRequest("2", b"y", 1))
+    with pytest.raises(m.BatchingError, match="exactly partition"):
+        m.batch_metrics(requests, ((requests[0],),))
+    with pytest.raises(m.BatchingError, match="exactly partition"):
+        m.batch_metrics(requests, ((requests[1], requests[0]),))
+    with pytest.raises(m.BatchingError, match="exactly partition"):
+        m.batch_metrics(requests, (requests, ()))
+
+
 def test_single_flight_executes_once_per_equivalent_payload() -> None:
     calls: list[bytes] = []
 
@@ -115,6 +132,14 @@ def test_single_flight_executes_once_per_equivalent_payload() -> None:
     )
     assert m.execute_single_flights(requests, execute) == {"1": b"X", "2": b"X", "3": b"Y"}
     assert calls == [b"x", b"y"]
+
+
+def test_batching_rejects_duplicate_subscriber_id_before_execution() -> None:
+    requests = (m.BatchRequest("same", b"x", 0), m.BatchRequest("same", b"y", 1))
+    calls: list[bytes] = []
+    with pytest.raises(m.BatchingError, match="duplicate request id"):
+        m.execute_single_flights(requests, lambda payload: calls.append(payload) or payload)
+    assert calls == []
 
 
 @pytest.mark.parametrize("payload", [b"", b"text", b"\x00\xff", bytes(range(32))])
