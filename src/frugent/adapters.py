@@ -17,7 +17,14 @@ class AdapterRequest:
     seed: int
 
     def __post_init__(self) -> None:
-        if not self.request_id or self.seed < 0:
+        if (
+            not isinstance(self.request_id, str)
+            or not self.request_id
+            or not isinstance(self.prompt, bytes)
+            or isinstance(self.seed, bool)
+            or not isinstance(self.seed, int)
+            or self.seed < 0
+        ):
             raise AdapterError("adapter request: invalid id or seed")
 
 
@@ -28,6 +35,23 @@ class AdapterResponse:
     model: str
     prompt_tokens: int
     completion_tokens: int
+
+    def __post_init__(self) -> None:
+        counts = (self.prompt_tokens, self.completion_tokens)
+        if (
+            not isinstance(self.request_id, str)
+            or not self.request_id
+            or not isinstance(self.content, bytes)
+            or not isinstance(self.model, str)
+            or not self.model
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value < 0
+                for value in counts
+            )
+        ):
+            raise AdapterError(
+                "adapter response: invalid identity, content, model, or token counts"
+            )
 
 
 @runtime_checkable
@@ -85,10 +109,24 @@ def response_record(response: AdapterResponse) -> dict[str, object]:
 
 
 def response_from_record(record: dict[str, object]) -> AdapterResponse:
+    expected = {
+        "request_id",
+        "content_hex",
+        "model",
+        "prompt_tokens",
+        "completion_tokens",
+    }
+    if set(record) != expected:
+        raise AdapterError("adapter response record: unexpected fields")
     try:
         request_id, model = record["request_id"], record["model"]
+        content_hex = record["content_hex"]
         prompt_tokens, completion_tokens = record["prompt_tokens"], record["completion_tokens"]
-        if not isinstance(request_id, str) or not isinstance(model, str):
+        if (
+            not isinstance(request_id, str)
+            or not isinstance(model, str)
+            or not isinstance(content_hex, str)
+        ):
             raise AdapterError("adapter response record: identity fields must be strings")
         if (
             not isinstance(prompt_tokens, int)
@@ -99,7 +137,7 @@ def response_from_record(record: dict[str, object]) -> AdapterResponse:
             raise AdapterError("adapter response record: token counts must be integers")
         return AdapterResponse(
             request_id,
-            bytes.fromhex(str(record["content_hex"])),
+            bytes.fromhex(content_hex),
             model,
             prompt_tokens,
             completion_tokens,

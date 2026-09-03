@@ -19,6 +19,17 @@ def test_adapter_request_requires_identity() -> None:
         m.AdapterRequest("", b"x", 0)
 
 
+def test_adapter_boundaries_reject_ambiguous_runtime_values() -> None:
+    with pytest.raises(m.AdapterError, match="adapter request"):
+        m.AdapterRequest("r", b"x", True)
+    with pytest.raises(m.AdapterError, match="adapter request"):
+        m.AdapterRequest("r", "x", 0)  # type: ignore[arg-type]
+    with pytest.raises(m.AdapterError, match="adapter response"):
+        m.AdapterResponse("r", b"ok", "", 1, 1)
+    with pytest.raises(m.AdapterError, match="adapter response"):
+        m.AdapterResponse("r", b"ok", "m", -1, 1)
+
+
 def test_scripted_adapter_returns_planted_exact_response() -> None:
     adapter = m.ScriptedAdapter("scripted-small", {b"fix x": b"edit x"})
     response = adapter.complete(m.AdapterRequest("r", b"fix x", 1))
@@ -49,6 +60,17 @@ def test_replay_adapter_requires_recorded_order() -> None:
 def test_adapter_response_record_roundtrip() -> None:
     response = m.AdapterResponse("r", b"\x00\xff", "scripted", 7, 3)
     assert m.response_from_record(m.response_record(response)) == response
+
+
+def test_adapter_response_record_has_a_strict_schema() -> None:
+    record = m.response_record(m.AdapterResponse("r", b"ok", "m", 1, 1))
+    record["extra"] = "drift"
+    with pytest.raises(m.AdapterError, match="unexpected fields"):
+        m.response_from_record(record)
+    del record["extra"]
+    record["content_hex"] = 123
+    with pytest.raises(m.AdapterError, match="identity fields"):
+        m.response_from_record(record)
 
 
 def test_recording_adapter_does_not_change_observable_response() -> None:
