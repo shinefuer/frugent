@@ -143,6 +143,51 @@ def test_loopback_adapter_rejects_local_https() -> None:
         m.complete_loopback("https://127.0.0.1/api", m.AdapterRequest("r", b"p", 0))
 
 
+def test_loopback_adapter_roundtrips_against_local_mock_only() -> None:
+    import threading
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    received: list[bytes] = []
+    response = m.AdapterResponse("r", b"mock result", "loopback-mock", 2, 2)
+    response_body = m.response_record(response)
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:
+            length = int(self.headers["Content-Length"])
+            received.append(self.rfile.read(length))
+            from frugent.codec import canonical_json
+
+            body = canonical_json(response_body)
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, format: str, *args: object) -> None:
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    request = m.AdapterRequest("r", b"local prompt", 4)
+    try:
+        result = m.complete_loopback(f"http://127.0.0.1:{server.server_port}/complete", request)
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
+    assert result == response
+    assert received == [m.loopback_request_record(request)]
+
+
+def test_loopback_adapter_bounds_wait_and_response_size() -> None:
+    request = m.AdapterRequest("r", b"p", 0)
+    with pytest.raises(m.AdapterError, match="timeout"):
+        m.complete_loopback("http://127.0.0.1:1", request, timeout_s=0)
+    with pytest.raises(m.AdapterError, match="response limit"):
+        m.complete_loopback("http://127.0.0.1:1", request, max_response_bytes=True)
+
+
 def test_same_request_has_identical_loopback_payload() -> None:
     request = m.AdapterRequest("r", b"payload", 7)
     assert m.loopback_request_record(request) == m.loopback_request_record(request)

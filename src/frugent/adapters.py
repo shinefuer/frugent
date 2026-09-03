@@ -269,21 +269,48 @@ def loopback_request_record(request: AdapterRequest) -> bytes:
 
 
 def loopback_response(data: bytes) -> AdapterResponse:
-    from frugent.codec import decode_json
+    from frugent.codec import CodecError, decode_json
 
-    decoded = decode_json(data)
+    try:
+        decoded = decode_json(data)
+    except CodecError as error:
+        raise AdapterError(f"loopback response: {error}") from error
     if not isinstance(decoded, dict):
         raise AdapterError("loopback response: expected object")
     return response_from_record(decoded)
 
 
-def complete_loopback(url: str, request: AdapterRequest, timeout_s: float = 2.0) -> AdapterResponse:
+def complete_loopback(
+    url: str,
+    request: AdapterRequest,
+    timeout_s: float = 2.0,
+    max_response_bytes: int = 1_000_000,
+) -> AdapterResponse:
     """POST to an explicitly supplied local HTTP mock URL."""
+    import math
     from urllib.parse import urlparse
     from urllib.request import Request, urlopen
 
+    if (
+        isinstance(timeout_s, bool)
+        or not isinstance(timeout_s, (int, float))
+        or not math.isfinite(timeout_s)
+        or timeout_s <= 0
+    ):
+        raise AdapterError("loopback adapter: timeout must be finite and positive")
+    if (
+        isinstance(max_response_bytes, bool)
+        or not isinstance(max_response_bytes, int)
+        or max_response_bytes <= 0
+    ):
+        raise AdapterError("loopback adapter: response limit must be a positive integer")
     parsed = urlparse(url)
-    if parsed.hostname not in {"127.0.0.1", "localhost", "::1"} or parsed.scheme != "http":
+    if (
+        parsed.hostname not in {"127.0.0.1", "localhost", "::1"}
+        or parsed.scheme != "http"
+        or parsed.username is not None
+        or parsed.password is not None
+    ):
         raise AdapterError("loopback adapter: only local HTTP mock URLs are allowed")
     message = Request(
         url,
@@ -293,9 +320,12 @@ def complete_loopback(url: str, request: AdapterRequest, timeout_s: float = 2.0)
     )
     try:
         with urlopen(message, timeout=timeout_s) as response:
-            result = loopback_response(response.read())
+            body = response.read(max_response_bytes + 1)
     except OSError as error:
         raise AdapterError(f"loopback adapter: local request failed: {error}") from error
+    if len(body) > max_response_bytes:
+        raise AdapterError("loopback adapter: response exceeds byte limit")
+    result = loopback_response(body)
     if result.request_id != request.request_id:
         raise AdapterError("loopback adapter: response id mismatch")
     return result
