@@ -62,6 +62,11 @@ def test_adapter_response_record_roundtrip() -> None:
     assert m.response_from_record(m.response_record(response)) == response
 
 
+def test_adapter_request_record_roundtrip_preserves_binary_prompt() -> None:
+    request = m.AdapterRequest("r", b"\x00\xff", 12)
+    assert m.request_from_record(m.request_record(request)) == request
+
+
 def test_adapter_response_record_has_a_strict_schema() -> None:
     record = m.response_record(m.AdapterResponse("r", b"ok", "m", 1, 1))
     record["extra"] = "drift"
@@ -79,6 +84,38 @@ def test_recording_adapter_does_not_change_observable_response() -> None:
     request = m.AdapterRequest("id", b"p", 0)
     assert adapter.complete(request) == inner.complete(request)
     assert adapter.records[0][0] == request
+
+
+def test_replay_session_jsonl_roundtrips_in_recorded_order() -> None:
+    pairs = (
+        (m.AdapterRequest("a", b"one", 1), m.AdapterResponse("a", b"1", "m", 1, 1)),
+        (m.AdapterRequest("b", b"two", 2), m.AdapterResponse("b", b"2", "m", 1, 1)),
+    )
+    encoded = m.export_session(pairs)
+    assert m.import_session(encoded) == pairs
+    replay = m.ReplayAdapter(m.import_session(encoded))
+    assert tuple(replay.complete(request) for request, _ in pairs) == tuple(
+        response for _, response in pairs
+    )
+
+
+def test_replay_session_rejects_truncation_and_checksum_mutation() -> None:
+    pair = (m.AdapterRequest("r", b"p", 0), m.AdapterResponse("r", b"c", "m", 1, 1))
+    encoded = m.export_session((pair,))
+    with pytest.raises(m.AdapterError, match="newline-terminated"):
+        m.import_session(encoded.rstrip(b"\n"))
+    with pytest.raises(m.AdapterError, match=r"session\[0\]"):
+        m.import_session(encoded.replace(b'"prompt_hex":"70"', b'"prompt_hex":"71"'))
+
+
+def test_replay_session_has_stable_golden_digest() -> None:
+    import hashlib
+
+    pair = (m.AdapterRequest("r", b"p", 0), m.AdapterResponse("r", b"c", "m", 1, 1))
+    assert (
+        hashlib.sha256(m.export_session((pair,))).hexdigest()
+        == "9bfe9129a300d1c7d247db9bfcee41b9939eff4b0074a2c842f5ea00858d0b0a"
+    )
 
 
 @pytest.mark.parametrize("payload", [b"", b"text", b"\x00\xff", bytes(range(16))])
