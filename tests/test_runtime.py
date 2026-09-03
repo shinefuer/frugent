@@ -46,6 +46,40 @@ def test_scripted_planner_validates_actions_and_observations() -> None:
         planner.plan(("observation",))  # type: ignore[arg-type]
 
 
+def test_action_adapter_record_roundtrips_binary_payload() -> None:
+    action = m.Action("tool", b"\x00read\xff")
+    assert m.action_from_record(m.action_record(action)) == action
+    with pytest.raises(m.RuntimeError, match="kind and payload"):
+        m.action_from_record(b"answer")
+
+
+def test_adapter_planner_drives_the_same_plan_act_observe_loop() -> None:
+    from frugent.adapters import AdapterRequest, ScriptedAdapter
+
+    requests = (AdapterRequest("1", b"plan", 4), AdapterRequest("2", b"finish", 4))
+    adapter = ScriptedAdapter(
+        "scripted-small",
+        {b"plan": m.action_record(m.Action("tool", b"read")), b"finish": b"answer\0done"},
+    )
+    planner = m.AdapterPlanner(adapter, requests)
+    events = m.run_loop(planner, lambda payload: b"observed:" + payload, 2)
+    assert tuple(event.phase for event in events) == ("act", "observe", "act", "answer")
+    assert m.terminal_outcome(events) == ("answer", b"done")
+    assert tuple(response.request_id for response in planner.responses) == ("1", "2")
+
+
+def test_adapter_planner_rejects_response_identity_drift() -> None:
+    from frugent.adapters import AdapterRequest, AdapterResponse
+
+    class WrongIdentityAdapter:
+        def complete(self, request: AdapterRequest) -> AdapterResponse:
+            return AdapterResponse("other", b"answer\0done", "mock", 1, 1)
+
+    planner = m.AdapterPlanner(WrongIdentityAdapter(), (AdapterRequest("expected", b"p", 0),))
+    with pytest.raises(m.RuntimeError, match="response id mismatch"):
+        planner.plan(())
+
+
 def test_loop_runs_plan_act_observe_to_answer() -> None:
     planner = m.ScriptedPlanner((m.Action("tool", b"read"), m.Action("answer", b"done")))
     events = m.run_loop(planner, lambda payload: b"obs:" + payload, 3)

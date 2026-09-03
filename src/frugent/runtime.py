@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Protocol, runtime_checkable
+
+from frugent.adapters import Adapter, AdapterRequest, AdapterResponse
 
 
 class RuntimeError(ValueError):
@@ -45,6 +48,13 @@ class LoopEvent:
             raise RuntimeError("loop event: payload is not canonical hex")
 
 
+@runtime_checkable
+class Planner(Protocol):
+    """Produce the next action from immutable observation bytes."""
+
+    def plan(self, observations: tuple[bytes, ...]) -> Action: ...
+
+
 class ScriptedPlanner:
     """Yield planted actions in order for offline mechanics tests."""
 
@@ -68,7 +78,51 @@ class ScriptedPlanner:
         return action
 
 
-def run_loop(planner: ScriptedPlanner, tool: object, max_steps: int) -> tuple[LoopEvent, ...]:
+def action_record(action: Action) -> bytes:
+    """Encode one adapter action with a single stable kind separator."""
+    return action.kind.encode("ascii") + b"\0" + action.payload
+
+
+def action_from_record(data: bytes) -> Action:
+    """Decode an adapter response into a validated runtime action."""
+    if not isinstance(data, bytes) or b"\0" not in data:
+        raise RuntimeError("adapter action: expected kind and payload bytes")
+    raw_kind, _, payload = data.partition(b"\0")
+    try:
+        kind = raw_kind.decode("ascii")
+    except UnicodeDecodeError as error:
+        raise RuntimeError("adapter action: kind must be ASCII") from error
+    return Action(kind, payload)
+
+
+class AdapterPlanner:
+    """Turn exact offline adapter responses into plan-act-observe actions."""
+
+    def __init__(self, adapter: Adapter, requests: tuple[AdapterRequest, ...]) -> None:
+        if not isinstance(adapter, Adapter) or not isinstance(requests, tuple):
+            raise RuntimeError("adapter planner: adapter and request tuple required")
+        self.adapter = adapter
+        self.requests = requests
+        self.cursor = 0
+        self.responses: list[AdapterResponse] = []
+
+    def plan(self, observations: tuple[bytes, ...]) -> Action:
+        if not isinstance(observations, tuple) or any(
+            not isinstance(observation, bytes) for observation in observations
+        ):
+            raise RuntimeError("adapter planner: observations must be a byte tuple")
+        if self.cursor >= len(self.requests):
+            raise RuntimeError("adapter planner: no request remains")
+        request = self.requests[self.cursor]
+        response = self.adapter.complete(request)
+        if response.request_id != request.request_id:
+            raise RuntimeError("adapter planner: response id mismatch")
+        self.cursor += 1
+        self.responses.append(response)
+        return action_from_record(response.content)
+
+
+def run_loop(planner: Planner, tool: object, max_steps: int) -> tuple[LoopEvent, ...]:
     """Execute planted actions until answer, cancel, or hard step budget."""
     if (
         isinstance(max_steps, bool)
@@ -81,9 +135,7 @@ def run_loop(planner: ScriptedPlanner, tool: object, max_steps: int) -> tuple[Lo
     observations: list[bytes] = []
     for _ in range(max_steps):
         action = planner.plan(tuple(observations))
-        events.append(
-            LoopEvent(len(events), "act", (action.kind.encode() + b"\0" + action.payload).hex())
-        )
+        events.append(LoopEvent(len(events), "act", action_record(action).hex()))
         if action.kind == "answer":
             events.append(LoopEvent(len(events), "answer", action.payload.hex()))
             return tuple(events)
