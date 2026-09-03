@@ -88,6 +88,18 @@ def test_wait_times_reject_early_dispatch() -> None:
         m.wait_times((m.BatchRequest("a", b"x", 3),), 2)
 
 
+def test_dispatch_closes_full_batches_and_bounds_partial_wait() -> None:
+    requests = tuple(
+        m.BatchRequest(str(index), b"x", arrival) for index, arrival in enumerate((0, 2, 4, 9))
+    )
+    batches = m.micro_batches(requests, window_ms=5, max_size=3)
+    assert m.dispatch_times(batches, window_ms=5, max_size=3) == (4, 14)
+    for batch, dispatch_ms in zip(
+        batches, m.dispatch_times(batches, window_ms=5, max_size=3), strict=True
+    ):
+        assert max(m.wait_times(batch, dispatch_ms)) <= 5
+
+
 @pytest.mark.parametrize("window", [0, 1, 5, 20])
 def test_each_micro_batch_stays_inside_first_arrival_window(window: int) -> None:
     requests = tuple(m.BatchRequest(str(index), b"x", index * 2) for index in range(20))
@@ -154,6 +166,22 @@ def test_batch_completion_simulation_amortizes_service() -> None:
     requests = tuple(m.BatchRequest(str(index), b"x", index) for index in range(4))
     batches = m.micro_batches(requests, window_ms=2, max_size=3)
     assert m.simulated_completion_times(batches, 5) == {"0": 7, "1": 7, "2": 7, "3": 12}
+
+
+def test_scheduled_completion_includes_batch_window_and_serial_queue() -> None:
+    requests = tuple(
+        m.BatchRequest(str(index), b"x", arrival) for index, arrival in enumerate((0, 2, 4, 9))
+    )
+    completed = m.scheduled_completion_times(requests, window_ms=5, max_size=3, service_ms=3)
+    assert completed == {"0": 7, "1": 7, "2": 7, "3": 17}
+    assert tuple(
+        completed[str(index)] - request.arrival_ms for index, request in enumerate(requests)
+    ) == (
+        7,
+        5,
+        3,
+        8,
+    )
 
 
 def test_coalescing_is_a_stable_complete_partition() -> None:

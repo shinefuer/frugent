@@ -94,6 +94,31 @@ def wait_times(batch: tuple[BatchRequest, ...], dispatch_ms: int) -> tuple[int, 
     return tuple(dispatch_ms - request.arrival_ms for request in batch)
 
 
+def dispatch_times(
+    batches: tuple[tuple[BatchRequest, ...], ...], *, window_ms: int, max_size: int
+) -> tuple[int, ...]:
+    """Close full batches immediately and partial batches at their deadline."""
+    if window_ms < 0 or max_size <= 0:
+        raise BatchingError("batch dispatch: invalid window or size")
+    dispatched: list[int] = []
+    previous_arrival = -1
+    for batch in batches:
+        if (
+            not batch
+            or len(batch) > max_size
+            or tuple(request.arrival_ms for request in batch)
+            != tuple(sorted(request.arrival_ms for request in batch))
+            or batch[0].arrival_ms < previous_arrival
+            or batch[-1].arrival_ms - batch[0].arrival_ms > window_ms
+        ):
+            raise BatchingError("batch dispatch: invalid batch partition")
+        dispatched.append(
+            batch[-1].arrival_ms if len(batch) == max_size else batch[0].arrival_ms + window_ms
+        )
+        previous_arrival = batch[-1].arrival_ms
+    return tuple(dispatched)
+
+
 @dataclass(frozen=True, slots=True)
 class BatchMetrics:
     requests: int
@@ -146,5 +171,21 @@ def simulated_completion_times(
         if not batch:
             raise BatchingError("batch latency: empty batch")
         available = max(available, batch[-1].arrival_ms) + service_ms
+        completed.update({request.request_id: available for request in batch})
+    return completed
+
+
+def scheduled_completion_times(
+    requests: tuple[BatchRequest, ...], *, window_ms: int, max_size: int, service_ms: int
+) -> dict[str, int]:
+    """Simulate deadline-aware serial execution of deterministic micro-batches."""
+    if service_ms < 0:
+        raise BatchingError("batch latency: service must be non-negative")
+    batches = micro_batches(requests, window_ms=window_ms, max_size=max_size)
+    deadlines = dispatch_times(batches, window_ms=window_ms, max_size=max_size)
+    available = 0
+    completed: dict[str, int] = {}
+    for batch, dispatch_ms in zip(batches, deadlines, strict=True):
+        available = max(available, dispatch_ms) + service_ms
         completed.update({request.request_id: available for request in batch})
     return completed
