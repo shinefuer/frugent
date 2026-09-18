@@ -18,9 +18,14 @@ class RunMetadata:
 
     def __post_init__(self) -> None:
         if (
-            not self.version
+            not isinstance(self.version, str)
+            or not self.version
+            or isinstance(self.seed, bool)
+            or not isinstance(self.seed, int)
             or self.seed < 0
+            or not isinstance(self.config_hash, str)
             or not self.config_hash
+            or not isinstance(self.rate_card_fingerprint, str)
             or not self.rate_card_fingerprint
         ):
             raise ReportError("metadata: version, seed, and fingerprints are required")
@@ -45,8 +50,26 @@ class MetricRow:
     p95_ms: float
 
     def __post_init__(self) -> None:
-        values = (self.completed, self.tokens, self.cost_micros, self.p50_ms, self.p95_ms)
-        if not self.policy or any(value < 0 for value in values) or self.p95_ms < self.p50_ms:
+        import math
+
+        counts = (self.completed, self.tokens, self.cost_micros)
+        latencies = (self.p50_ms, self.p95_ms)
+        if (
+            not isinstance(self.policy, str)
+            or not self.policy
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value < 0
+                for value in counts
+            )
+            or any(
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or value < 0
+                for value in latencies
+            )
+            or self.p95_ms < self.p50_ms
+        ):
             raise ReportError("metric row: invalid policy, counts, costs, or percentiles")
 
 
@@ -54,7 +77,11 @@ def svg_bars(rows: tuple[MetricRow, ...], *, field: str, title: str) -> str:
     """Render one non-negative integer metric without plotting dependencies."""
     import html
 
-    if not rows or field not in {"completed", "tokens", "cost_micros"}:
+    if (
+        not rows
+        or field not in {"completed", "tokens", "cost_micros"}
+        or not isinstance(title, str)
+    ):
         raise ReportError("svg: unsupported or empty series")
     values = [int(getattr(row, field)) for row in rows]
     scale = max(values) or 1
@@ -81,12 +108,23 @@ def markdown_table(rows: tuple[MetricRow, ...]) -> str:
         "|---|---:|---:|---:|---:|---:|",
     ]
     for row in rows:
-        policy = row.policy.replace("|", "\\|").replace("\n", " ")
+        policy = _markdown_inline(row.policy)
         lines.append(
             f"| {policy} | {row.completed} | {row.tokens} | {row.cost_micros} | "
             f"{row.p50_ms:.3f} | {row.p95_ms:.3f} |"
         )
     return "\n".join(lines)
+
+
+def _markdown_inline(value: object) -> str:
+    return (
+        str(value)
+        .replace("\\", "\\\\")
+        .replace("`", "\\`")
+        .replace("|", "\\|")
+        .replace("\r", " ")
+        .replace("\n", " ")
+    )
 
 
 def markdown_report(
@@ -103,9 +141,9 @@ def markdown_report(
         "## Run metadata",
         "",
     ]
-    lines.extend(f"- {key}: `{value}`" for key, value in meta.items())
+    lines.extend(f"- {key}: `{_markdown_inline(value)}`" for key, value in meta.items())
     lines.extend(("", "## Measured comparison", "", markdown_table(rows), "", "## Limitations", ""))
-    lines.extend(f"- {item}" for item in limitations)
+    lines.extend(f"- {_markdown_inline(item)}" for item in limitations)
     return "\n".join(lines) + "\n"
 
 
@@ -114,7 +152,7 @@ def html_report(
 ) -> str:
     import html
 
-    if not limitations:
+    if not limitations or any(not isinstance(item, str) or not item for item in limitations):
         raise ReportError("html report: limitations are required")
     cells = "".join(
         "<tr>"

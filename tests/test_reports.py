@@ -17,6 +17,15 @@ def test_metadata_record_names_reproducibility_inputs() -> None:
     }
 
 
+def test_report_records_reject_ambiguous_counts_and_nonfinite_latency() -> None:
+    with pytest.raises(m.ReportError, match="metadata"):
+        m.RunMetadata("v", True, "cfg", "rates")
+    with pytest.raises(m.ReportError, match="metric row"):
+        m.MetricRow("x", True, 1, 1, 1, 2)
+    with pytest.raises(m.ReportError, match="metric row"):
+        m.MetricRow("x", 1, 1, 1, 1, float("nan"))
+
+
 def test_metric_row_preserves_measured_counts() -> None:
     row = m.MetricRow("candidate", 3, 120, 44, 5.5, 9.0)
     assert (row.tokens, row.p95_ms) == (120, 9.0)
@@ -57,6 +66,19 @@ def test_markdown_report_discloses_synthetic_scope() -> None:
     assert "offline only" in report
 
 
+def test_markdown_report_keeps_hostile_text_inside_cells_and_list_items() -> None:
+    metadata = m.RunMetadata("v`\n# heading", 1, "cfg", "rate")
+    report = m.markdown_report(
+        metadata,
+        (m.MetricRow("a|b\nrow", 1, 2, 3, 4, 5),),
+        ("first\n# injected",),
+    )
+    assert "a\\|b row" in report
+    assert "- first # injected" in report
+    assert report.count("\n# injected") == 0
+    assert "v\\` # heading" in report
+
+
 def test_rendering_does_not_mutate_metric_rows() -> None:
     rows = (m.MetricRow("base", 2, 20, 30, 4, 9),)
     before = rows
@@ -70,6 +92,11 @@ def test_html_report_escapes_hostile_run_text() -> None:
     assert "<script>" not in html and "&lt;script&gt;" in html
     assert "&lt;v&gt;" in html and "a &lt; b" in html
     assert html.startswith("<!doctype html>")
+
+
+def test_html_report_rejects_empty_limitation_text() -> None:
+    with pytest.raises(m.ReportError, match="limitations"):
+        m.html_report(m.RunMetadata("v", 1, "c", "r"), (), ("",))
 
 
 def test_report_fingerprint_is_byte_sensitive() -> None:
