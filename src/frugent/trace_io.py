@@ -162,6 +162,13 @@ def event_diff(left: bytes, right: bytes) -> tuple[dict[str, object], ...]:
     """Return paired sequence records whose logical payload changed."""
     _, left_events = import_trace(left)
     _, right_events = import_trace(right)
+    return _event_changes(left_events, right_events)
+
+
+def _event_changes(
+    left_events: tuple[dict[str, object], ...],
+    right_events: tuple[dict[str, object], ...],
+) -> tuple[dict[str, object], ...]:
     length = max(len(left_events), len(right_events))
     changes: list[dict[str, object]] = []
     for index in range(length):
@@ -170,3 +177,23 @@ def event_diff(left: bytes, right: bytes) -> tuple[dict[str, object], ...]:
         if before != after:
             changes.append({"sequence": index, "before": before, "after": after})
     return tuple(changes)
+
+
+@dataclass(frozen=True, slots=True)
+class TraceDiff:
+    """Logical header and event changes between two verified streams."""
+
+    header: tuple[TraceHeader, TraceHeader] | None
+    events: tuple[dict[str, object], ...]
+
+    @property
+    def changed(self) -> bool:
+        return self.header is not None or bool(self.events)
+
+
+def trace_diff(left: bytes, right: bytes) -> TraceDiff:
+    """Compare complete traces, including reproducibility metadata."""
+    left_header, left_events = import_trace(left)
+    right_header, right_events = import_trace(right)
+    header_change = None if left_header == right_header else (left_header, right_header)
+    return TraceDiff(header_change, _event_changes(left_events, right_events))

@@ -129,6 +129,28 @@ def test_event_diff_reports_change_and_addition() -> None:
     assert changes[1]["before"] is None
 
 
+def test_trace_diff_includes_reproducibility_header_changes() -> None:
+    left = m.export_trace(m.TraceHeader("left", 1, "c", "p"), ({"kind": "same"},))
+    right = m.export_trace(m.TraceHeader("right", 2, "c", "p"), ({"kind": "same"},))
+    difference = m.trace_diff(left, right)
+    assert difference.changed
+    assert difference.header == (
+        m.TraceHeader("left", 1, "c", "p"),
+        m.TraceHeader("right", 2, "c", "p"),
+    )
+    assert difference.events == ()
+
+
+def test_trace_diff_is_empty_only_for_logically_identical_runs() -> None:
+    header = m.TraceHeader("r", 1, "c", "p")
+    left = m.export_trace(header, ({"kind": "a"},))
+    same = m.export_trace(header, ({"kind": "a"},))
+    changed = m.export_trace(header, ({"kind": "b"},))
+    assert m.trace_diff(left, same) == m.TraceDiff(None, ())
+    assert not m.trace_diff(left, same).changed
+    assert tuple(item["sequence"] for item in m.trace_diff(left, changed).events) == (0,)
+
+
 def test_trace_migration_rejects_boolean_seed() -> None:
     record = {"schema_version": 1, "run": "r", "seed": True, "config": "c", "rate": "x"}
     with pytest.raises(m.TraceIOError, match="seed"):
