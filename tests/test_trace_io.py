@@ -23,6 +23,13 @@ def test_trace_header_rejects_empty_fingerprint() -> None:
         m.TraceHeader("run", 0, "", "rate")
 
 
+def test_trace_header_rejects_ambiguous_runtime_types() -> None:
+    with pytest.raises(m.TraceIOError, match="trace header"):
+        m.TraceHeader("run", True, "cfg", "rate")
+    with pytest.raises(m.TraceIOError, match="trace header"):
+        m.TraceHeader(1, 0, "cfg", "rate")  # type: ignore[arg-type]
+
+
 def test_trace_event_roundtrip_preserves_payload() -> None:
     encoded = m.encode_event(3, {"kind": "route", "model": "small"})
     assert m.decode_event(encoded) == {"sequence": 3, "kind": "route", "model": "small"}
@@ -31,6 +38,11 @@ def test_trace_event_roundtrip_preserves_payload() -> None:
 def test_trace_event_rejects_duplicate_sequence_field() -> None:
     with pytest.raises(m.TraceIOError, match="duplicate sequence"):
         m.encode_event(1, {"sequence": 2})
+
+
+def test_trace_event_rejects_boolean_sequence() -> None:
+    with pytest.raises(m.TraceIOError, match="invalid"):
+        m.encode_event(True, {"kind": "x"})
 
 
 @pytest.mark.parametrize("field", ["run_id", "config_hash", "rate_card_hash"])
@@ -53,6 +65,16 @@ def test_trace_import_inverts_export() -> None:
     restored_header, events = m.import_trace(data)
     assert restored_header == header
     assert events == ({"sequence": 0, "kind": "a"}, {"sequence": 1, "kind": "b"})
+
+
+def test_trace_import_checks_payload_schema_version_not_only_envelope() -> None:
+    from frugent.codec import encode_envelope
+
+    header = m.TraceHeader("r", 1, "c", "p").to_record()
+    header["schema_version"] = 1
+    encoded = encode_envelope("frugent.trace.header", 2, header) + b"\n"
+    with pytest.raises(m.TraceIOError, match="schema version"):
+        m.import_trace(encoded)
 
 
 def test_verify_trace_detects_single_byte_tampering() -> None:
@@ -110,6 +132,12 @@ def test_event_diff_reports_change_and_addition() -> None:
 def test_trace_migration_rejects_boolean_seed() -> None:
     record = {"schema_version": 1, "run": "r", "seed": True, "config": "c", "rate": "x"}
     with pytest.raises(m.TraceIOError, match="seed"):
+        m.migrate_header(record)
+
+
+def test_trace_migration_rejects_boolean_schema_version() -> None:
+    record = {"schema_version": True, "run": "r", "seed": 1, "config": "c", "rate": "x"}
+    with pytest.raises(m.TraceIOError, match="unsupported"):
         m.migrate_header(record)
 
 

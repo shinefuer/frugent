@@ -21,10 +21,17 @@ class TraceHeader:
 
     def __post_init__(self) -> None:
         if (
-            not self.run_id
+            not isinstance(self.run_id, str)
+            or not self.run_id
+            or isinstance(self.seed, bool)
+            or not isinstance(self.seed, int)
             or self.seed < 0
+            or not isinstance(self.config_hash, str)
             or not self.config_hash
+            or not isinstance(self.rate_card_hash, str)
             or not self.rate_card_hash
+            or isinstance(self.schema_version, bool)
+            or not isinstance(self.schema_version, int)
             or self.schema_version != 2
         ):
             raise TraceIOError("trace header: invalid field")
@@ -41,7 +48,13 @@ class TraceHeader:
 
 def encode_event(sequence: int, event: dict[str, object]) -> bytes:
     """Encode one sequence-bearing event with the shared checksum codec."""
-    if sequence < 0 or "sequence" in event:
+    if (
+        isinstance(sequence, bool)
+        or not isinstance(sequence, int)
+        or sequence < 0
+        or not isinstance(event, dict)
+        or "sequence" in event
+    ):
         raise TraceIOError("trace event: invalid or duplicate sequence")
     return encode_envelope("frugent.trace.event", 2, {"sequence": sequence, **event})
 
@@ -55,6 +68,8 @@ def decode_event(data: bytes | str) -> dict[str, object]:
         version != 2
         or not isinstance(payload, dict)
         or not isinstance(payload.get("sequence"), int)
+        or isinstance(payload.get("sequence"), bool)
+        or payload["sequence"] < 0
     ):
         raise TraceIOError("trace event: unsupported version or payload")
     return payload
@@ -101,16 +116,25 @@ def _header_from_record(record: dict[str, object]) -> TraceHeader:
         raise TraceIOError("trace header record: unexpected fields")
     run_id, seed = record["run_id"], record["seed"]
     config_hash, rate_hash = record["config_hash"], record["rate_card_hash"]
+    schema_version = record["schema_version"]
     if not isinstance(run_id, str) or not isinstance(seed, int) or isinstance(seed, bool):
         raise TraceIOError("trace header record: invalid run id or seed")
     if not isinstance(config_hash, str) or not isinstance(rate_hash, str):
         raise TraceIOError("trace header record: invalid fingerprints")
-    return TraceHeader(run_id, seed, config_hash, rate_hash)
+    if (
+        isinstance(schema_version, bool)
+        or not isinstance(schema_version, int)
+        or schema_version != 2
+    ):
+        raise TraceIOError("trace header record: unsupported schema version")
+    return TraceHeader(run_id, seed, config_hash, rate_hash, schema_version)
 
 
 def migrate_header(record: dict[str, object]) -> dict[str, object]:
     """Migrate v1 run/config/rate fields to explicit v2 names."""
     version = record.get("schema_version")
+    if isinstance(version, bool):
+        raise TraceIOError("trace migration: unsupported legacy header")
     if version == 2:
         return _header_from_record(record).to_record()
     expected = {"schema_version", "run", "seed", "config", "rate"}
