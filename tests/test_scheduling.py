@@ -17,6 +17,17 @@ def test_task_rejects_invalid_state(values: tuple[object, ...]) -> None:
         m.Task(*values)  # type: ignore[arg-type]
 
 
+def test_scheduler_rejects_ambiguous_resource_types() -> None:
+    with pytest.raises(m.SchedulingError, match="scheduled task"):
+        m.Task(1, 0, 0, 0)  # type: ignore[arg-type]
+    with pytest.raises(m.SchedulingError, match="task admission"):
+        m.admit_tasks((), True, 0)
+    with pytest.raises(m.SchedulingError, match="fair shares"):
+        m.fair_shares(4, (1, True))
+    with pytest.raises(m.SchedulingError, match="degradation"):
+        m.degradation_decision(m.Task("t", 0, 1, 1), (-1, 1))
+
+
 def test_task_order_is_priority_aware_and_stable() -> None:
     tasks = (m.Task("low", 0, 1, 1), m.Task("big", 2, 9, 1), m.Task("small", 2, 3, 1))
     assert tuple(task.task_id for task in m.task_order(tasks)) == ("small", "big", "low")
@@ -62,6 +73,12 @@ def test_task_budgets_give_higher_priority_no_smaller_share() -> None:
     assert budgets["high"][0] >= budgets["low"][0]
     assert sum(tokens for tokens, _ in budgets.values()) == 10
     assert sum(cost for _, cost in budgets.values()) == 100
+
+
+def test_empty_scheduler_has_no_allocations_or_spend() -> None:
+    assert m.task_budgets((), 10, 20) == {}
+    assert m.schedule((), 10, 20) == ()
+    assert m.schedule_totals(()) == (0, 0)
 
 
 @pytest.mark.parametrize("total", range(0, 30))

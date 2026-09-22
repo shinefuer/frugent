@@ -153,6 +153,8 @@ def batch_command(arguments: argparse.Namespace) -> CommandOutput:
 def budget_command(arguments: argparse.Namespace) -> CommandOutput:
     from frugent.scheduling import Task, schedule, schedule_totals
 
+    if arguments.tasks < 0:
+        raise ValueError("budget: tasks must be non-negative")
     tasks = tuple(
         Task(f"t{index}", index % 3, 20 + index, 30 + index * 2) for index in range(arguments.tasks)
     )

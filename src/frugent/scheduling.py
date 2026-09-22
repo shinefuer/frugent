@@ -18,14 +18,21 @@ class Task:
 
     def __post_init__(self) -> None:
         values = (self.priority, self.tokens, self.cost_micros)
-        if not self.task_id or any(
-            isinstance(value, bool) or not isinstance(value, int) or value < 0 for value in values
+        if (
+            not isinstance(self.task_id, str)
+            or not self.task_id
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value < 0
+                for value in values
+            )
         ):
             raise SchedulingError("scheduled task: invalid identity or resources")
 
 
 def task_order(tasks: tuple[Task, ...]) -> tuple[Task, ...]:
     """Order high priority first, then smaller token estimate and stable id."""
+    if not isinstance(tasks, tuple) or any(not isinstance(task, Task) for task in tasks):
+        raise SchedulingError("task order: expected a task tuple")
     if len({task.task_id for task in tasks}) != len(tasks):
         raise SchedulingError("task order: duplicate task id")
     return tuple(sorted(tasks, key=lambda task: (-task.priority, task.tokens, task.task_id)))
@@ -35,8 +42,7 @@ def admit_tasks(
     tasks: tuple[Task, ...], token_limit: int, cost_limit_micros: int
 ) -> tuple[Task, ...]:
     """Greedily admit deterministic order without overspending either limit."""
-    if token_limit < 0 or cost_limit_micros < 0:
-        raise SchedulingError("task admission: limits must be non-negative")
+    _validate_limits(token_limit, cost_limit_micros, "task admission")
     admitted: list[Task] = []
     remaining_tokens, remaining_cost = token_limit, cost_limit_micros
     for task in task_order(tasks):
@@ -47,9 +53,27 @@ def admit_tasks(
     return tuple(admitted)
 
 
+def _validate_limits(token_limit: int, cost_limit_micros: int, operation: str) -> None:
+    if any(
+        isinstance(value, bool) or not isinstance(value, int) or value < 0
+        for value in (token_limit, cost_limit_micros)
+    ):
+        raise SchedulingError(f"{operation}: limits must be non-negative integers")
+
+
 def fair_shares(total: int, weights: tuple[int, ...]) -> tuple[int, ...]:
     """Allocate integer units by weight with stable largest remainders."""
-    if total < 0 or not weights or any(weight <= 0 for weight in weights):
+    if (
+        isinstance(total, bool)
+        or not isinstance(total, int)
+        or total < 0
+        or not isinstance(weights, tuple)
+        or not weights
+        or any(
+            isinstance(weight, bool) or not isinstance(weight, int) or weight <= 0
+            for weight in weights
+        )
+    ):
         raise SchedulingError("fair shares: invalid total or weights")
     weight_sum = sum(weights)
     base = [total * weight // weight_sum for weight in weights]
@@ -65,7 +89,10 @@ def task_budgets(
     tasks: tuple[Task, ...], token_limit: int, cost_limit_micros: int
 ) -> dict[str, tuple[int, int]]:
     """Allocate token and cost shares using priority+1 as fair weight."""
+    _validate_limits(token_limit, cost_limit_micros, "task budgets")
     ordered = task_order(tasks)
+    if not ordered:
+        return {}
     weights = tuple(task.priority + 1 for task in ordered)
     token_shares = fair_shares(token_limit, weights)
     cost_shares = fair_shares(cost_limit_micros, weights)
@@ -77,7 +104,10 @@ def task_budgets(
 
 def degradation_decision(task: Task, allocation: tuple[int, int]) -> str:
     """Apply downgrade, compression, cache-only, then defer thresholds."""
+    if not isinstance(allocation, tuple) or len(allocation) != 2:
+        raise SchedulingError("degradation: expected token and cost allocation")
     tokens, cost = allocation
+    _validate_limits(tokens, cost, "degradation")
     if task.tokens <= tokens and task.cost_micros <= cost:
         return "full"
     if task.tokens <= tokens and task.cost_micros <= cost * 2:
