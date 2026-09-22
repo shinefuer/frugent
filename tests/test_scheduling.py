@@ -122,6 +122,43 @@ def test_schedule_totals_reconcile_allocated_limits() -> None:
     assert m.schedule_totals(decisions) == (11, 17)
 
 
+def test_realized_spend_applies_declared_degradation_math() -> None:
+    task = m.Task("t", 1, 10, 10)
+    assert m.realized_spend(task, ("t", "full", 10, 10)) == (10, 10)
+    assert m.realized_spend(task, ("t", "downgrade", 10, 5)) == (10, 5)
+    assert m.realized_spend(task, ("t", "compress", 5, 5)) == (5, 5)
+    assert m.realized_spend(task, ("t", "cache_only", 0, 0)) == (0, 0)
+
+
+def test_realized_spend_rejects_forged_stage_or_identity() -> None:
+    task = m.Task("t", 1, 10, 10)
+    with pytest.raises(m.SchedulingError, match="identity"):
+        m.realized_spend(task, ("other", "full", 10, 10))
+    with pytest.raises(m.SchedulingError, match="stage"):
+        m.realized_spend(task, ("t", "full", 5, 5))
+
+
+def test_random_schedule_spend_never_exceeds_hard_limits() -> None:
+    import random
+
+    generator = random.Random(904)
+    for run in range(200):
+        tasks = tuple(
+            m.Task(
+                f"{run}-{index}",
+                generator.randrange(5),
+                generator.randrange(40),
+                generator.randrange(100),
+            )
+            for index in range(generator.randrange(1, 15))
+        )
+        token_limit, cost_limit = generator.randrange(200), generator.randrange(500)
+        decisions = m.schedule(tasks, token_limit, cost_limit)
+        spent_tokens, spent_cost = m.schedule_spend_totals(tasks, decisions)
+        assert spent_tokens <= token_limit
+        assert spent_cost <= cost_limit
+
+
 def test_fair_shares_conserve_total_with_subunit_rounding_error() -> None:
     import random
 

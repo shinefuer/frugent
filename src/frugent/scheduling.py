@@ -139,3 +139,37 @@ def schedule_totals(decisions: tuple[tuple[str, str, int, int], ...]) -> tuple[i
     if len({task_id for task_id, _, _, _ in decisions}) != len(decisions):
         raise SchedulingError("schedule totals: duplicate task id")
     return sum(tokens for _, _, tokens, _ in decisions), sum(cost for _, _, _, cost in decisions)
+
+
+def realized_spend(task: Task, decision: tuple[str, str, int, int]) -> tuple[int, int]:
+    """Translate one degradation decision into bounded simulated spend."""
+    task_id, stage, allocated_tokens, allocated_cost = decision
+    if task_id != task.task_id:
+        raise SchedulingError("schedule spend: task identity mismatch")
+    expected_stage = degradation_decision(task, (allocated_tokens, allocated_cost))
+    if stage != expected_stage:
+        raise SchedulingError("schedule spend: degradation stage mismatch")
+    if stage == "full":
+        spend = (task.tokens, task.cost_micros)
+    elif stage == "downgrade":
+        spend = (task.tokens, (task.cost_micros + 1) // 2)
+    elif stage == "compress":
+        spend = ((task.tokens + 1) // 2, (task.cost_micros + 1) // 2)
+    else:
+        spend = (0, 0)
+    if spend[0] > allocated_tokens or spend[1] > allocated_cost:
+        raise SchedulingError("schedule spend: degradation exceeds allocation")
+    return spend
+
+
+def schedule_spend_totals(
+    tasks: tuple[Task, ...], decisions: tuple[tuple[str, str, int, int], ...]
+) -> tuple[int, int]:
+    """Roll up actual simulated spend while retaining unused allocation."""
+    ordered = task_order(tasks)
+    if len(ordered) != len(decisions):
+        raise SchedulingError("schedule spend: task and decision counts differ")
+    spends = tuple(
+        realized_spend(task, decision) for task, decision in zip(ordered, decisions, strict=True)
+    )
+    return sum(tokens for tokens, _ in spends), sum(cost for _, cost in spends)
