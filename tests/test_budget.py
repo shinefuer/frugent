@@ -57,6 +57,16 @@ def test_release_inverts_matching_reservation() -> None:
     assert m.release(reserved, 30, 40) == base
 
 
+def test_budget_operations_reject_boolean_and_noninteger_amounts() -> None:
+    budget = m.Budget(10, 20, 3, 4)
+    with pytest.raises(m.BudgetError, match="admission"):
+        m.can_admit(budget, True, 1)
+    with pytest.raises(m.BudgetError, match="release"):
+        m.release(budget, 1.5, 1)  # type: ignore[arg-type]
+    with pytest.raises(m.BudgetError, match="estimate cap"):
+        m.capped_estimate(budget, 1, False)
+
+
 @pytest.mark.parametrize("amounts", [(31, 0), (0, 41), (-1, 0)])
 def test_release_rejects_impossible_refund(amounts: tuple[int, int]) -> None:
     with pytest.raises(m.BudgetError, match="release"):
@@ -117,6 +127,11 @@ def test_rollup_charges_only_child_spend() -> None:
 def test_rollup_cannot_hide_parent_overspend() -> None:
     with pytest.raises(m.BudgetError, match="reservation"):
         m.rollup(m.Budget(4, 100), (m.Budget(10, 10, 5, 1),))
+
+
+def test_rollup_rejects_nonbudget_children_before_accounting() -> None:
+    with pytest.raises(m.BudgetError, match="children"):
+        m.rollup(m.Budget(10, 10), (object(),))  # type: ignore[arg-type]
 
 
 def test_random_reservations_release_to_identical_budget() -> None:

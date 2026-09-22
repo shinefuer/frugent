@@ -41,12 +41,16 @@ class Budget:
 
 def can_admit(budget: Budget, tokens: int, cost_micros: int) -> bool:
     """Return whether a reservation fits both hard limits."""
+    _validate_amounts(tokens, cost_micros, "admission")
+    return tokens <= budget.remaining_tokens and cost_micros <= budget.remaining_cost_micros
+
+
+def _validate_amounts(tokens: int, cost_micros: int, operation: str) -> None:
     if any(
         isinstance(value, bool) or not isinstance(value, int) or value < 0
         for value in (tokens, cost_micros)
     ):
-        raise BudgetError("admission: estimates must be non-negative integers")
-    return tokens <= budget.remaining_tokens and cost_micros <= budget.remaining_cost_micros
+        raise BudgetError(f"{operation}: values must be non-negative integers")
 
 
 def reserve(budget: Budget, tokens: int, cost_micros: int) -> Budget:
@@ -63,8 +67,7 @@ def reserve(budget: Budget, tokens: int, cost_micros: int) -> Budget:
 
 def release(budget: Budget, tokens: int, cost_micros: int) -> Budget:
     """Return unused reserved resources without crossing zero spend."""
-    if any(value < 0 for value in (tokens, cost_micros)):
-        raise BudgetError("release: values must be non-negative")
+    _validate_amounts(tokens, cost_micros, "release")
     if tokens > budget.tokens_spent or cost_micros > budget.cost_spent_micros:
         raise BudgetError("release: cannot release more than spent")
     return Budget(
@@ -107,13 +110,14 @@ def partition(budget: Budget, shares: tuple[int, ...]) -> tuple[Budget, ...]:
 
 def capped_estimate(budget: Budget, tokens: int, cost_micros: int) -> tuple[int, int]:
     """Clamp optimistic work estimates to resources that remain."""
-    if tokens < 0 or cost_micros < 0:
-        raise BudgetError("estimate cap: estimates must be non-negative")
+    _validate_amounts(tokens, cost_micros, "estimate cap")
     return min(tokens, budget.remaining_tokens), min(cost_micros, budget.remaining_cost_micros)
 
 
 def rollup(parent: Budget, children: tuple[Budget, ...]) -> Budget:
     """Charge a parent for child spends while enforcing parent limits."""
+    if not isinstance(children, tuple) or any(not isinstance(child, Budget) for child in children):
+        raise BudgetError("budget rollup: children must be a budget tuple")
     tokens = sum(child.tokens_spent for child in children)
     cost = sum(child.cost_spent_micros for child in children)
     return reserve(parent, tokens, cost)
