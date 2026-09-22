@@ -65,6 +65,27 @@ def reserve(budget: Budget, tokens: int, cost_micros: int) -> Budget:
     )
 
 
+def _reservation_total(
+    reservations: tuple[tuple[int, int], ...], operation: str
+) -> tuple[int, int]:
+    if not isinstance(reservations, tuple) or any(
+        not isinstance(item, tuple) or len(item) != 2 for item in reservations
+    ):
+        raise BudgetError(f"{operation}: expected a tuple of token and cost pairs")
+    for tokens, cost in reservations:
+        _validate_amounts(tokens, cost, operation)
+    return (
+        sum(tokens for tokens, _ in reservations),
+        sum(cost for _, cost in reservations),
+    )
+
+
+def reserve_many(budget: Budget, reservations: tuple[tuple[int, int], ...]) -> Budget:
+    """Atomically reserve a measured group or reject it without partial spend."""
+    tokens, cost = _reservation_total(reservations, "group reservation")
+    return reserve(budget, tokens, cost)
+
+
 def release(budget: Budget, tokens: int, cost_micros: int) -> Budget:
     """Return unused reserved resources without crossing zero spend."""
     _validate_amounts(tokens, cost_micros, "release")
@@ -76,6 +97,12 @@ def release(budget: Budget, tokens: int, cost_micros: int) -> Budget:
         budget.tokens_spent - tokens,
         budget.cost_spent_micros - cost_micros,
     )
+
+
+def release_many(budget: Budget, reservations: tuple[tuple[int, int], ...]) -> Budget:
+    """Atomically release the exact aggregate of a reservation group."""
+    tokens, cost = _reservation_total(reservations, "group release")
+    return release(budget, tokens, cost)
 
 
 DEGRADATION_LADDER = ("full", "downgrade", "compress", "cache_only", "defer")

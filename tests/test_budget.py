@@ -51,6 +51,26 @@ def test_reserve_rejects_without_partial_spend() -> None:
     assert original.tokens_spent == 9
 
 
+def test_group_reservation_is_atomic_and_release_is_its_inverse() -> None:
+    original = m.Budget(20, 30)
+    group = ((3, 4), (5, 6), (0, 2))
+    reserved = m.reserve_many(original, group)
+    assert reserved == m.Budget(20, 30, 8, 12)
+    assert m.release_many(reserved, group) == original
+
+
+def test_group_reservation_rejects_whole_overspend() -> None:
+    original = m.Budget(10, 10, 2, 1)
+    with pytest.raises(m.BudgetError, match="exceeds remaining"):
+        m.reserve_many(original, ((4, 2), (5, 2)))
+    assert original == m.Budget(10, 10, 2, 1)
+
+
+def test_group_reservation_validates_every_pair_before_accounting() -> None:
+    with pytest.raises(m.BudgetError, match="group reservation"):
+        m.reserve_many(m.Budget(10, 10), ((1, 1), (True, 2)))
+
+
 def test_release_inverts_matching_reservation() -> None:
     base = m.Budget(100, 100)
     reserved = m.reserve(base, 30, 40)
