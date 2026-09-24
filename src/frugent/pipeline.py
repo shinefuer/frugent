@@ -155,6 +155,8 @@ class StackStages:
     """Measured stage counts for one end-to-end synthetic stack run."""
 
     requests: int
+    route_instances: int
+    routed_prefix_tokens: int
     cache_hits: int
     cached_tokens: int
     batches: int
@@ -164,6 +166,8 @@ class StackStages:
     def __post_init__(self) -> None:
         values = (
             self.requests,
+            self.route_instances,
+            self.routed_prefix_tokens,
             self.cache_hits,
             self.cached_tokens,
             self.batches,
@@ -177,8 +181,38 @@ class StackStages:
             and self.executions <= self.requests
             and self.admitted <= self.requests
             and self.batches <= self.requests
+            and self.route_instances <= self.requests
         ):
             raise PipelineError("stack stages: inconsistent measured counts")
+
+
+def route_measurements(config: PipelineConfig) -> tuple[tuple[str, ...], int]:
+    """Measure fixed-snapshot prefix affinity against planted cache placements."""
+    from frugent.prompt_router import (
+        greedy_fixed_assignment,
+        routed_hit_tokens,
+        seeded_instances,
+    )
+    from frugent.workloads import generate_corpus
+
+    tasks = generate_corpus(config.seed, config.tasks)
+    groups = tuple(sorted({task.prefix_group for task in tasks}))
+    instance_count = min(2, len(groups))
+    names = tuple(f"cache-{index}" for index in range(instance_count))
+    placements: dict[str, tuple[tuple[str, ...], ...]] = {}
+    for index, name in enumerate(names):
+        placements[name] = tuple(
+            (f"workspace:{group}", "policy:offline")
+            for group_index, group in enumerate(groups)
+            if group_index % instance_count == index
+        )
+    instances = seeded_instances(placements)
+    requests = tuple(
+        (f"workspace:{task.prefix_group}", "policy:offline", f"request:{task.task_id}")
+        for task in tasks
+    )
+    assignments = greedy_fixed_assignment(instances, requests)
+    return assignments, routed_hit_tokens(instances, assignments, requests)
 
 
 def stack_stages(config: PipelineConfig) -> StackStages:
@@ -195,8 +229,11 @@ def stack_stages(config: PipelineConfig) -> StackStages:
     measured_batches = batch_metrics(requests, batches)
     measurements = stack_measurements(config)
     admitted = admit_measurements(measurements, config.token_budget, config.cost_budget_micros)
+    assignments, routed_tokens = route_measurements(config)
     return StackStages(
         len(measurements),
+        len(set(assignments)),
+        routed_tokens,
         sum(item.cached_tokens > 0 for item in measurements),
         sum(item.cached_tokens for item in measurements),
         measured_batches.batches,

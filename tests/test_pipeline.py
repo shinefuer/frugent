@@ -59,11 +59,22 @@ def test_stack_stage_metrics_come_from_actual_cache_and_batch_plans() -> None:
     stages = m.stack_stages(config)
     run = m.stack_run(config)
     assert stages.requests == 20
+    assert stages.route_instances == 2
+    assert stages.routed_prefix_tokens == 2 * stages.requests
     assert 0 < stages.cache_hits < stages.requests
     assert stages.cached_tokens == run.cached_tokens
     assert 0 < stages.batches < stages.requests
     assert stages.executions == stages.requests
     assert stages.admitted == run.completed
+
+
+def test_pipeline_prefix_routing_recovers_planted_affinity() -> None:
+    config = m.PipelineConfig(seed=17, tasks=15)
+    first_assignments, first_hits = m.route_measurements(config)
+    second_assignments, second_hits = m.route_measurements(config)
+    assert first_assignments == second_assignments
+    assert first_hits == second_hits == 2 * config.tasks
+    assert 1 <= len(set(first_assignments)) <= 2
 
 
 def test_batch_discount_is_derived_from_batch_membership() -> None:
