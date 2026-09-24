@@ -54,6 +54,36 @@ def test_stack_accounts_only_observed_cache_hits() -> None:
     assert run.completed == 20
 
 
+def test_stack_stage_metrics_come_from_actual_cache_and_batch_plans() -> None:
+    config = m.PipelineConfig(seed=8, tasks=20)
+    stages = m.stack_stages(config)
+    run = m.stack_run(config)
+    assert stages.requests == 20
+    assert 0 < stages.cache_hits < stages.requests
+    assert stages.cached_tokens == run.cached_tokens
+    assert 0 < stages.batches < stages.requests
+    assert stages.executions == stages.requests
+    assert stages.admitted == run.completed
+
+
+def test_batch_discount_is_derived_from_batch_membership() -> None:
+    from frugent.ratecard import demo_rate_card, price_usage
+    from frugent.types import Usage
+
+    config = m.PipelineConfig(seed=5, tasks=3)
+    measured = m.stack_measurements(config)
+    rate = demo_rate_card().model_rate("scripted-medium")
+    expected = tuple(
+        price_usage(
+            rate,
+            Usage(item.prompt_tokens, item.completion_tokens, item.cached_tokens),
+            batched=True,
+        ).total_micros
+        for item in measured
+    )
+    assert tuple(item.cost_micros for item in measured) == expected
+
+
 def test_comparison_uses_identical_completion_denominator() -> None:
     comparison = m.compare(m.PipelineConfig(seed=14, tasks=16))
     assert comparison.baseline.completed == comparison.stack.completed == 16

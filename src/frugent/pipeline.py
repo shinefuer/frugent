@@ -112,6 +112,14 @@ def stack_measurements(config: PipelineConfig) -> tuple[TaskMeasurement, ...]:
     from frugent.workloads import generate_corpus
 
     tasks = generate_corpus(config.seed, config.tasks)
+    from frugent.batching import BatchRequest, micro_batches
+
+    batch_requests = tuple(
+        BatchRequest(task.task_id, task.prompt.encode(), index * 2)
+        for index, task in enumerate(tasks)
+    )
+    batches = micro_batches(batch_requests, window_ms=4, max_size=3)
+    batched_ids = {request.request_id for batch in batches if len(batch) > 1 for request in batch}
     tokenizer = HeuristicTokenizer()
     prompts = tuple(tokenizer.count(task.prompt) for task in tasks)
     times = tuple(index * 10 for index in range(len(tasks)))
@@ -134,11 +142,66 @@ def stack_measurements(config: PipelineConfig) -> tuple[TaskMeasurement, ...]:
             price_usage(
                 rate,
                 Usage(prompt, 4 * len(task.solution_path), hit),
-                batched=index % 3 != 0,
+                batched=task.task_id in batched_ids,
             ).total_micros,
             22 + 8 * (len(task.solution_path) - 2) + index % 3,
         )
         for index, (task, prompt, hit) in enumerate(zip(tasks, prompts, cached, strict=True))
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class StackStages:
+    """Measured stage counts for one end-to-end synthetic stack run."""
+
+    requests: int
+    cache_hits: int
+    cached_tokens: int
+    batches: int
+    executions: int
+    admitted: int
+
+    def __post_init__(self) -> None:
+        values = (
+            self.requests,
+            self.cache_hits,
+            self.cached_tokens,
+            self.batches,
+            self.executions,
+            self.admitted,
+        )
+        if any(
+            isinstance(value, bool) or not isinstance(value, int) or value < 0 for value in values
+        ) or not (
+            self.cache_hits <= self.requests
+            and self.executions <= self.requests
+            and self.admitted <= self.requests
+            and self.batches <= self.requests
+        ):
+            raise PipelineError("stack stages: inconsistent measured counts")
+
+
+def stack_stages(config: PipelineConfig) -> StackStages:
+    """Run cache, micro-batch, and hard-budget stages over one corpus."""
+    from frugent.batching import BatchRequest, batch_metrics, micro_batches
+    from frugent.workloads import generate_corpus
+
+    tasks = generate_corpus(config.seed, config.tasks)
+    requests = tuple(
+        BatchRequest(task.task_id, task.prompt.encode(), index * 2)
+        for index, task in enumerate(tasks)
+    )
+    batches = micro_batches(requests, window_ms=4, max_size=3)
+    measured_batches = batch_metrics(requests, batches)
+    measurements = stack_measurements(config)
+    admitted = admit_measurements(measurements, config.token_budget, config.cost_budget_micros)
+    return StackStages(
+        len(measurements),
+        sum(item.cached_tokens > 0 for item in measurements),
+        sum(item.cached_tokens for item in measurements),
+        measured_batches.batches,
+        measured_batches.executions,
+        len(admitted),
     )
 
 
