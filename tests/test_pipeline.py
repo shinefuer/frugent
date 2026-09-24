@@ -30,6 +30,24 @@ def test_baseline_measures_every_generated_task() -> None:
     assert len(run.latencies_ms) == 7
 
 
+def test_per_task_measurements_conserve_policy_rollups() -> None:
+    config = m.PipelineConfig(seed=4, tasks=7)
+    baseline = m.baseline_measurements(config)
+    stack = m.stack_measurements(config)
+    assert tuple(item.task_id for item in baseline) == tuple(item.task_id for item in stack)
+    assert len(set(item.task_id for item in stack)) == config.tasks
+    assert sum(item.prompt_tokens for item in baseline) == m.baseline_run(config).prompt_tokens
+    assert sum(item.cached_tokens for item in stack) == m.stack_run(config).cached_tokens
+    assert sum(item.cost_micros for item in stack) == m.stack_run(config).cost_micros
+
+
+def test_task_measurement_counts_prompt_and_completion_budget() -> None:
+    measured = m.TaskMeasurement("t", 10, 4, 3, 8, 2)
+    assert measured.total_tokens == 14
+    with pytest.raises(m.PipelineError, match="task measurement"):
+        m.TaskMeasurement("t", 2, 1, 3, 4, 5)
+
+
 def test_stack_accounts_only_observed_cache_hits() -> None:
     run = m.stack_run(m.PipelineConfig(seed=8, tasks=20))
     assert 0 < run.cached_tokens < run.prompt_tokens

@@ -43,8 +43,43 @@ class PolicyRun:
             raise PipelineError("policy run: cache and latency measurements are inconsistent")
 
 
-def baseline_run(config: PipelineConfig) -> PolicyRun:
-    """Execute accounting for one fictional premium request per generated task."""
+@dataclass(frozen=True, slots=True)
+class TaskMeasurement:
+    """Measured integer accounting for one planted synthetic task."""
+
+    task_id: str
+    prompt_tokens: int
+    completion_tokens: int
+    cached_tokens: int
+    cost_micros: int
+    latency_ms: int
+
+    def __post_init__(self) -> None:
+        values = (
+            self.prompt_tokens,
+            self.completion_tokens,
+            self.cached_tokens,
+            self.cost_micros,
+            self.latency_ms,
+        )
+        if (
+            not isinstance(self.task_id, str)
+            or not self.task_id
+            or any(
+                isinstance(value, bool) or not isinstance(value, int) or value < 0
+                for value in values
+            )
+            or self.cached_tokens > self.prompt_tokens
+        ):
+            raise PipelineError("task measurement: invalid identity, tokens, cost, or latency")
+
+    @property
+    def total_tokens(self) -> int:
+        return self.prompt_tokens + self.completion_tokens
+
+
+def baseline_measurements(config: PipelineConfig) -> tuple[TaskMeasurement, ...]:
+    """Measure one fictional premium request per generated task."""
     from frugent.ratecard import demo_rate_card, price_usage
     from frugent.tokenizer import HeuristicTokenizer
     from frugent.types import Usage
@@ -55,16 +90,21 @@ def baseline_run(config: PipelineConfig) -> PolicyRun:
     rate = demo_rate_card().model_rate("scripted-large")
     prompt_tokens = tuple(tokenizer.count(task.prompt) for task in tasks)
     completion_tokens = tuple(4 * len(task.solution_path) for task in tasks)
-    costs = tuple(
-        price_usage(rate, Usage(prompt, completion)).total_micros
-        for prompt, completion in zip(prompt_tokens, completion_tokens, strict=True)
+    return tuple(
+        TaskMeasurement(
+            task.task_id,
+            prompt,
+            completion,
+            0,
+            price_usage(rate, Usage(prompt, completion)).total_micros,
+            35 + 12 * (len(task.solution_path) - 2),
+        )
+        for task, prompt, completion in zip(tasks, prompt_tokens, completion_tokens, strict=True)
     )
-    latencies = tuple(35 + 12 * (len(task.solution_path) - 2) for task in tasks)
-    return PolicyRun("baseline-premium", len(tasks), sum(prompt_tokens), 0, sum(costs), latencies)
 
 
-def stack_run(config: PipelineConfig) -> PolicyRun:
-    """Measure runtime mechanics over the identical planted task corpus."""
+def stack_measurements(config: PipelineConfig) -> tuple[TaskMeasurement, ...]:
+    """Measure stack cache, batch, cost, and latency effects per task."""
     from frugent.prompt_cache import CachePolicy, replay_trace
     from frugent.ratecard import demo_rate_card, price_usage
     from frugent.tokenizer import HeuristicTokenizer
@@ -85,17 +125,53 @@ def stack_run(config: PipelineConfig) -> PolicyRun:
         for prompt, (hit, hit_tokens) in zip(prompts, cache_outcomes, strict=True)
     )
     rate = demo_rate_card().model_rate("scripted-medium")
-    costs = tuple(
-        price_usage(
-            rate, Usage(prompt, 4 * len(task.solution_path), hit), batched=index % 3 != 0
-        ).total_micros
+    return tuple(
+        TaskMeasurement(
+            task.task_id,
+            prompt,
+            4 * len(task.solution_path),
+            hit,
+            price_usage(
+                rate,
+                Usage(prompt, 4 * len(task.solution_path), hit),
+                batched=index % 3 != 0,
+            ).total_micros,
+            22 + 8 * (len(task.solution_path) - 2) + index % 3,
+        )
         for index, (task, prompt, hit) in enumerate(zip(tasks, prompts, cached, strict=True))
     )
-    latencies = tuple(
-        22 + 8 * (len(task.solution_path) - 2) + index % 3 for index, task in enumerate(tasks)
+
+
+def _policy_run(policy: str, measurements: tuple[TaskMeasurement, ...]) -> PolicyRun:
+    return PolicyRun(
+        policy,
+        len(measurements),
+        sum(item.prompt_tokens for item in measurements),
+        sum(item.cached_tokens for item in measurements),
+        sum(item.cost_micros for item in measurements),
+        tuple(item.latency_ms for item in measurements),
     )
-    completed = len(tasks) if sum(costs) <= config.cost_budget_micros else 0
-    return PolicyRun("frugent-stack", completed, sum(prompts), sum(cached), sum(costs), latencies)
+
+
+def baseline_run(config: PipelineConfig) -> PolicyRun:
+    """Aggregate per-task baseline accounting."""
+    return _policy_run("baseline-premium", baseline_measurements(config))
+
+
+def stack_run(config: PipelineConfig) -> PolicyRun:
+    """Aggregate stack accounting over the planted task corpus."""
+    measurements = stack_measurements(config)
+    run = _policy_run("frugent-stack", measurements)
+    if run.cost_micros <= config.cost_budget_micros:
+        return run
+    return PolicyRun(
+        run.policy,
+        0,
+        run.prompt_tokens,
+        run.cached_tokens,
+        run.cost_micros,
+        run.latencies_ms,
+    )
 
 
 @dataclass(frozen=True, slots=True)
