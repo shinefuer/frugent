@@ -67,6 +67,47 @@ def test_stack_never_exceeds_generated_task_count() -> None:
         assert m.stack_run(config).completed <= config.tasks
 
 
+def test_stack_admits_a_deterministic_partial_prefix_under_tight_budgets() -> None:
+    base = m.PipelineConfig(seed=3, tasks=8)
+    first = m.stack_measurements(base)[0]
+    config = m.PipelineConfig(
+        seed=3,
+        tasks=8,
+        token_budget=first.total_tokens,
+        cost_budget_micros=first.cost_micros,
+    )
+    admitted = m.admit_measurements(
+        m.stack_measurements(config), config.token_budget, config.cost_budget_micros
+    )
+    run = m.stack_run(config)
+    assert admitted == (first,)
+    assert run.completed == 1
+    assert sum(item.total_tokens for item in admitted) <= config.token_budget
+    assert run.cost_micros <= config.cost_budget_micros
+
+
+def test_pipeline_reports_zero_completion_without_undefined_percentiles() -> None:
+    config = m.PipelineConfig(seed=1, tasks=3, token_budget=1, cost_budget_micros=1)
+    artifacts = m.run_pipeline(config)
+    assert artifacts.comparison.stack.completed == 0
+    stack_row = m.report_rows(artifacts.comparison)[1]
+    assert (stack_row.p50_ms, stack_row.p95_ms) == (0.0, 0.0)
+    assert "frugent-stack" in artifacts.markdown
+
+
+def test_random_pipeline_admissions_never_cross_hard_budgets() -> None:
+    import random
+
+    generator = random.Random(711)
+    for seed in range(40):
+        token_budget = generator.randrange(1, 300)
+        cost_budget = generator.randrange(1, 2_000)
+        config = m.PipelineConfig(seed, 12, token_budget, cost_budget)
+        admitted = m.admit_measurements(m.stack_measurements(config), token_budget, cost_budget)
+        assert sum(item.total_tokens for item in admitted) <= token_budget
+        assert sum(item.cost_micros for item in admitted) <= cost_budget
+
+
 def test_report_rows_use_net_prompt_tokens_and_measured_latency() -> None:
     comparison = m.compare(m.PipelineConfig(seed=2, tasks=9))
     baseline, stack = m.report_rows(comparison)

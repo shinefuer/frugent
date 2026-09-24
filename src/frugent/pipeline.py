@@ -153,6 +153,21 @@ def _policy_run(policy: str, measurements: tuple[TaskMeasurement, ...]) -> Polic
     )
 
 
+def admit_measurements(
+    measurements: tuple[TaskMeasurement, ...], token_budget: int, cost_budget_micros: int
+) -> tuple[TaskMeasurement, ...]:
+    """Admit seeded task order without crossing either hard session budget."""
+    from frugent.budget import Budget, can_admit, reserve
+
+    budget = Budget(token_budget, cost_budget_micros)
+    admitted: list[TaskMeasurement] = []
+    for measurement in measurements:
+        if can_admit(budget, measurement.total_tokens, measurement.cost_micros):
+            budget = reserve(budget, measurement.total_tokens, measurement.cost_micros)
+            admitted.append(measurement)
+    return tuple(admitted)
+
+
 def baseline_run(config: PipelineConfig) -> PolicyRun:
     """Aggregate per-task baseline accounting."""
     return _policy_run("baseline-premium", baseline_measurements(config))
@@ -160,18 +175,10 @@ def baseline_run(config: PipelineConfig) -> PolicyRun:
 
 def stack_run(config: PipelineConfig) -> PolicyRun:
     """Aggregate stack accounting over the planted task corpus."""
-    measurements = stack_measurements(config)
-    run = _policy_run("frugent-stack", measurements)
-    if run.cost_micros <= config.cost_budget_micros:
-        return run
-    return PolicyRun(
-        run.policy,
-        0,
-        run.prompt_tokens,
-        run.cached_tokens,
-        run.cost_micros,
-        run.latencies_ms,
+    measurements = admit_measurements(
+        stack_measurements(config), config.token_budget, config.cost_budget_micros
     )
+    return _policy_run("frugent-stack", measurements)
 
 
 @dataclass(frozen=True, slots=True)
@@ -204,8 +211,8 @@ def report_rows(comparison: Comparison) -> tuple[MetricRow, ...]:
             run.completed,
             run.prompt_tokens - run.cached_tokens,
             run.cost_micros,
-            quantile(values, 0.5),
-            quantile(values, 0.95),
+            0.0 if not values else quantile(values, 0.5),
+            0.0 if not values else quantile(values, 0.95),
         )
 
     return row(comparison.baseline), row(comparison.stack)
