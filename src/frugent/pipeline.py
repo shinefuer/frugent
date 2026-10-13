@@ -336,6 +336,7 @@ def trace_bytes(config: PipelineConfig, comparison: Comparison) -> bytes:
     )
     events = tuple(
         {
+            "kind": "policy",
             "policy": run.policy,
             "completed": run.completed,
             "prompt_tokens": run.prompt_tokens,
@@ -344,7 +345,19 @@ def trace_bytes(config: PipelineConfig, comparison: Comparison) -> bytes:
         }
         for run in (comparison.baseline, comparison.stack)
     )
-    return export_trace(header, events)
+    stages = stack_stages(config)
+    stage_event = {
+        "kind": "stack_stages",
+        "requests": stages.requests,
+        "route_instances": stages.route_instances,
+        "routed_prefix_tokens": stages.routed_prefix_tokens,
+        "cache_hits": stages.cache_hits,
+        "cached_tokens": stages.cached_tokens,
+        "batches": stages.batches,
+        "executions": stages.executions,
+        "admitted": stages.admitted,
+    }
+    return export_trace(header, (*events, stage_event))
 
 
 @dataclass(frozen=True, slots=True)

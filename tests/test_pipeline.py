@@ -163,7 +163,10 @@ def test_pipeline_trace_roundtrips_with_contiguous_events() -> None:
     config = m.PipelineConfig(seed=5, tasks=5)
     header, events = import_trace(m.trace_bytes(config, m.compare(config)))
     assert header.seed == 5
-    assert tuple(event["sequence"] for event in events) == (0, 1)
+    assert tuple(event["sequence"] for event in events) == (0, 1, 2)
+    assert tuple(event["kind"] for event in events) == ("policy", "policy", "stack_stages")
+    assert events[-1]["requests"] == config.tasks
+    assert events[-1]["admitted"] == m.stack_run(config).completed
 
 
 def test_pipeline_artifacts_are_byte_deterministic() -> None:

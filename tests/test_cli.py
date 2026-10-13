@@ -63,7 +63,7 @@ def test_commands_return_useful_error_codes_for_invalid_limits(capsys: object) -
 def test_trace_command_reports_verified_stream_metadata(capsys: object) -> None:
     assert m.main(["trace", "--seed", "6", "--tasks", "3"]) == 0
     output = json.loads(capsys.readouterr().out)
-    assert output["run_id"] == "synthetic-6" and output["events"] == 2
+    assert output["run_id"] == "synthetic-6" and output["events"] == 3
     assert output["fingerprint"].startswith("sha256:")
 
 
