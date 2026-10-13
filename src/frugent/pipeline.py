@@ -373,6 +373,7 @@ def run_pipeline(config: PipelineConfig) -> PipelineArtifacts:
     from frugent.config import RuntimeConfig
     from frugent.ratecard import demo_rate_card, rate_card_fingerprint
     from frugent.reports import (
+        MeasuredFact,
         RunMetadata,
         coverage_limitations,
         html_report,
@@ -395,9 +396,18 @@ def run_pipeline(config: PipelineConfig) -> PipelineArtifacts:
         used_real_endpoint=False, used_external_data=False, model_evaluated=False
     )
     rows = report_rows(comparison)
+    stages = stack_stages(config)
+    facts = (
+        MeasuredFact("routed prefix tokens", stages.routed_prefix_tokens, "tokens"),
+        MeasuredFact("prompt cache hits", stages.cache_hits, "requests"),
+        MeasuredFact("cached prompt tokens", stages.cached_tokens, "tokens"),
+        MeasuredFact("micro batches", stages.batches, "batches"),
+        MeasuredFact("model executions", stages.executions, "executions"),
+        MeasuredFact("budget admissions", stages.admitted, "tasks"),
+    )
     return PipelineArtifacts(
         comparison,
         trace_bytes(config, comparison),
-        markdown_report(metadata, rows, limitations),
-        html_report(metadata, rows, limitations),
+        markdown_report(metadata, rows, limitations, facts),
+        html_report(metadata, rows, limitations, facts),
     )

@@ -66,6 +66,23 @@ def test_markdown_report_discloses_synthetic_scope() -> None:
     assert "offline only" in report
 
 
+def test_reports_render_measured_mechanic_facts_with_units() -> None:
+    metadata = m.RunMetadata("v", 1, "cfg", "rate")
+    rows = (m.MetricRow("stack", 1, 2, 3, 4, 5),)
+    facts = (m.MeasuredFact("cache <hits>", 7, "requests"),)
+    markdown = m.markdown_report(metadata, rows, ("offline",), facts)
+    html = m.html_report(metadata, rows, ("offline",), facts)
+    assert "cache <hits>: `7 requests`" in markdown
+    assert "cache &lt;hits&gt;" in html and "7 requests" in html
+
+
+def test_measured_fact_rejects_boolean_or_unlabeled_values() -> None:
+    with pytest.raises(m.ReportError, match="measured fact"):
+        m.MeasuredFact("hits", True, "requests")
+    with pytest.raises(m.ReportError, match="measured fact"):
+        m.MeasuredFact("hits", 1, "")
+
+
 def test_markdown_report_keeps_hostile_text_inside_cells_and_list_items() -> None:
     metadata = m.RunMetadata("v`\n# heading", 1, "cfg", "rate")
     report = m.markdown_report(

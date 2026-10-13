@@ -179,6 +179,8 @@ def test_pipeline_artifacts_derive_from_one_comparison() -> None:
     artifacts = m.run_pipeline(m.PipelineConfig(seed=9, tasks=6))
     assert str(artifacts.comparison.stack.cost_micros) in artifacts.markdown
     assert "Offline synthetic measurements" in artifacts.html
+    assert "Measured mechanics" in artifacts.html
+    assert "routed prefix tokens" in artifacts.markdown
     assert artifacts.trace.endswith(b"\n")
 
 

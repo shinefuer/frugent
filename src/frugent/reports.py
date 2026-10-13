@@ -73,6 +73,27 @@ class MetricRow:
             raise ReportError("metric row: invalid policy, counts, costs, or percentiles")
 
 
+@dataclass(frozen=True, slots=True)
+class MeasuredFact:
+    """One non-negative mechanism count with an explicit display unit."""
+
+    name: str
+    value: int
+    unit: str
+
+    def __post_init__(self) -> None:
+        if (
+            not isinstance(self.name, str)
+            or not self.name
+            or isinstance(self.value, bool)
+            or not isinstance(self.value, int)
+            or self.value < 0
+            or not isinstance(self.unit, str)
+            or not self.unit
+        ):
+            raise ReportError("measured fact: name, non-negative value, and unit required")
+
+
 def svg_bars(rows: tuple[MetricRow, ...], *, field: str, title: str) -> str:
     """Render one non-negative integer metric without plotting dependencies."""
     import html
@@ -128,7 +149,10 @@ def _markdown_inline(value: object) -> str:
 
 
 def markdown_report(
-    metadata: RunMetadata, rows: tuple[MetricRow, ...], limitations: tuple[str, ...]
+    metadata: RunMetadata,
+    rows: tuple[MetricRow, ...],
+    limitations: tuple[str, ...],
+    facts: tuple[MeasuredFact, ...] = (),
 ) -> str:
     if not limitations or any(not item for item in limitations):
         raise ReportError("report: at least one limitation is required")
@@ -143,12 +167,25 @@ def markdown_report(
     ]
     lines.extend(f"- {key}: `{_markdown_inline(value)}`" for key, value in meta.items())
     lines.extend(("", "## Measured comparison", "", markdown_table(rows), "", "## Limitations", ""))
+    if facts:
+        lines[-2:-2] = [
+            "## Measured mechanics",
+            "",
+            *(
+                f"- {_markdown_inline(fact.name)}: `{fact.value} {_markdown_inline(fact.unit)}`"
+                for fact in facts
+            ),
+            "",
+        ]
     lines.extend(f"- {_markdown_inline(item)}" for item in limitations)
     return "\n".join(lines) + "\n"
 
 
 def html_report(
-    metadata: RunMetadata, rows: tuple[MetricRow, ...], limitations: tuple[str, ...]
+    metadata: RunMetadata,
+    rows: tuple[MetricRow, ...],
+    limitations: tuple[str, ...],
+    facts: tuple[MeasuredFact, ...] = (),
 ) -> str:
     import html
 
@@ -175,6 +212,11 @@ def html_report(
         f"<dt>{html.escape(key)}</dt><dd>{html.escape(str(value))}</dd>"
         for key, value in metadata_record(metadata).items()
     )
+    facts_html = "".join(
+        f"<dt>{html.escape(fact.name)}</dt><dd>{fact.value} {html.escape(fact.unit)}</dd>"
+        for fact in facts
+    )
+    facts_section = f"<h2>Measured mechanics</h2><dl>{facts_html}</dl>" if facts else ""
     chart = svg_bars(rows, field="cost_micros", title="Fictional cost by policy")
     return (
         '<!doctype html><html><head><meta charset="utf-8">'
@@ -183,7 +225,7 @@ def html_report(
         "td,th{padding:.4rem}</style></head><body>"
         "<h1>Frugent synthetic cost report</h1>"
         "<p>Offline synthetic measurements; fictional rate card.</p>"
-        f"<dl>{metadata_html}</dl>{chart}<table><tbody>{cells}</tbody></table>"
+        f"<dl>{metadata_html}</dl>{chart}<table><tbody>{cells}</tbody></table>{facts_section}"
         f"<h2>Limitations</h2><ul>{limits}</ul></body></html>"
     )
 
