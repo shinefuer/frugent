@@ -187,12 +187,18 @@ def trace_command(arguments: argparse.Namespace) -> CommandOutput:
 
 @register("bench", "compare baseline and stack on identical synthetic tasks")
 def bench_command(arguments: argparse.Namespace) -> CommandOutput:
-    from frugent.pipeline import PipelineConfig, compare
+    from frugent.benchmark import cache_hit_uplift, cost_per_completed
+    from frugent.pipeline import PipelineConfig, compare, stack_stages
 
-    comparison = compare(
-        PipelineConfig(
-            arguments.seed, arguments.tasks, arguments.token_budget, arguments.cost_budget
-        )
+    config = PipelineConfig(
+        arguments.seed, arguments.tasks, arguments.token_budget, arguments.cost_budget
+    )
+    comparison = compare(config)
+    stages = stack_stages(config)
+    stack_cost_per_completed = (
+        cost_per_completed(comparison.stack.cost_micros, comparison.stack.completed)
+        if comparison.stack.completed
+        else None
     )
     return CommandOutput(
         {
@@ -201,6 +207,8 @@ def bench_command(arguments: argparse.Namespace) -> CommandOutput:
             "completed": comparison.stack.completed,
             "token_savings": comparison.token_savings,
             "cost_savings_micros": comparison.cost_savings_micros,
+            "cache_hit_uplift": cache_hit_uplift(0, stages.cache_hits, stages.requests),
+            "stack_cost_per_completed_micros": stack_cost_per_completed,
         }
     )
 
@@ -222,20 +230,24 @@ def report_command(arguments: argparse.Namespace) -> CommandOutput:
 
 @register("run", "execute synthesis, accounting, tracing, and reporting")
 def run_command(arguments: argparse.Namespace) -> CommandOutput:
-    from frugent.pipeline import PipelineConfig, run_pipeline
+    from frugent.pipeline import PipelineConfig, run_pipeline, stack_stages
     from frugent.trace_io import trace_fingerprint
 
-    artifacts = run_pipeline(
-        PipelineConfig(
-            arguments.seed, arguments.tasks, arguments.token_budget, arguments.cost_budget
-        )
+    config = PipelineConfig(
+        arguments.seed, arguments.tasks, arguments.token_budget, arguments.cost_budget
     )
+    artifacts = run_pipeline(config)
+    stages = stack_stages(config)
     comparison = artifacts.comparison
     return CommandOutput(
         {
             "completed": comparison.stack.completed,
             "token_savings": comparison.token_savings,
             "cost_savings_micros": comparison.cost_savings_micros,
+            "routed_prefix_tokens": stages.routed_prefix_tokens,
+            "cache_hits": stages.cache_hits,
+            "micro_batches": stages.batches,
+            "budget_admissions": stages.admitted,
             "trace_fingerprint": trace_fingerprint(artifacts.trace),
         }
     )
@@ -243,13 +255,13 @@ def run_command(arguments: argparse.Namespace) -> CommandOutput:
 
 @register("demo", "run the complete offline demonstration with honest labels")
 def demo_command(arguments: argparse.Namespace) -> CommandOutput:
-    from frugent.pipeline import PipelineConfig, run_pipeline
+    from frugent.pipeline import PipelineConfig, run_pipeline, stack_stages
 
-    artifacts = run_pipeline(
-        PipelineConfig(
-            arguments.seed, arguments.tasks, arguments.token_budget, arguments.cost_budget
-        )
+    config = PipelineConfig(
+        arguments.seed, arguments.tasks, arguments.token_budget, arguments.cost_budget
     )
+    artifacts = run_pipeline(config)
+    stages = stack_stages(config)
     comparison = artifacts.comparison
     data = {
         "scope": "offline synthetic workload",
@@ -257,6 +269,10 @@ def demo_command(arguments: argparse.Namespace) -> CommandOutput:
         "tasks_completed": comparison.stack.completed,
         "measured_token_savings": comparison.token_savings,
         "measured_cost_savings_micros": comparison.cost_savings_micros,
+        "measured_routed_prefix_tokens": stages.routed_prefix_tokens,
+        "measured_cache_hits": stages.cache_hits,
+        "measured_micro_batches": stages.batches,
+        "measured_budget_admissions": stages.admitted,
     }
     artifact = artifacts.html.encode() if arguments.format == "html" else None
     return CommandOutput(data, artifact)

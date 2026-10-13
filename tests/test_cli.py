@@ -72,6 +72,8 @@ def test_bench_command_labels_measured_scope(capsys: object) -> None:
     output = json.loads(capsys.readouterr().out)
     assert output["synthetic"] is True and output["fictional_rate_card"] is True
     assert output["completed"] == 8 and output["cost_savings_micros"] > 0
+    assert 0 < output["cache_hit_uplift"] < 1
+    assert output["stack_cost_per_completed_micros"] > 0
 
 
 def test_report_command_writes_requested_self_contained_artifact(tmp_path: object) -> None:
@@ -92,6 +94,9 @@ def test_run_command_connects_pipeline_artifacts(capsys: object) -> None:
     assert m.main(["run", "--seed", "10", "--tasks", "6"]) == 0
     output = json.loads(capsys.readouterr().out)
     assert output["completed"] == 6
+    assert output["routed_prefix_tokens"] == 12
+    assert 0 < output["cache_hits"] < 6
+    assert output["budget_admissions"] == 6
     assert output["trace_fingerprint"].startswith("sha256:")
 
 
@@ -100,6 +105,8 @@ def test_demo_command_discloses_synthetic_fictional_scope(capsys: object) -> Non
     output = json.loads(capsys.readouterr().out)
     assert output["scope"] == "offline synthetic workload"
     assert output["rate_card"] == "fictional" and output["tasks_completed"] == 5
+    assert output["measured_routed_prefix_tokens"] == 10
+    assert output["measured_micro_batches"] > 0
 
 
 def test_complete_subcommand_inventory_is_deliberate() -> None:
