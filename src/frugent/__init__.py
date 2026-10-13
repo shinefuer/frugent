@@ -7,9 +7,24 @@ from frugent.adapters import (
     AdapterResponse,
     ReplayAdapter,
     ScriptedAdapter,
+    export_session,
+    import_session,
 )
-from frugent.batching import BatchRequest, execute_single_flights, micro_batches
-from frugent.budget import Budget, BudgetError, can_admit, reserve
+from frugent.batching import (
+    BatchRequest,
+    dispatch_times,
+    execute_single_flights,
+    micro_batches,
+    scheduled_completion_times,
+)
+from frugent.budget import (
+    Budget,
+    BudgetError,
+    can_admit,
+    release_many,
+    reserve,
+    reserve_many,
+)
 from frugent.cascade import ModelProfile, cheapest_profile_at_floor
 from frugent.cascade_dp import DifficultyMixture, Policy, optimal_policy, optimum_gap
 from frugent.compression import Block, exact_budget_select, recall_curve, sliding_window
@@ -23,7 +38,17 @@ from frugent.context import (
     snapshot,
     store_fingerprint,
 )
-from frugent.pipeline import PipelineArtifacts, PipelineConfig, compare, run_pipeline
+from frugent.pipeline import (
+    PipelineArtifacts,
+    PipelineConfig,
+    StackStages,
+    TaskMeasurement,
+    admit_measurements,
+    compare,
+    route_measurements,
+    run_pipeline,
+    stack_stages,
+)
 from frugent.prompt_cache import CacheEntry, CacheMetrics, CachePolicy, replay_trace
 from frugent.ratecard import (
     CostBreakdown,
@@ -34,13 +59,29 @@ from frugent.ratecard import (
     price_usage,
     rate_card_fingerprint,
 )
-from frugent.reports import MetricRow, RunMetadata, html_report, markdown_report, svg_bars
-from frugent.runtime import Action, LoopEvent, ScriptedPlanner, run_loop
+from frugent.reports import (
+    MeasuredFact,
+    MetricRow,
+    RunMetadata,
+    html_report,
+    markdown_report,
+    svg_bars,
+)
+from frugent.runtime import (
+    Action,
+    AdapterPlanner,
+    LoopEvent,
+    Planner,
+    ScriptedPlanner,
+    action_from_record,
+    action_record,
+    run_loop,
+)
 from frugent.sandbox import Decision as SandboxDecision
 from frugent.sandbox import Policy as SandboxPolicy
 from frugent.sandbox import decide
 from frugent.scheduling import Task as ScheduledTask
-from frugent.scheduling import schedule
+from frugent.scheduling import realized_spend, schedule, schedule_spend_totals
 from frugent.semantic_cache import (
     SemanticEntry,
     SemanticMetrics,
@@ -49,7 +90,15 @@ from frugent.semantic_cache import (
     fuzzy_candidates,
 )
 from frugent.tools import ScriptedTools, ToolCall, ToolResult, dry_run, execute
-from frugent.trace_io import TraceHeader, event_diff, export_trace, import_trace, trace_fingerprint
+from frugent.trace_io import (
+    TraceDiff,
+    TraceHeader,
+    event_diff,
+    export_trace,
+    import_trace,
+    trace_diff,
+    trace_fingerprint,
+)
 from frugent.tracing import Span, span_diff
 from frugent.types import Decision, Event, Message, RecordError, Request, Response, Usage
 from frugent.workloads import SyntheticTask, generate_corpus, manifest_fingerprint
@@ -57,6 +106,7 @@ from frugent.workloads import SyntheticTask, generate_corpus, manifest_fingerpri
 __all__ = [
     "Action",
     "Adapter",
+    "AdapterPlanner",
     "AdapterRequest",
     "AdapterResponse",
     "BatchRequest",
@@ -73,6 +123,7 @@ __all__ = [
     "DifficultyMixture",
     "Event",
     "LoopEvent",
+    "MeasuredFact",
     "Message",
     "MessageStore",
     "MetricRow",
@@ -80,6 +131,7 @@ __all__ = [
     "ModelRate",
     "PipelineArtifacts",
     "PipelineConfig",
+    "Planner",
     "Policy",
     "RateCard",
     "RateCardError",
@@ -99,12 +151,18 @@ __all__ = [
     "SemanticMetrics",
     "Snapshot",
     "Span",
+    "StackStages",
     "SyntheticTask",
+    "TaskMeasurement",
     "ToolCall",
     "ToolResult",
+    "TraceDiff",
     "TraceHeader",
     "Usage",
     "__version__",
+    "action_from_record",
+    "action_record",
+    "admit_measurements",
     "apply_diff",
     "can_admit",
     "cheapest_profile_at_floor",
@@ -112,6 +170,7 @@ __all__ = [
     "decide",
     "demo_rate_card",
     "diff",
+    "dispatch_times",
     "dry_run",
     "dump_config",
     "event_diff",
@@ -120,10 +179,12 @@ __all__ = [
     "exact_lookup",
     "execute",
     "execute_single_flights",
+    "export_session",
     "export_trace",
     "fuzzy_candidates",
     "generate_corpus",
     "html_report",
+    "import_session",
     "import_trace",
     "load_config",
     "manifest_fingerprint",
@@ -134,16 +195,24 @@ __all__ = [
     "optimum_gap",
     "price_usage",
     "rate_card_fingerprint",
+    "realized_spend",
     "recall_curve",
+    "release_many",
     "replay_trace",
     "reserve",
+    "reserve_many",
+    "route_measurements",
     "run_loop",
     "run_pipeline",
     "schedule",
+    "schedule_spend_totals",
+    "scheduled_completion_times",
     "sliding_window",
     "snapshot",
     "span_diff",
+    "stack_stages",
     "store_fingerprint",
     "svg_bars",
+    "trace_diff",
     "trace_fingerprint",
 ]

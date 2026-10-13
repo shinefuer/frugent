@@ -88,6 +88,25 @@ def test_pipeline_facade_runs_without_external_dependencies() -> None:
     assert "fictional rate card" in artifacts.html
 
 
+def test_integrated_audit_facade_exposes_new_mechanism_results() -> None:
+    config = frugent.PipelineConfig(seed=5, tasks=6)
+    stages = frugent.stack_stages(config)
+    assert isinstance(stages, frugent.StackStages)
+    assert stages.requests == 6 and stages.routed_prefix_tokens > 0
+    assignments, hits = frugent.route_measurements(config)
+    assert len(assignments) == 6 and hits == stages.routed_prefix_tokens
+
+
+def test_replay_and_trace_diff_facades_roundtrip_verified_artifacts() -> None:
+    request = frugent.AdapterRequest("r", b"p", 0)
+    response = frugent.AdapterResponse("r", b"answer\0ok", "mock", 1, 1)
+    session = frugent.export_session(((request, response),))
+    assert frugent.import_session(session) == ((request, response),)
+    left = frugent.export_trace(frugent.TraceHeader("a", 0, "c", "r"), ({"x": 1},))
+    right = frugent.export_trace(frugent.TraceHeader("b", 0, "c", "r"), ({"x": 1},))
+    assert isinstance(frugent.trace_diff(left, right), frugent.TraceDiff)
+
+
 def test_public_symbol_inventory_is_sorted_unique_and_real() -> None:
     assert frugent.__all__ == sorted(set(frugent.__all__))
     assert len(frugent.__all__) >= 75
