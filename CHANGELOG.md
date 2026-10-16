@@ -2,6 +2,12 @@
 
 版本遵循 patch-only 序列，记录可验证的 library/CLI/schema 变化。
 
+## 0.1.2 - 2026-10-30
+
+- 增加 checksummed replay session、bounded loopback mock 与 adapter-driven runtime planning。
+- 将 prefix route、prompt cache、micro-batch 和 hard-budget admission 接入完整离线 pipeline。
+- trace 与 cost report 记录实际 stage counts；CLI 输出 paired synthetic measurement。
+
 ## 0.1.1 - 2026-10-30
 
 - 稳定 public facade、strict record parsing 与完整 CLI/examples。
