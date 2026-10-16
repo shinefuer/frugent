@@ -10,7 +10,7 @@ frugent 是一个 Python 3.11+ 工具包，用于在完全离线、可复现的�
 |---|---|
 | prefix / semantic cache | affinity routing、TTL、LRU/LFU、严格 exact retrieval |
 | context compression | sliding window、extractive scoring、knapsack、needle recall |
-| batching | single-flight、fan-out、micro-batch wait bound |
+| batching | single-flight、fan-out、deadline dispatch、micro-batch wait bound |
 | cascade / budget | quality floor、DP optimum、hard admission、degradation ladder |
 | tracing / sandbox | cost conservation、checksummed JSONL、allowlist、timeout/replay |
 | offline runtime | scripted/replay/local-loopback adapter、plan→act→observe |
@@ -44,7 +44,7 @@ frugent report --seed 7 --tasks 24 --format html --output report.html
 frugent demo --seed 7 --tasks 12
 ```
 
-机制命令输出 canonical JSON；`report` 直接输出 Markdown/HTML。cost 是 fictional micro-cost，latency 是离散事件模拟值。
+机制命令输出 canonical JSON；`run` / `demo` 同时给出实际 route/cache/batch/budget stage 计数，`report` 直接输出 Markdown/HTML。cost 是 fictional micro-cost，latency 是离散事件模拟值。
 
 ## 示例
 
@@ -71,4 +71,3 @@ frugent demo --seed 7 --tasks 12
 ## 许可
 
 MIT License，详见 [LICENSE](LICENSE)。
-
